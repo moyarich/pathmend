@@ -59,7 +59,7 @@ async function runScriptCases(check, cfg) {
     check("Docker: stage, variable and URL sources ignored",
       ![7, 8, 9].some((line) => keys.has("Dockerfile:" + line + ":PM003")));
     check("Compose: remote context and variable ignored",
-      ![15, 18].some((line) => keys.has("docker-compose.yml:" + line + ":PM004")));
+      ![14, 17].some((line) => keys.has("docker-compose.yml:" + line + ":PM004")));
     check("package: build output reference not diagnosed", !keys.has("package.json:7:PM001"));
 
     // Let someone watching the editor inspect the script examples as well.
