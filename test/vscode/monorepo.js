@@ -9,29 +9,17 @@ const { waitFor } = require("./utils/visual");
 
 async function runMonorepoCases(check, cfg) {
   const ws = fs.realpathSync(cfg.ws);
-  const dir = path.join(ws, "pathmend-rename-cases");
+  const dir = path.join(ws, "packages", "script-cases");
   const manifest = path.join(dir, "package.json");
   const oldFile = path.join(dir, "scripts", "build-registry.ts");
   const newFile = path.join(dir, "scripts", "registry-cli.ts");
   const api = await vscode.extensions.getExtension("jaytankdev.pathmend").activate();
   const originalInfo = vscode.window.showInformationMessage;
+  const original = fs.readFileSync(manifest, "utf8");
   let intercepted = false;
   const read = () => JSON.parse(fs.readFileSync(manifest, "utf8"));
 
   try {
-    fs.mkdirSync(path.dirname(oldFile), { recursive: true });
-    fs.writeFileSync(oldFile, "// test fixture\n");
-    fs.writeFileSync(manifest, JSON.stringify({
-      name: "pathmend-rename-case",
-      private: true,
-      bin: { "build-registry": "./scripts/build-registry.ts" },
-      scripts: {
-        "registry:build": "node scripts/build-registry.ts --check",
-        "registry:check": "node scripts/build-registry.ts",
-        "other": "npm run registry:build",
-      },
-    }, null, 2) + "\n");
-
     await api.rebuildIndex();
     const manifestDiagnostics = () => vscode.languages.getDiagnostics(vscode.Uri.file(manifest))
       .filter((d) => d.source === "PathMend");
@@ -96,7 +84,9 @@ async function runMonorepoCases(check, cfg) {
     }
   } finally {
     if (intercepted) vscode.window.showInformationMessage = originalInfo;
-    fs.rmSync(dir, { recursive: true, force: true });
+    // Restore the isolated copy so other tests see the original tracked fixture.
+    fs.writeFileSync(manifest, original);
+    if (fs.existsSync(newFile) && !fs.existsSync(oldFile)) fs.renameSync(newFile, oldFile);
     await api.rebuildIndex();
   }
 }
