@@ -8,27 +8,19 @@ const path = require("path");
 
 async function runScriptCases(check, cfg) {
   const ws = fs.realpathSync(cfg.ws);
-  const dir = path.join(ws, "pathmend-script-cases");
-  const pkgPath = path.join(dir, "package.json");
-  const script = path.join(dir, "tools", "present.sh");
+  const pkgPath = path.join(ws, "packages", "script-cases", "package.json");
   const ext = vscode.extensions.getExtension("jaytankdev.pathmend");
   const api = await ext.activate();
+  const original = fs.readFileSync(pkgPath, "utf8");
   try {
-    fs.mkdirSync(path.dirname(script), { recursive: true });
-    fs.writeFileSync(script, "#!/bin/sh\necho ok\n");
-    const scripts = {
+    const fixture = JSON.parse(original);
+    Object.assign(fixture.scripts, {
       missingNode: "node tools/missing.js",
       missingBash: "bash tools/missing.sh",
       missingRelative: "./tools/missing-cli.sh",
-      existingBash: "bash tools/present.sh",
-      existingRelative: "./tools/present.sh",
-      npmCommand: "npm run build",
-      packageBinary: "eslint .",
-      envVariable: "node $ENTRYPOINT",
-      remote: "node https://example.com/script.js",
       chained: "echo ready && node tools/missing-second.js",
-    };
-    fs.writeFileSync(pkgPath, JSON.stringify({ name: "script-cases", version: "1.0.0", scripts }, null, 2) + "\n");
+    });
+    fs.writeFileSync(pkgPath, JSON.stringify(fixture, null, 2) + "\n");
     await api.rebuildIndex();
     const findings = vscode.languages.getDiagnostics(vscode.Uri.file(pkgPath))
       .filter((d) => d.source === "PathMend");
@@ -71,8 +63,8 @@ async function runScriptCases(check, cfg) {
       console.warn("Could not show script use cases:", error.message);
     }
   } finally {
-    // Remove only files created by this suite; restore the original workspace.
-    fs.rmSync(dir, { recursive: true, force: true });
+    // Restore the copied tracked fixture; never modify the repository fixture.
+    fs.writeFileSync(pkgPath, original);
     await api.rebuildIndex();
   }
 }
