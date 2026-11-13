@@ -3,8 +3,7 @@
 // Launches a real, isolated VS Code window with PathMend loaded from this folder and runs
 // test/vscode/index.js inside it: once trusted (full suite), once in an untrusted workspace
 // (PathMend supports untrusted workspaces, so it must still work there). In the trusted run the
-// test asks Playwright to capture the VS Code workbench; the screenshot is saved
-// in screenshots/pathmend-panel.png (outside the temporary test workspace).
+// test requests meaningful workbench snapshots saved in screenshots/ (outside the temporary workspace).
 // Usage: node test/run-vscode.js [tmpBaseDir]
 
 const fs = require("fs");
@@ -29,7 +28,7 @@ const shotDir = path.join(base, "shots");
 fs.mkdirSync(shotDir);
 const screenshotsDir = path.join(extDir, "screenshots");
 fs.mkdirSync(screenshotsDir, { recursive: true });
-const shot = path.join(screenshotsDir, "pathmend-panel.png");
+
 
 function writeSettings(trustEnabled) {
   fs.writeFileSync(
@@ -63,7 +62,7 @@ async function resolveVSCode() {
   throw new Error("VS Code executable not found: " + downloaded);
 }
 
-async function captureWorkbench(devtoolsUrl) {
+async function captureWorkbench(devtoolsUrl, screenshotName) {
   if (!devtoolsUrl) throw new Error("VS Code did not expose a DevTools endpoint");
   const browser = await chromium.connectOverCDP(devtoolsUrl, { timeout: 10000 });
   try {
@@ -77,8 +76,9 @@ async function captureWorkbench(devtoolsUrl) {
       if (!page) await new Promise((resolve) => setTimeout(resolve, 200));
     }
     if (!page) throw new Error("VS Code workbench page not found");
-    await page.screenshot({ path: shot, timeout: 10000, animations: "disabled" });
-    if (!fs.existsSync(shot) || fs.statSync(shot).size === 0) {
+    const screenshotPath = path.join(screenshotsDir, screenshotName + ".png");
+    await page.screenshot({ path: screenshotPath, timeout: 10000, animations: "disabled" });
+    if (!fs.existsSync(screenshotPath) || fs.statSync(screenshotPath).size === 0) {
       throw new Error("Playwright did not create a nonempty screenshot");
     }
   } finally {
@@ -130,20 +130,27 @@ async function launch(executable, mode, extraArgs) {
   const killer = setTimeout(() => child.kill("SIGKILL"), 300000);
   let captureInProgress = false;
   const poll = setInterval(async () => {
-    const want = path.join(shotDir, "shot-" + mode);
-    if (captureInProgress || !fs.existsSync(want)) return;
+    if (captureInProgress) return;
+    const requests = fs.readdirSync(shotDir).filter((name) => name.startsWith("shot-" + mode + "-") && !name.startsWith("shot-done-")).sort();
+    if (!requests.length) return;
+    const request = requests[0];
+    const screenshotName = request.slice(("shot-" + mode + "-").length);
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(screenshotName)) {
+      fs.unlinkSync(path.join(shotDir, request));
+      return;
+    }
     captureInProgress = true;
-    fs.unlinkSync(want);
+    fs.unlinkSync(path.join(shotDir, request));
     let screenshotOk = false;
     try {
-      await captureWorkbench(devtoolsUrl);
+      await captureWorkbench(devtoolsUrl, screenshotName);
       screenshotOk = true;
-      console.log("screenshot: " + shot);
+      console.log("screenshot: " + path.join(screenshotsDir, screenshotName + ".png"));
     } catch (error) {
       console.error("screenshot failed:", error.message);
     } finally {
       // Signal an attempt only after Playwright finishes; the test reads its result.
-      fs.writeFileSync(path.join(shotDir, "shot-done-" + mode), screenshotOk ? "ok" : "failed");
+      fs.writeFileSync(path.join(shotDir, "shot-done-" + mode + "-" + screenshotName), screenshotOk ? "ok" : "failed");
       captureInProgress = false;
     }
   }, 200);
