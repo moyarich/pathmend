@@ -27,7 +27,17 @@ npm test
 
 The VS Code runner launches an isolated editor and runs `test/vscode/index.js`. By default, `@vscode/test-electron` downloads a VS Code executable (cached across runs). Set `VSCODE_EXECUTABLE_PATH` to an existing **VS Code Electron executable** to avoid downloading it, or `VSCODE_TEST_VERSION` to select a specific download. The `code` command-line shell wrapper is not a substitute for the executable.
 
-The trusted-workspace test saves one screenshot to `screenshots/pathmend-panel.png` at the repository root. The runner creates this directory automatically, preserves it after successful tests, and Git and VS Code extension packaging ignore it.
+The test runner automatically creates `screenshots/` at the repository root and preserves captured images after successful tests. The folder is ignored by Git and excluded from extension packaging. Each screenshot has a descriptive name:
+
+- `diagnostics-panel.png` — initial broken-path findings
+- `after-inline-fix.png` — findings after applying a fix
+- `after-folder-rename.png` — findings after updating references
+- `ignored-rename.png` — unresolved references after ignoring an update
+- `empty-state.png` — no findings displayed
+- `disabled-state.png` — extension diagnostics disabled
+- `untrusted-panel.png` — panel in an untrusted workspace
+
+Screenshots are taken only at these specific UI states, not after every assertion. A capture failure is reported as a failed test.
 
 Screenshots use Playwright's Chromium DevTools Protocol (CDP) connection to the **actual VS Code workbench**, not OS-level screen capture. This works on macOS, Windows, and Linux with the same code and does not require ImageMagick, `xdotool`, `screencapture`, or PowerShell. VS Code still needs a graphical desktop or virtual display on headless Linux; screenshot failures count as failed assertions.
 
