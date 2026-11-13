@@ -98,14 +98,9 @@ async function screenshotEditor(ws, file, line) {
 }
 
 async function screenshotView() {
+  // Opening PathMend is sufficient: its file-group TreeItems already default
+  // to CollapsibleState.Expanded. There is no public list.expandAll command.
   await vscode.commands.executeCommand("workbench.view.extension.pathmend");
-  // The tree can be collapsed even though the TreeDataProvider reports rows.
-  // Expand what VS Code has focused; if the command is unavailable, still capture.
-  try {
-    await vscode.commands.executeCommand("list.expandAll");
-  } catch (error) {
-    console.warn("Could not expand screenshot tree:", error.message);
-  }
 }
 
 async function captureState(cfg, name, prepare) {
