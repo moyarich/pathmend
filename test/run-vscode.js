@@ -10,9 +10,18 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawn } = require("node:child_process");
-const screenshotsEnabled = process.env.PM_SCREENSHOTS !== "0";
-// Do not load Playwright when running functional tests without screenshots.
-const chromium = screenshotsEnabled ? require("playwright-core").chromium : null;
+// Visual capture is optional: missing or broken Playwright must never prevent
+// Extension Host tests from starting or change their pass/fail result.
+let screenshotsEnabled = process.env.PM_SCREENSHOTS !== "0";
+let chromium = null;
+if (screenshotsEnabled) {
+  try {
+    chromium = require("playwright-core").chromium;
+  } catch (error) {
+    screenshotsEnabled = false;
+    console.warn("Playwright unavailable; continuing functional tests without screenshots:", error.message);
+  }
+}
 const { downloadAndUnzipVSCode } = require("@vscode/test-electron");
 const { prepare } = require("./prepare");
 
@@ -130,6 +139,7 @@ async function launch(executable, mode, extraArgs) {
   let captureInProgress = false;
   const poll = screenshotsEnabled ? setInterval(async () => {
     if (captureInProgress) return;
+    try {
     const requests = fs.readdirSync(shotDir).filter((name) => name.startsWith("shot-" + mode + "-") && !name.startsWith("shot-done-")).sort();
     if (!requests.length) return;
     const request = requests[0];
@@ -149,7 +159,16 @@ async function launch(executable, mode, extraArgs) {
       console.warn("screenshot skipped (" + screenshotName + "):", error.message);
     } finally {
       // Acknowledge capture completion so the extension test can continue at the correct UI state.
-      fs.writeFileSync(path.join(shotDir, "shot-done-" + mode + "-" + screenshotName), screenshotOk ? "ok" : "failed");
+      try {
+        fs.writeFileSync(path.join(shotDir, "shot-done-" + mode + "-" + screenshotName), screenshotOk ? "ok" : "failed");
+      } catch (error) {
+        console.warn("Screenshot acknowledgment unavailable:", error.message);
+      }
+      captureInProgress = false;
+    }
+    } catch (error) {
+      // Keep the optional observer isolated from the VS Code functional runner.
+      console.warn("Screenshot observer error:", error.message);
       captureInProgress = false;
     }
   }, 200) : null;
