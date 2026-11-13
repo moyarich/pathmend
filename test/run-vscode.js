@@ -74,6 +74,26 @@ async function launch(mode, extraArgs) {
       if (process.platform === "darwin") {
         // macOS ships screencapture; ImageMagick's import is not installed by default.
         execFileSync("screencapture", ["-x", shot]);
+      } else if (process.platform === "win32") {
+        // PowerShell and System.Drawing are included in Windows PowerShell 5.1.
+        // Capture the full virtual desktop without third-party dependencies.
+        const script = [
+          "Add-Type -AssemblyName System.Windows.Forms",
+          "Add-Type -AssemblyName System.Drawing",
+          "$bounds = [System.Windows.Forms.SystemInformation]::VirtualScreen",
+          "$bitmap = New-Object System.Drawing.Bitmap($bounds.Width, $bounds.Height)",
+          "$graphics = [System.Drawing.Graphics]::FromImage($bitmap)",
+          "try {",
+          "  $graphics.CopyFromScreen($bounds.Left, $bounds.Top, 0, 0, $bitmap.Size)",
+          "  $bitmap.Save($env:PM_SCREENSHOT_PATH, [System.Drawing.Imaging.ImageFormat]::Png)",
+          "} finally {",
+          "  $graphics.Dispose()",
+          "  $bitmap.Dispose()",
+          "}",
+        ].join("\n");
+        execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
+          env: Object.assign({}, process.env, { PM_SCREENSHOT_PATH: shot }),
+        });
       } else {
         const display = process.env.DISPLAY || ":99";
         let win = "root";
