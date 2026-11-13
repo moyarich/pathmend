@@ -3,18 +3,21 @@
 // Launches a real, isolated VS Code window with PathMend loaded from this folder and runs
 // test/vscode/index.js inside it: once trusted (full suite), once in an untrusted workspace
 // (PathMend supports untrusted workspaces, so it must still work there). In the trusted run the
-// test asks for a screenshot of the (hidden) display with the PathMend view open; it is saved
+// test asks Playwright to capture the VS Code workbench; the screenshot is saved
 // as <tmpBaseDir>/pathmend-panel.png.
 // Usage: node test/run-vscode.js [tmpBaseDir]
 
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { spawn, execFileSync } = require("child_process");
+const { spawn } = require("node:child_process");
+const { chromium } = require("playwright-core");
+const { downloadAndUnzipVSCode } = require("@vscode/test-electron");
 const { prepare } = require("./prepare");
 
 const extDir = path.resolve(__dirname, "..");
-const base = fs.realpathSync(fs.mkdtempSync(path.join(process.argv[2] || os.tmpdir(), "pm-vscode-")));
+// Short paths matter on macOS because VS Code uses Unix-domain IPC sockets.
+const base = fs.realpathSync(fs.mkdtempSync(path.join(process.argv[2] || (process.platform === "darwin" ? "/tmp" : os.tmpdir()), "pm-vscode-")));
 const userDir = path.join(base, "user");
 const extsDir = path.join(base, "exts");
 fs.mkdirSync(path.join(userDir, "User"), { recursive: true });
@@ -47,11 +50,47 @@ function writeSettings(trustEnabled) {
   );
 }
 
-async function launch(mode, extraArgs) {
+async function resolveVSCode() {
+  // Launch the actual Electron executable, not the code CLI shim, so Chromium
+  // exposes its DevTools endpoint to Playwright (as Nx Console E2E does).
+  const downloaded = process.env.VSCODE_EXECUTABLE_PATH
+    || await downloadAndUnzipVSCode(process.env.VSCODE_TEST_VERSION || undefined);
+  if (fs.existsSync(downloaded)) return downloaded;
+  const macCode = path.join(path.dirname(downloaded), "Code");
+  if (fs.existsSync(macCode)) return macCode;
+  throw new Error("VS Code executable not found: " + downloaded);
+}
+
+async function captureWorkbench(devtoolsUrl) {
+  if (!devtoolsUrl) throw new Error("VS Code did not expose a DevTools endpoint");
+  const browser = await chromium.connectOverCDP(devtoolsUrl, { timeout: 10000 });
+  try {
+    const deadline = Date.now() + 10000;
+    let page;
+    while (!page && Date.now() < deadline) {
+      for (const context of browser.contexts()) {
+        page = context.pages().find((candidate) => candidate.url().includes("workbench"));
+        if (page) break;
+      }
+      if (!page) await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    if (!page) throw new Error("VS Code workbench page not found");
+    await page.screenshot({ path: shot, timeout: 10000, animations: "disabled" });
+    if (!fs.existsSync(shot) || fs.statSync(shot).size === 0) {
+      throw new Error("Playwright did not create a nonempty screenshot");
+    }
+  } finally {
+    // A CDP browser close disconnects Playwright, leaving VS Code running.
+    await browser.close();
+  }
+}
+
+async function launch(executable, mode, extraArgs) {
   const fx = prepare(path.join(base, mode, "fx"));
   fs.writeFileSync(cfgFile, JSON.stringify({ mode, resultFile, shotDir, ws: fx.ws, outside: fx.outside }));
   const args = [
-    "--wait", "--new-window",
+    "--new-window",
+    "--remote-debugging-port=0",
     "--user-data-dir", userDir,
     "--extensions-dir", extsDir,
     "--disable-extensions",
@@ -61,69 +100,56 @@ async function launch(mode, extraArgs) {
     "--extensionTestsPath=" + path.join(__dirname, "vscode", "index.js"),
     fx.ws,
   ];
-  console.log("code " + args.join(" "));
-  const child = spawn("code", args, { stdio: "inherit", env: Object.assign({}, process.env, { PM_TEST_CONFIG: cfgFile }) });
+  console.log(executable + " " + args.join(" "));
+  const child = spawn(executable, args, {
+    env: Object.assign({}, process.env, { PM_TEST_CONFIG: cfgFile }),
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let devtoolsUrl;
+  const onOutput = (data, stream) => {
+    const output = data.toString();
+    stream.write(output);
+    if (!devtoolsUrl) {
+      const match = /DevTools listening on (ws:\/\/\S+)/.exec(output);
+      if (match) devtoolsUrl = match[1];
+    }
+  };
+  child.stdout.on("data", (data) => onOutput(data, process.stdout));
+  child.stderr.on("data", (data) => onOutput(data, process.stderr));
+  let spawnError;
+  child.on("error", (error) => {
+    spawnError = error;
+    console.error("VS Code launch failed:", error);
+  });
   const exited = new Promise((resolve) => child.on("exit", (code) => resolve(code)));
   const killer = setTimeout(() => child.kill("SIGKILL"), 300000);
-  const poll = setInterval(() => {
+  let captureInProgress = false;
+  const poll = setInterval(async () => {
     const want = path.join(shotDir, "shot-" + mode);
-    if (!fs.existsSync(want)) return;
+    if (captureInProgress || !fs.existsSync(want)) return;
+    captureInProgress = true;
     fs.unlinkSync(want);
     let screenshotOk = false;
     try {
-      if (process.platform === "darwin") {
-        // macOS ships screencapture; ImageMagick's import is not installed by default.
-        execFileSync("screencapture", ["-x", shot]);
-      } else if (process.platform === "win32") {
-        // PowerShell and System.Drawing are included in Windows PowerShell 5.1.
-        // Capture the full virtual desktop without third-party dependencies.
-        const script = [
-          "Add-Type -AssemblyName System.Windows.Forms",
-          "Add-Type -AssemblyName System.Drawing",
-          "$bounds = [System.Windows.Forms.SystemInformation]::VirtualScreen",
-          "$bitmap = [System.Drawing.Bitmap]::new($bounds.Width, $bounds.Height)",
-          "$graphics = [System.Drawing.Graphics]::FromImage($bitmap)",
-          "try {",
-          "  $graphics.CopyFromScreen($bounds.Left, $bounds.Top, 0, 0, $bitmap.Size)",
-          "  $bitmap.Save($env:PM_SCREENSHOT_PATH, [System.Drawing.Imaging.ImageFormat]::Png)",
-          "} finally {",
-          "  $graphics.Dispose()",
-          "  $bitmap.Dispose()",
-          "}",
-        ].join("\n");
-        execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
-          env: Object.assign({}, process.env, { PM_SCREENSHOT_PATH: shot }),
-        });
-      } else {
-        const display = process.env.DISPLAY || ":99";
-        let win = "root";
-        try {
-          const ids = execFileSync("xdotool", ["search", "--name", "pathmend-shot"], {
-            env: Object.assign({}, process.env, { DISPLAY: display }),
-          }).toString().trim().split(/\\s+/).filter(Boolean);
-          if (ids.length) {
-            win = ids[ids.length - 1];
-            execFileSync("xdotool", ["windowraise", win], {
-              env: Object.assign({}, process.env, { DISPLAY: display }),
-            });
-          }
-        } catch (_) {
-          win = "root";
-        }
-        execFileSync("import", ["-window", win, "-display", display, shot]);
-      }
-      screenshotOk = fs.existsSync(shot) && fs.statSync(shot).size > 0;
-      if (screenshotOk) console.log("screenshot: " + shot);
-      else console.log("screenshot failed: no image was created");
-    } catch (e) {
-      console.log("screenshot failed: " + e.message);
+      await captureWorkbench(devtoolsUrl);
+      screenshotOk = true;
+      console.log("screenshot: " + shot);
+    } catch (error) {
+      console.error("screenshot failed:", error.message);
+    } finally {
+      // Signal an attempt only after Playwright finishes; the test reads its result.
+      fs.writeFileSync(path.join(shotDir, "shot-done-" + mode), screenshotOk ? "ok" : "failed");
+      captureInProgress = false;
     }
-    // The editor must distinguish a completed attempt from a successful capture.
-    fs.writeFileSync(path.join(shotDir, "shot-done-" + mode), screenshotOk ? "ok" : "failed");
-  }, 300);
+  }, 200);
   const status = await exited;
   clearTimeout(killer);
   clearInterval(poll);
+  if (captureInProgress) {
+    // Capture normally completes before the extension host writes test results.
+    while (captureInProgress) await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  if (spawnError) throw spawnError;
   console.log("code exit status:", status);
   if (!fs.existsSync(resultFile)) {
     console.log("FAIL: no results written");
@@ -136,13 +162,14 @@ async function launch(mode, extraArgs) {
 }
 
 (async () => {
+  const executable = await resolveVSCode();
   writeSettings(false);
-  const r1 = await launch("trusted", ["--disable-workspace-trust"]);
+  const r1 = await launch(executable, "trusted", ["--disable-workspace-trust"]);
   writeSettings(true);
-  const r2 = await launch("untrusted", []);
+  const r2 = await launch(executable, "untrusted", []);
   const passed = r1.passed + r2.passed;
   const failed = r1.failed + r2.failed;
   console.log(`\nin-editor tests: ${passed} passed, ${failed} failed (trusted run ${r1.passed}/${r1.passed + r1.failed}, untrusted run ${r2.passed}/${r2.passed + r2.failed})`);
   if (!failed) fs.rmSync(base, { recursive: true, force: true });
   process.exit(failed ? 1 : 0);
-})();
+})().catch((error) => { console.error(error); process.exitCode = 1; });
