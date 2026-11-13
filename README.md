@@ -82,6 +82,10 @@ PathMend compares with the references it saw before the move and shows:
 Only config files inside the workspace are edited. Renames done outside VS Code (for example
 `git mv` in a terminal) are not seen as renames; the references simply show up as broken.
 
+## Tests
+
+Run `npm install` and `npm test` for the Vitest regression suite, or `npm run test:watch` during development. The `test/package-scripts.test.mjs` suite copies the repository's own `package.json` into a fresh operating-system temporary directory, adds test-only scripts to the copy, and performs actual file and directory moves there. The original repository manifest is never edited; the temporary directory is removed after every test.
+
 ## Settings
 
 | Setting | Default | Description |
