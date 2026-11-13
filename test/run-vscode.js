@@ -10,7 +10,9 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawn } = require("node:child_process");
-const { chromium } = require("playwright-core");
+const screenshotsEnabled = process.env.PM_SCREENSHOTS !== "0";
+// Do not load Playwright when running functional tests without screenshots.
+const chromium = screenshotsEnabled ? require("playwright-core").chromium : null;
 const { downloadAndUnzipVSCode } = require("@vscode/test-electron");
 const { prepare } = require("./prepare");
 
@@ -27,7 +29,7 @@ const cfgFile = path.join(base, "config.json");
 const shotDir = path.join(base, "shots");
 fs.mkdirSync(shotDir);
 const screenshotsDir = path.join(extDir, "screenshots");
-fs.mkdirSync(screenshotsDir, { recursive: true });
+if (screenshotsEnabled) fs.mkdirSync(screenshotsDir, { recursive: true });
 
 
 function writeSettings(trustEnabled) {
@@ -86,10 +88,10 @@ async function captureWorkbench(devtoolsUrl, screenshotName) {
 
 async function launch(executable, mode, extraArgs) {
   const fx = prepare(path.join(base, mode, "fx"));
-  fs.writeFileSync(cfgFile, JSON.stringify({ mode, resultFile, shotDir, ws: fx.ws, outside: fx.outside }));
+  fs.writeFileSync(cfgFile, JSON.stringify({ mode, resultFile, shotDir, screenshotsEnabled, ws: fx.ws, outside: fx.outside }));
   const args = [
     "--new-window",
-    "--remote-debugging-port=0",
+    ...(screenshotsEnabled ? ["--remote-debugging-port=0"] : []),
     "--user-data-dir", userDir,
     "--extensions-dir", extsDir,
     "--disable-extensions",
@@ -109,7 +111,7 @@ async function launch(executable, mode, extraArgs) {
   const onOutput = (data, stream) => {
     const output = data.toString();
     stream.write(output);
-    if (!devtoolsUrl) {
+    if (screenshotsEnabled && !devtoolsUrl) {
       // The websocket URL can span multiple stdout/stderr data events.
       debugOutput = (debugOutput + output).slice(-8192);
       const match = /DevTools listening on (ws:\/\/\S+)/.exec(debugOutput);
@@ -126,7 +128,7 @@ async function launch(executable, mode, extraArgs) {
   const exited = new Promise((resolve) => child.on("exit", (code) => resolve(code)));
   const killer = setTimeout(() => child.kill("SIGKILL"), 300000);
   let captureInProgress = false;
-  const poll = setInterval(async () => {
+  const poll = screenshotsEnabled ? setInterval(async () => {
     if (captureInProgress) return;
     const requests = fs.readdirSync(shotDir).filter((name) => name.startsWith("shot-" + mode + "-") && !name.startsWith("shot-done-")).sort();
     if (!requests.length) return;
@@ -150,11 +152,11 @@ async function launch(executable, mode, extraArgs) {
       fs.writeFileSync(path.join(shotDir, "shot-done-" + mode + "-" + screenshotName), screenshotOk ? "ok" : "failed");
       captureInProgress = false;
     }
-  }, 200);
+  }, 200) : null;
   const status = await exited;
   clearTimeout(killer);
-  clearInterval(poll);
-  if (captureInProgress) {
+  if (poll) clearInterval(poll);
+  if (screenshotsEnabled && captureInProgress) {
     // Capture normally completes before the extension host writes test results.
     while (captureInProgress) await new Promise((resolve) => setTimeout(resolve, 50));
   }
