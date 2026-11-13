@@ -288,6 +288,12 @@ async function body(check, cfg) {
     // Show the diagnostics alongside the PathMend sidebar on the initial shot.
     await vscode.commands.executeCommand("workbench.actions.view.problems");
   });
+  // Keep the Problems panel specific to the initial overview screenshot.
+  try {
+    await vscode.commands.executeCommand("workbench.action.closePanel");
+  } catch (error) {
+    console.warn("Could not close Problems panel after screenshot:", error.message);
+  }
 
   // ---- open command ------------------------------------------------------------------
   const openRes = await vscode.commands.executeCommand(start.item.command.command, ...start.item.command.arguments);
