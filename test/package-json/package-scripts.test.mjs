@@ -5,24 +5,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import core from "../../core.js";
 
-const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const originalManifest = path.join(repositoryRoot, "package.json");
-const scriptEntries = {
-  build: "tsx scripts/build.ts --watch",
-  node: "node ./scripts/run.js",
-  shell: "bash scripts/setup.sh",
-  direct: "./scripts/setup.sh",
-  chained: "echo ready && tsx scripts/other.ts",
-  package: "vite build",
-  npm: "npm run build",
-  option: "node --eval console.log(1)",
-  variable: "tsx $SCRIPT",
-  url: "node https://example.test/script.js",
-  notAPath: "echo scripts/build.ts",
-};
+const testDirectory = path.dirname(fileURLToPath(import.meta.url));
+const fixtureManifest = path.resolve(testDirectory, "../fixtures/package-json/package.json");
 let scratch;
 let manifest;
-let originalText;
 
 function analyze() {
   const guard = core.createGuard(fs, [scratch]);
@@ -53,29 +39,20 @@ function applyPlan(plan) {
 
 describe("package.json script paths", () => {
   beforeEach(() => {
-    originalText = fs.readFileSync(originalManifest, "utf8");
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), "pathmend-vitest-"));
     manifest = path.join(scratch, "package.json");
-    // Copy the actual repository manifest; never modify it in place.
-    fs.copyFileSync(originalManifest, manifest);
-    // Preserve existing package entry points so diagnostics remain meaningful.
-    fs.copyFileSync(path.join(repositoryRoot, "extension.js"), path.join(scratch, "extension.js"));
+    // Only edit a temporary copy of the dedicated tracked fixture.
+    fs.copyFileSync(fixtureManifest, manifest);
     fs.mkdirSync(path.join(scratch, "scripts"), { recursive: true });
     fs.mkdirSync(path.join(scratch, "tools"), { recursive: true });
     for (const file of ["build.ts", "run.js", "setup.sh", "other.ts"]) {
       fs.writeFileSync(path.join(scratch, "scripts", file), "");
     }
-    const copy = JSON.parse(fs.readFileSync(manifest, "utf8"));
-    copy.scripts = { ...copy.scripts, ...scriptEntries };
-    fs.writeFileSync(manifest, JSON.stringify(copy, null, 2) + "\n");
   });
 
   afterEach(() => {
-    try {
-      expect(fs.readFileSync(originalManifest, "utf8")).toBe(originalText);
-    } finally {
-      if (scratch) fs.rmSync(scratch, { recursive: true, force: true });
-    }
+    if (scratch) fs.rmSync(scratch, { recursive: true, force: true });
+    scratch = undefined;
   });
 
   it("detects only executable local script operands with exact ranges", () => {
