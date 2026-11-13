@@ -23,7 +23,7 @@ npm test
 | `node test/unit.js`                                         | Core diagnostics against the sample workspace                                                       | No            |
 | `node test/run-vscode.js`                                   | Editor integration tests (trusted and untrusted workspaces)                                         | Yes           |
 
-**Note:** `test/unit.js` and `test/run-vscode.js` are not Vitest tests, so `npm test` skips them. Run them when you change core diagnostics, rename handling, or editor behavior.
+The trusted VS Code run also executes `test/vscode/usecases.js` after the original functional suite. It checks `package.json` script operands (missing and existing scripts, chained commands, package binaries, variables and URLs), GitHub Actions shell-script references, and Docker/Compose/build-output false positives. The additional suite creates and removes its own temporary fixture inside the isolated workspace; it does not run any of the script commands. These checks run automatically with both `node test/run-vscode.js` and `PM_SCREENSHOTS=0 node test/run-vscode.js`.\n\n**Note:** `test/unit.js` and `test/run-vscode.js` are not Vitest tests, so `npm test` skips them. Run them when you change core diagnostics, rename handling, or editor behavior.
 
 The VS Code runner launches an isolated editor and runs `test/vscode/index.js`. By default, `@vscode/test-electron` downloads a VS Code executable (cached across runs). Set `VSCODE_EXECUTABLE_PATH` to an existing **VS Code Electron executable** to avoid downloading it, or `VSCODE_TEST_VERSION` to select a specific download. The `code` command-line shell wrapper is not a substitute for the executable.
 
@@ -95,6 +95,7 @@ test/
 ├── run-vscode.js                 # VS Code test launcher
 └── vscode/
     ├── index.js                  # Functional tests inside the editor
+    ├── usecases.js               # Additional article/script regression cases
     └── utils/
         └── visual.js             # Watchable editor states and optional screenshots
 ```
