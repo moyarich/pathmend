@@ -6,7 +6,7 @@
 
 - Detect local file paths referenced by `package.json` scripts, including common JavaScript, TypeScript, Python, shell, Ruby, Perl and PowerShell entry points (for example, `tsx scripts/build.ts`, `node ./scripts/start.js`, and `bash scripts/setup.sh`).
 - Include script paths in existing PM001 missing-file diagnostics and rename/move updates, preserving the surrounding command and JSON formatting.
-- Vitest regression coverage for script path detection, real file and directory moves, and commands that should not be interpreted as local file paths. Tests use an isolated temporary copy of the repository's `package.json` and clean up afterward.
+- Vitest regression coverage for script path detection, real file and directory moves, and commands that should not be interpreted as local file paths. Tests use an isolated temporary copy of `test/fixtures/package-json/package.json` and clean up afterward.
 
 ### Notes
 
