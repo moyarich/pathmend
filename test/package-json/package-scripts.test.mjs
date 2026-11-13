@@ -1,16 +1,11 @@
-"use strict";
-
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createRequire } from "node:module";
-const require = createRequire(import.meta.url);
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import core from "../../core.js";
 
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
-const __dirname = path.dirname(require.resolve("../core")); // core.js lives at the repository root
-const core = require("../core");
-
-const repositoryRoot = __dirname;
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const originalManifest = path.join(repositoryRoot, "package.json");
 const scriptEntries = {
   build: "tsx scripts/build.ts --watch",
