@@ -37,7 +37,7 @@ The test runner automatically creates `screenshots/` at the repository root and 
 - `disabled-state.png` — extension diagnostics disabled
 - `untrusted-panel.png` — panel in an untrusted workspace
 
-Screenshots are optional visual debugging artifacts captured at these specific UI states, not assertions. The functional checks in `test/vscode/index.js` determine pass/fail. A screenshot failure logs a warning without failing the test suite.
+Each screenshot checkpoint prepares a relevant editor, expands the PathMend tree where possible, or shows an appropriate workbench panel. The initial diagnostics snapshot also shows Problems; fix and rename snapshots show the affected configuration lines, while empty and disabled snapshots close editors to expose welcome content. Screenshots are optional visual debugging artifacts captured at these specific UI states, not assertions. The functional checks in `test/vscode/index.js` determine pass/fail. A screenshot failure logs a warning without failing the test suite.
 
 Screenshots use Playwright's Chromium DevTools Protocol (CDP) connection to the **actual VS Code workbench**, not OS-level screen capture. This works on macOS, Windows, and Linux with the same code and does not require ImageMagick, `xdotool`, `screencapture`, or PowerShell. VS Code still needs a graphical desktop or virtual display on headless Linux to capture screenshots; failures to capture screenshots do not affect the functional test result.
 
