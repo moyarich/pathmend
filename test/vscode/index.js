@@ -10,6 +10,7 @@ const expected = require("../expected");
 
 const EXT_DIR = path.resolve(__dirname, "..", "..");
 const { sleep, waitFor, captureState } = require("./utils/visual");
+const { runScriptCases } = require("./usecases");
 
 function diagList(ws) {
   const out = [];
@@ -54,7 +55,10 @@ async function run() {
   const check = (name, ok, detail) => results.push({ name, ok: !!ok, detail: ok ? undefined : detail === undefined ? null : detail });
   try {
     if (cfg.mode === "untrusted") await untrusted(check, cfg);
-    else await body(check, cfg);
+    else {
+      await body(check, cfg);
+      await runScriptCases(check, cfg);
+    }
   } catch (e) {
     check("no exception", false, String(e && e.stack));
   }
