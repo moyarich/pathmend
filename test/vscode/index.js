@@ -84,6 +84,41 @@ async function screenshot(cfg, name) {
   }
 }
 
+// Prepare only the *presentation* for a screenshot. Functional checks above
+// verify the actual state; these commands must never determine test pass/fail.
+async function screenshotEditor(ws, file, line) {
+  const document = await vscode.workspace.openTextDocument(vscode.Uri.file(path.join(ws, file)));
+  const position = new vscode.Position(Math.min(line, document.lineCount - 1), 0);
+  const editor = await vscode.window.showTextDocument(document, {
+    preview: false,
+    preserveFocus: false,
+    selection: new vscode.Range(position, position),
+  });
+  editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+}
+
+async function screenshotView() {
+  await vscode.commands.executeCommand("workbench.view.extension.pathmend");
+  // The tree can be collapsed even though the TreeDataProvider reports rows.
+  // Expand what VS Code has focused; if the command is unavailable, still capture.
+  try {
+    await vscode.commands.executeCommand("list.expandAll");
+  } catch (error) {
+    console.warn("Could not expand screenshot tree:", error.message);
+  }
+}
+
+async function captureState(cfg, name, prepare) {
+  try {
+    await prepare();
+  } catch (error) {
+    // Preparing the layout is best-effort and must not change functional results.
+    console.warn("Could not prepare screenshot (" + name + "):", error.message);
+  }
+  await sleep(500);
+  await screenshot(cfg, name);
+}
+
 async function run() {
   const cfg = JSON.parse(fs.readFileSync(process.env.PM_TEST_CONFIG, "utf8"));
   const results = [];
@@ -132,8 +167,10 @@ async function untrusted(check, cfg) {
   const broken = api.getFindings().filter((f) => !f.info).length;
   check("untrusted: view has rows", rows(api).length === expected.length, rows(api).length);
   check("untrusted: badge = broken references", api.getBadge() === broken && broken > 0, [api.getBadge(), broken]);
-  await sleep(500);
-  await screenshot(cfg, "untrusted-panel");
+  await captureState(cfg, "untrusted-panel", async () => {
+    await screenshotEditor(ws, "Dockerfile", 5);
+    await screenshotView();
+  });
   const row = rows(api).find((r) => r.group === "Dockerfile" && r.label === "PM003  scripts/start.sh");
   const opened = row && (await vscode.commands.executeCommand(row.item.command.command, ...row.item.command.arguments));
   const ed = vscode.window.activeTextEditor;
@@ -245,10 +282,12 @@ async function body(check, cfg) {
   check("tsconfig typeRoots row labelled with the path", !!tsRow, all.filter((r) => r.group === "packages/app/tsconfig.json").map((r) => r.label));
 
   // ---- meaningful UI screenshots -----------------------------------------------
-  await vscode.commands.executeCommand("workbench.action.closeAllEditors");
-  await vscode.commands.executeCommand("workbench.view.extension.pathmend");
-  await sleep(1200);
-  await screenshot(cfg, "diagnostics-panel");
+  await captureState(cfg, "diagnostics-panel", async () => {
+    await screenshotEditor(ws, "Dockerfile", 5);
+    await screenshotView();
+    // Show the diagnostics alongside the PathMend sidebar on the initial shot.
+    await vscode.commands.executeCommand("workbench.actions.view.problems");
+  });
 
   // ---- open command ------------------------------------------------------------------
   const openRes = await vscode.commands.executeCommand(start.item.command.command, ...start.item.command.arguments);
@@ -275,9 +314,10 @@ async function body(check, cfg) {
   check("inline fix rewrote only that path and saved", fixRes === true && /^COPY tools\/start\.sh \/usr\/local\/bin\/start\.sh$/m.test(dockerText) && !/scripts\/start\.sh/.test(dockerText), dockerText.split("\n")[5]);
   check("badge drops by one after the fix", api.getBadge() === before - 1, [before, api.getBadge()]);
   check("row gone after the fix", !rows(api).some((r) => r.group === "Dockerfile" && r.label === "PM003  scripts/start.sh"));
-  await vscode.commands.executeCommand("workbench.view.extension.pathmend");
-  await sleep(400);
-  await screenshot(cfg, "after-inline-fix");
+  await captureState(cfg, "after-inline-fix", async () => {
+    await screenshotEditor(ws, "Dockerfile", 5); // repaired COPY source
+    await screenshotView();
+  });
   const forgedFix = await vscode.commands.executeCommand("pathmend.applyFix", { file: path.join(ws, "Dockerfile"), line: 5, col: 5, code: "PM003" });
   const noFix = await vscode.commands.executeCommand("pathmend.applyFix", rows(api).find((r) => r.item.contextValue === "finding").node);
   check("fix command rejects stale and unfixable rows", forgedFix === false && noFix === false, [forgedFix, noFix]);
@@ -363,9 +403,10 @@ async function body(check, cfg) {
   list = diagList(ws);
   d = diff(list.map((x) => x.key), afterFix);
   check("no diagnostics left from the folder rename", !d.extra.length && !d.missing.length, d);
-  await vscode.commands.executeCommand("workbench.view.extension.pathmend");
-  await sleep(400);
-  await screenshot(cfg, "after-folder-rename");
+  await captureState(cfg, "after-folder-rename", async () => {
+    await screenshotEditor(ws, "packages/app/tsconfig.json", 6); // src/common references
+    await screenshotView();
+  });
 
   // File rename, answered "Ignore": nothing edited, the references show up as broken.
   answer = "Ignore";
@@ -381,9 +422,10 @@ async function body(check, cfg) {
   check("ignored rename leaves exactly those references broken", same(d.extra.sort(), ["Dockerfile:20:PM003", "package.json:9:PM001", "packages/app/tsconfig.json:7:PM002"]) && !d.missing.length, d);
   const cliRow = rows(api).find((r) => r.group === "package.json" && r.label === "PM001  lib/tool.js");
   check("panel shows the stale reference by its path", cliRow && /package\.json:9/.test(cliRow.item.tooltip), cliRow && cliRow.item.tooltip);
-  await vscode.commands.executeCommand("workbench.view.extension.pathmend");
-  await sleep(400);
-  await screenshot(cfg, "ignored-rename");
+  await captureState(cfg, "ignored-rename", async () => {
+    await screenshotEditor(ws, "package.json", 8); // stale lib/tool.js reference
+    await screenshotView();
+  });
 
   // renameUpdates = off: plan computed, no prompt. Renaming back clears the diagnostics.
   await vscode.workspace.getConfiguration("pathmend").update("renameUpdates", "off", vscode.ConfigurationTarget.Workspace);
@@ -430,9 +472,10 @@ async function body(check, cfg) {
   await sleep(200);
   await api.scan();
   check("empty state: nothing to show -> no rows, no badge (welcome text shows)", api.getChildren().length === 0 && api.getBadge() === 0);
-  await vscode.commands.executeCommand("workbench.view.extension.pathmend");
-  await sleep(400);
-  await screenshot(cfg, "empty-state");
+  await captureState(cfg, "empty-state", async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await screenshotView();
+  });
   await conf.update("disabledRules", undefined, vscode.ConfigurationTarget.Workspace);
   await conf.update("severity", "error", vscode.ConfigurationTarget.Workspace);
   await sleep(200);
@@ -450,9 +493,10 @@ async function body(check, cfg) {
   await api.scan();
   check("enabled=false clears diagnostics", diagList(ws).length === 0);
   check("enabled=false: view empty, badge cleared", api.getChildren().length === 0 && api.getBadge() === 0);
-  await vscode.commands.executeCommand("workbench.view.extension.pathmend");
-  await sleep(400);
-  await screenshot(cfg, "disabled-state");
+  await captureState(cfg, "disabled-state", async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await screenshotView();
+  });
   const welcome = pkg.contributes.viewsWelcome;
   check(
     "welcome states: turned off, no folder, nothing found (with what it checks + Scan button)",
