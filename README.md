@@ -84,7 +84,7 @@ Only config files inside the workspace are edited. Renames done outside VS Code 
 
 ## Tests
 
-Run `npm install` and `npm test` for the Vitest regression suite, or `npm run test:watch` during development. The `test/package-json/package-scripts.test.mjs` suite copies the repository's own `package.json` into a fresh operating-system temporary directory, adds test-only scripts to the copy, and performs actual file and directory moves there. The original repository manifest is never edited; the temporary directory is removed after every test.
+Run `npm install` and `npm test` for the Vitest regression suite, or `npm run test:watch` during development. The `test/package-json/package-scripts.test.mjs` suite copies the dedicated `test/fixtures/package-json/package.json` fixture into a fresh operating-system temporary directory, and performs actual file and directory moves there. The tracked fixture and root extension manifest are never edited; the temporary directory is removed after every test.
 
 ## Settings
 
