@@ -94,7 +94,9 @@ test/
 ├── unit.js                       # Core diagnostics test
 ├── run-vscode.js                 # VS Code test launcher
 └── vscode/
-    └── index.js                  # Tests that run inside the editor
+    ├── index.js                  # Functional tests inside the editor
+    └── utils/
+        └── visual.js             # Watchable editor states and optional screenshots
 ```
 
 - **`unit.js` and `run-vscode.js`:** `prepare.js` copies `fixtures/ws/` to a temp folder, adds symlinks and other edge cases, and returns the workspace paths.
