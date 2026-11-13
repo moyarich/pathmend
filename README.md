@@ -82,10 +82,6 @@ PathMend compares with the references it saw before the move and shows:
 Only config files inside the workspace are edited. Renames done outside VS Code (for example
 `git mv` in a terminal) are not seen as renames; the references simply show up as broken.
 
-## Tests
-
-Run `npm install` and `npm test` for the Vitest regression suite, or `npm run test:watch` during development. The `test/package-json/package-scripts.test.mjs` suite copies the dedicated `test/fixtures/package-json/package.json` fixture into a fresh operating-system temporary directory, and performs actual file and directory moves there. The tracked fixture and root extension manifest are never edited; the temporary directory is removed after every test.
-
 ## Settings
 
 | Setting | Default | Description |
@@ -150,6 +146,10 @@ the window regains focus and once a minute, even where the editor's file watcher
 - A rename update is skipped for references inside a config file that was itself moved.
 - Out of scope by design: `env_file` and `${VAR}` in Compose files, and script line endings,
   shebangs and executable bits.
+
+## Contributing
+
+For development setup, test commands, and fixture layout, see [readme-dev.md](readme-dev.md).
 
 ## License
 
