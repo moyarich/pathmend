@@ -50,6 +50,29 @@ node test/run-vscode.js
 VSCODE_EXECUTABLE_PATH=/path/to/vscode/electron node test/run-vscode.js
 ```
 
+### Use the locally installed VS Code on macOS
+
+In Bash or Zsh, locate the application executable automatically and run the integration tests without downloading another copy of VS Code:
+
+```bash
+VSCODE_EXECUTABLE_PATH="$(
+  find "/Applications/Visual Studio Code.app/Contents/MacOS" \
+    -maxdepth 1 -type f \( -name "Code" -o -name "Electron" \) \
+    -print -quit
+)"
+
+if [ -z "$VSCODE_EXECUTABLE_PATH" ]; then
+  echo "VS Code executable not found in /Applications" >&2
+  exit 1
+fi
+
+export VSCODE_EXECUTABLE_PATH
+echo "Using VS Code: $VSCODE_EXECUTABLE_PATH"
+node test/run-vscode.js
+```
+
+If VS Code is installed elsewhere, replace the application path. Use the Electron executable (`Code` or `Electron`), not the `code` shell command.
+
 ## Test fixtures
 
 Files in `test/fixtures/` are test inputs, not tests.
