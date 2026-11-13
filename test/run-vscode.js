@@ -106,11 +106,14 @@ async function launch(executable, mode, extraArgs) {
     stdio: ["ignore", "pipe", "pipe"],
   });
   let devtoolsUrl;
+  let debugOutput = "";
   const onOutput = (data, stream) => {
     const output = data.toString();
     stream.write(output);
     if (!devtoolsUrl) {
-      const match = /DevTools listening on (ws:\/\/\S+)/.exec(output);
+      // The websocket URL can span multiple stdout/stderr data events.
+      debugOutput = (debugOutput + output).slice(-8192);
+      const match = /DevTools listening on (ws:\/\/\S+)/.exec(debugOutput);
       if (match) devtoolsUrl = match[1];
     }
   };
@@ -158,6 +161,7 @@ async function launch(executable, mode, extraArgs) {
   const res = JSON.parse(fs.readFileSync(resultFile, "utf8"));
   fs.unlinkSync(resultFile);
   for (const t of res.results) console.log((t.ok ? "PASS " : "FAIL ") + t.name + (t.detail !== undefined ? " :: " + JSON.stringify(t.detail) : ""));
+  if (status !== 0) res.failed += 1;
   return res;
 }
 
