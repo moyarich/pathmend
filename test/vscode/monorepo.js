@@ -59,7 +59,10 @@ async function runMonorepoCases(check, cfg) {
     check("rename: VS Code renames referenced script file", renamed);
     if (!renamed) return;
 
-    const prompt = await waitFor(() => api.getLastPrompt(), 10000);
+    const prompt = await waitFor(() => {
+      const plan = api.getLastRenamePlan() || [];
+      return plan.some((item) => item.ref.file === manifest) && api.getLastPrompt();
+    }, 10000);
     check("rename: PathMend offers to update references", !!prompt, prompt);
     const plan = (api.getLastRenamePlan() || [])
       .filter((item) => item.ref.file === manifest)
