@@ -81,7 +81,7 @@ async function launch(mode, extraArgs) {
           "Add-Type -AssemblyName System.Windows.Forms",
           "Add-Type -AssemblyName System.Drawing",
           "$bounds = [System.Windows.Forms.SystemInformation]::VirtualScreen",
-          "$bitmap = New-Object System.Drawing.Bitmap($bounds.Width, $bounds.Height)",
+          "$bitmap = [System.Drawing.Bitmap]::new($bounds.Width, $bounds.Height)",
           "$graphics = [System.Drawing.Graphics]::FromImage($bitmap)",
           "try {",
           "  $graphics.CopyFromScreen($bounds.Left, $bounds.Top, 0, 0, $bitmap.Size)",
