@@ -68,7 +68,6 @@ async function runMonorepoCases(check, cfg) {
 
     const diagnostics = () => vscode.languages.getDiagnostics(vscode.Uri.file(manifest))
       .filter((d) => d.source === "PathMend");
-    const refs = api.getFindings().filter((f) => f.file === manifest);
     const raw = fs.readFileSync(manifest, "utf8").split("\n");
     const actual = diagnostics().map((d) => ({
       code: d.code,
@@ -97,6 +96,24 @@ async function runMonorepoCases(check, cfg) {
         d.message.includes("bin/missing-registry.ts")),
       missing.map((d) => d.message));
     pkg.scripts["registry:build"] = "node bin/build-registry.ts";
+    pkg.bin["build-registry"] = "./scripts/build-registry/missing-cli.ts";
+    fs.writeFileSync(manifest, JSON.stringify(pkg, null, 2) + "\n");
+    await api.rebuildIndex();
+    check("monorepo: missing bin target is flagged",
+      diagnostics().some((d) => d.code === "PM001" &&
+        d.message.includes("./scripts/build-registry/missing-cli.ts")),
+      diagnostics().map((d) => d.message));
+
+    pkg.bin["build-registry"] = "./scripts/build-registry/build-registry-cli.ts";
+    pkg.workspaces = ["packages/*", "missing-workspaces/*"];
+    fs.writeFileSync(manifest, JSON.stringify(pkg, null, 2) + "\n");
+    await api.rebuildIndex();
+    check("monorepo: unmatched workspace glob is flagged",
+      diagnostics().some((d) => d.code === "PM009" &&
+        d.message.includes("missing-workspaces/*")),
+      diagnostics().map((d) => d.message));
+
+    pkg.workspaces = ["packages/*", "apps/*"];
     fs.writeFileSync(manifest, JSON.stringify(pkg, null, 2) + "\n");
     await api.rebuildIndex();
 
