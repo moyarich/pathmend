@@ -4,7 +4,7 @@
 // test/vscode/index.js inside it: once trusted (full suite), once in an untrusted workspace
 // (PathMend supports untrusted workspaces, so it must still work there). In the trusted run the
 // test asks Playwright to capture the VS Code workbench; the screenshot is saved
-// as <tmpBaseDir>/pathmend-panel.png.
+// in screenshots/pathmend-panel.png (outside the temporary test workspace).
 // Usage: node test/run-vscode.js [tmpBaseDir]
 
 const fs = require("fs");
@@ -27,7 +27,9 @@ const resultFile = path.join(base, "results.json");
 const cfgFile = path.join(base, "config.json");
 const shotDir = path.join(base, "shots");
 fs.mkdirSync(shotDir);
-const shot = path.join(process.argv[2] ? path.resolve(process.argv[2]) : base, "pathmend-panel.png");
+const screenshotsDir = path.join(extDir, "screenshots");
+fs.mkdirSync(screenshotsDir, { recursive: true });
+const shot = path.join(screenshotsDir, "pathmend-panel.png");
 
 function writeSettings(trustEnabled) {
   fs.writeFileSync(
