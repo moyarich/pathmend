@@ -25,7 +25,18 @@ npm test
 
 **Note:** `test/unit.js` and `test/run-vscode.js` are not Vitest tests, so `npm test` skips them. Run them when you change core diagnostics, rename handling, or editor behavior.
 
-The VS Code runner needs the `code` CLI on your `PATH`. It launches an isolated editor with PathMend loaded and runs `test/vscode/index.js`. Screenshot capture uses the built-in `screencapture` on macOS and Windows PowerShell (`System.Drawing`) on Windows. On Linux, the runner uses `xdotool` (for selecting the editor window when available) and ImageMagick's `import`. Capture requires an interactive graphical desktop or a configured display; a screenshot failure is reported explicitly rather than counted as a successful screenshot.
+The VS Code runner launches an isolated editor and runs `test/vscode/index.js`. By default, `@vscode/test-electron` downloads a VS Code executable (cached across runs). Set `VSCODE_EXECUTABLE_PATH` to an existing **VS Code Electron executable** to avoid downloading it, or `VSCODE_TEST_VERSION` to select a specific download. The `code` command-line shell wrapper is not a substitute for the executable.
+
+Screenshots use Playwright's Chromium DevTools Protocol (CDP) connection to the **actual VS Code workbench**, not OS-level screen capture. This works on macOS, Windows, and Linux with the same code and does not require ImageMagick, `xdotool`, `screencapture`, or PowerShell. VS Code still needs a graphical desktop or virtual display on headless Linux; screenshot failures count as failed assertions.
+
+For example:
+
+```bash
+npm install
+node test/run-vscode.js
+# Or use a previously installed VS Code executable:
+VSCODE_EXECUTABLE_PATH=/path/to/vscode/electron node test/run-vscode.js
+```
 
 ## Test fixtures
 
