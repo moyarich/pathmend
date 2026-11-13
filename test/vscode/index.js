@@ -105,15 +105,18 @@ async function screenshotView() {
 }
 
 async function captureState(cfg, name, prepare) {
-  if (!cfg.screenshotsEnabled) return;
+  // Show the same editor transitions for someone watching VS Code, regardless
+  // of whether Playwright is installed or screenshots are enabled.
   try {
     await prepare();
   } catch (error) {
-    // Preparing the layout is best-effort and must not change functional results.
-    console.warn("Could not prepare screenshot (" + name + "):", error.message);
+    // Presentation is independent from functional assertions.
+    console.warn("Could not show test state (" + name + "):", error.message);
   }
-  await sleep(500);
-  await screenshot(cfg, name);
+  if (cfg.screenshotsEnabled) {
+    await sleep(500);
+    await screenshot(cfg, name);
+  }
 }
 
 async function run() {
