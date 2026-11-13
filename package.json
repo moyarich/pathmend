@@ -242,6 +242,8 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@vscode/test-electron": "^2.5.2",
+    "playwright-core": "^1.56.1",
     "vitest": "^3.2.4"
   }
 }
