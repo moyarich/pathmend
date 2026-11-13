@@ -64,6 +64,7 @@ async function codeActions(uri, range) {
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 async function screenshot(cfg, name) {
+  if (!cfg.screenshotsEnabled) return;
   // Screenshots are diagnostic artifacts, not test assertions. Wait for the
   // runner's acknowledgment so each image corresponds to the requested state.
   const done = path.join(cfg.shotDir, "shot-done-" + cfg.mode + "-" + name);
@@ -104,6 +105,7 @@ async function screenshotView() {
 }
 
 async function captureState(cfg, name, prepare) {
+  if (!cfg.screenshotsEnabled) return;
   try {
     await prepare();
   } catch (error) {
