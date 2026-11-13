@@ -12,5 +12,5 @@ coverage/
 test-results/
 playwright-report/
 
-# Local screenshot output
-pathmend-panel.png
+# Local screenshots (created by the VS Code test runner)
+screenshots/
