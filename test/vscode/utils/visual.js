@@ -64,19 +64,60 @@ async function screenshotView() {
   await vscode.commands.executeCommand("workbench.view.extension.pathmend");
 }
 
-async function captureState(cfg, name, prepare) {
-  // Show the same editor transitions for someone watching VS Code, regardless
-  // of whether Playwright is installed or screenshots are enabled.
+// These are presentation checkpoints, not tests. Keep their layout details
+// here so index.js remains focused on PathMend behavior.
+async function showState(name, ws) {
+  switch (name) {
+    case "diagnostics-panel":
+      await screenshotEditor(ws, "Dockerfile", 5);
+      await screenshotView();
+      await vscode.commands.executeCommand("workbench.actions.view.problems");
+      break;
+    case "after-inline-fix":
+      await screenshotEditor(ws, "Dockerfile", 5);
+      await screenshotView();
+      break;
+    case "after-folder-rename":
+      await screenshotEditor(ws, "packages/app/tsconfig.json", 6);
+      await screenshotView();
+      break;
+    case "ignored-rename":
+      await screenshotEditor(ws, "package.json", 8);
+      await screenshotView();
+      break;
+    case "untrusted-panel":
+      await screenshotEditor(ws, "Dockerfile", 5);
+      await screenshotView();
+      break;
+    case "empty-state":
+    case "disabled-state":
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await screenshotView();
+      break;
+    default:
+      throw new Error("Unknown visual checkpoint: " + name);
+  }
+}
+
+async function captureState(cfg, name, ws) {
+  // Editor transitions remain watchable when Playwright is disabled or missing.
   try {
-    await prepare();
+    await showState(name, ws);
   } catch (error) {
-    // Presentation is independent from functional assertions.
     console.warn("Could not show test state (" + name + "):", error.message);
   }
   if (cfg.screenshotsEnabled) {
     await sleep(500);
     await screenshot(cfg, name);
   }
+  if (name === "diagnostics-panel") {
+    // The Problems panel should not obscure subsequent editor interactions.
+    try {
+      await vscode.commands.executeCommand("workbench.action.closePanel");
+    } catch (error) {
+      console.warn("Could not close Problems panel after checkpoint:", error.message);
+    }
+  }
 }
 
-module.exports = { sleep, waitFor, captureState, screenshotEditor, screenshotView };
+module.exports = { sleep, waitFor, captureState };
