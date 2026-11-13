@@ -11,6 +11,7 @@ const expected = require("../expected");
 const EXT_DIR = path.resolve(__dirname, "..", "..");
 const { sleep, waitFor, captureState } = require("./utils/visual");
 const { runScriptCases } = require("./usecases");
+const { runMonorepoCases } = require("./monorepo");
 
 function diagList(ws) {
   const out = [];
@@ -58,6 +59,7 @@ async function run() {
     else {
       await body(check, cfg);
       await runScriptCases(check, cfg);
+      await runMonorepoCases(check, cfg);
     }
   } catch (e) {
     check("no exception", false, String(e && e.stack));
