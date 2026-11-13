@@ -27,7 +27,7 @@ npm test
 
 The VS Code runner launches an isolated editor and runs `test/vscode/index.js`. By default, `@vscode/test-electron` downloads a VS Code executable (cached across runs). Set `VSCODE_EXECUTABLE_PATH` to an existing **VS Code Electron executable** to avoid downloading it, or `VSCODE_TEST_VERSION` to select a specific download. The `code` command-line shell wrapper is not a substitute for the executable.
 
-The test runner automatically creates `screenshots/` at the repository root and preserves captured images after successful tests. The folder is ignored by Git and excluded from extension packaging. Each screenshot has a descriptive name:
+By default, the test runner enables Playwright screenshots and creates `screenshots/` at the repository root. Set `PM_SCREENSHOTS=0` to run only the trusted and untrusted Extension Host functional checks, without loading Playwright or enabling Chromium remote debugging. This works with `VSCODE_EXECUTABLE_PATH` to use your installed VS Code. When enabled, captured images are preserved after successful tests. The folder is ignored by Git and excluded from extension packaging. Each screenshot has a descriptive name:
 
 - `diagnostics-panel.png` — initial broken-path findings
 - `after-inline-fix.png` — findings after applying a fix
@@ -48,6 +48,10 @@ npm install
 node test/run-vscode.js
 # Or use a previously installed VS Code executable:
 VSCODE_EXECUTABLE_PATH=/path/to/vscode/electron node test/run-vscode.js
+# Run functional checks without Playwright or screenshots:
+PM_SCREENSHOTS=0 node test/run-vscode.js
+# Use the installed VS Code and disable screenshots:
+PM_SCREENSHOTS=0 VSCODE_EXECUTABLE_PATH=/path/to/vscode/electron node test/run-vscode.js
 ```
 
 ### Use the locally installed VS Code on macOS
@@ -68,7 +72,8 @@ fi
 
 export VSCODE_EXECUTABLE_PATH
 echo "Using VS Code: $VSCODE_EXECUTABLE_PATH"
-node test/run-vscode.js
+PM_SCREENSHOTS=0 node test/run-vscode.js  # Functional checks only
+# Or: node test/run-vscode.js     # Includes Playwright screenshots
 ```
 
 If VS Code is installed elsewhere, replace the application path. Use the Electron executable (`Code` or `Electron`), not the `code` shell command.
