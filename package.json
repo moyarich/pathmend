@@ -152,7 +152,7 @@
     "viewsWelcome": [
       {
         "view": "pathmend.actions",
-        "contents": "Check your workspace for broken file references.\n[Open Reference Details](command:pathmend.openDetails)\n[Scan Workspace](command:pathmend.scan)\nExport and view options are available in Reference Details.\n[Settings](command:pathmend.openSettings)"
+        "contents": "Check your workspace for broken file references.\n[Open Reference Details](command:pathmend.openDetails)\n[Scan Workspace](command:pathmend.scan)\n[Settings](command:pathmend.openSettings)"
       },
       {
         "view": "pathmend.references",
