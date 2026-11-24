@@ -106,6 +106,9 @@ async function launch(executable, mode, extraArgs) {
     "--user-data-dir", userDir,
     "--extensions-dir", extsDir,
     "--disable-extensions",
+    // The built-in extension manifest editor is unrelated to PathMend and can
+    // overflow its parser on hostile package.json fixtures in the test workspace.
+    "--disable-extension", "vscode.extension-editing",
     ...extraArgs,
     "--skip-welcome", "--skip-release-notes",
     "--extensionDevelopmentPath=" + extDir,
