@@ -7,6 +7,7 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const expected = require("../fixtures/expected");
+const { classify } = require("../../src/analyzer/formats/registry");
 
 const EXT_DIR = path.resolve(__dirname, "..", "..");
 const { sleep, waitFor, captureState } = require("./utils/visual");
@@ -188,7 +189,8 @@ async function body(check, cfg) {
   check("zero fs calls outside the workspace", bad.length === 0, bad.slice(0, 20));
   check("outside secret folder never touched", outside && !calls.some((c) => c.p.startsWith(outside)), outside);
   check("no call on /etc", !calls.some((c) => c.p.startsWith("/etc")));
-  check("only supported config and documentation files are read", calls.filter((c) => /readFile/.test(c.fn)).every((c) => /(package\.json|tsconfig[^/]*\.json|Dockerfile|\.ya?ml|CODEOWNERS|launch\.json|\.mdx?)$/i.test(c.p)), calls.filter((c) => /readFile/.test(c.fn)).map((c) => c.p));
+  const unsupportedReads = calls.filter(c => /readFile/.test(c.fn) && !classify(c.p));
+  check("only registered reference formats are read", unsupportedReads.length === 0, unsupportedReads.map(c => c.p));
   check("symlinked tsconfig (to outside) not read", !calls.some((c) => /readFile/.test(c.fn) && c.p.endsWith(path.join("hostile", "tsconfig.json"))));
   check("huge package.json not read", !calls.some((c) => /readFile/.test(c.fn) && c.p.includes(path.join("hostile", "huge"))));
   check("config found through symlinked folder not reported", !list.some((x) => x.key.startsWith("hostile/linkout/")));

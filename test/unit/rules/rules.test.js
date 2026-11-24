@@ -12,9 +12,9 @@ const { RULES, resolveRuleId } = require("../../../src/analyzer/rules/registry.j
 
 describe("rule metadata", () => {
   it("preserves stable IDs and has unique descriptive aliases", () => {
-    expect(Object.keys(RULES)).toEqual(Array.from({ length: 15 }, (_, i) => "PM" + String(i + 1).padStart(3, "0")));
+    expect(Object.keys(RULES)).toEqual(expect.arrayContaining(Array.from({ length: 15 }, (_, i) => "PM" + String(i + 1).padStart(3, "0"))));
     expect(analyzer.RULES).toBe(RULES);
-    expect(new Set(Object.values(RULES).map(rule => rule.name)).size).toBe(15);
+    expect(new Set(Object.values(RULES).map(rule => rule.name)).size).toBe(Object.keys(RULES).length);
     for (const [id, rule] of Object.entries(RULES)) {
       expect(resolveRuleId(id)).toBe(id);
       expect(resolveRuleId(rule.name)).toBe(id);

@@ -4,6 +4,7 @@ const { isGlob } = require("../../utils/paths");
 const { posOf } = require("../../utils/text-position");
 const { parseJsonc, jget } = require("../../parsers/jsonc");
 const { mkRef, jsonRef } = require("../../references/create-reference");
+const { extractDependencies } = require("./dependencies");
 const { extractScriptPaths } = require("./scripts");
 
 function packageScriptRefs(c, node, label, base, ctx) {
@@ -56,11 +57,13 @@ function extractPackage(c, ctx) {
       if (it.type === "string" && it.value && !it.value.startsWith("!")) add(it, "files", { kind: "any", glob: isGlob(it.value) ? "std" : false });
     }
   }
+  out.push(...extractDependencies(c, tree));
   let ws = jget(tree, "workspaces");
   if (ws && ws.type === "object") ws = jget(ws, "packages");
   if (ws && ws.type === "array") {
+    const exclusions = ws.items.filter(it => it.type === "string" && it.value.startsWith("!")).map(it => it.value.slice(1));
     for (const it of ws.items) {
-      if (it.type === "string" && it.value && !it.value.startsWith("!")) add(it, "workspaces", { kind: "dir", glob: isGlob(it.value) ? "std" : false });
+      if (it.type === "string" && it.value && !it.value.startsWith("!")) add(it, "workspaces", { kind: "dir", glob: isGlob(it.value) ? "std" : false, needFileIn: ["package.json"], workspaceExclusions: exclusions });
     }
   }
   return out;
