@@ -126,6 +126,7 @@ function activate(context) {
     if (selected) await showReferenceDetails(selected.f);
   }
   const referenceDetailsActions = {
+    rescan: scan,
     currentFile: () => { const doc = vscode.window.activeTextEditor?.document; return doc?.uri.scheme === "file" && insideWorkspace(doc.uri.fsPath) ? viewPath(doc.uri.fsPath) : null; },
     getGroups, getSeverity: () => getConfig().severity,
     isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
@@ -188,6 +189,7 @@ function activate(context) {
     vscode.window.onDidChangeActiveTextEditor(() => refreshTree()),
     vscode.window.registerTreeDataProvider("pathmend.actions", createQuickActionsProvider()),
     vscode.window.registerWebviewViewProvider("pathmend.referenceDetails", runtime.referenceDetailsSidebarProvider),
+    vscode.window.registerWebviewPanelSerializer("pathmend.referenceDetailsEditor", runtime.referenceDetailsPanel),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
     vscode.commands.registerCommand("pathmend.openReference", openReference),
