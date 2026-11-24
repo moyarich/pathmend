@@ -64,7 +64,12 @@ class ReferenceDetailsWebview {
     if (!this.view?.visible || !this.ready) return;
     if (message.type === "editor" && this.location === "sidebar") return vscode.commands.executeCommand("pathmend.openReferenceDetailsInEditor");
     if (message.type === "sidebar" && this.location === "editor") return vscode.commands.executeCommand("pathmend.openReferenceDetailsInSidebar");
-    if (message.type === "bulk-repair") return this.actions.bulkRepair();
+    if (message.type === "bulk-repair") {
+      if (message.revision !== this.revision || !Array.isArray(message.ids) || !message.ids.length || message.ids.length > this.references.size) return false;
+      const ids = new Set(message.ids);
+      if (ids.size !== message.ids.length || [...ids].some(id => typeof id !== "string" || !this.references.has(id))) return false;
+      return this.actions.bulkRepair([...ids].map(id => this.references.get(id)));
+    }
     if (message.type === "export") return vscode.commands.executeCommand("pathmend.exportResults");
     if (message.type === "settings") return vscode.commands.executeCommand("pathmend.openSettings");
     if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");
@@ -128,9 +133,14 @@ function renderHtml(cspSource, style, script, sidebar) {
   <div class="toolbar" role="group" aria-label="Reference actions">
     ${sidebar ? '<button id="editor" class="quiet" type="button" title="Open Reference Details in an editor tab alongside your files">Open Reference Details in Editor</button>' : '<button id="sidebar" class="quiet" type="button" title="Show Reference Details in the PathMend sidebar">Open Reference Details in Sidebar</button>'}
     <button id="problems" class="quiet" type="button" title="Open the VS Code Problems panel">Problems</button>
-    <button id="bulk-repair" class="quiet" type="button" title="Select and preview verified repairs">Bulk repairs</button>
+    <button id="bulk-repair" class="quiet" type="button" title="Preview selected suggested repairs" disabled>Bulk repairs (0)</button>
     <button id="export" class="quiet" type="button" title="Save the complete diagnostic report in your chosen format">Export</button>
     <button id="settings" class="quiet" type="button" title="Configure PathMend settings">Settings</button>
+  </div>
+  <div class="bulk-selection-row" role="group" aria-label="Bulk repair selection">
+    <label><input id="select-visible" type="checkbox" disabled> Select visible fixes</label>
+    <button id="clear-selection" class="quiet" type="button" disabled>Clear selection</button>
+    <span id="selection-status" role="status" aria-live="polite">0 selected</span>
   </div>
 </header>
 <main class="view-content"><pm-reference-list><p class="reference-status" role="status">Loading references…</p></pm-reference-list></main>
