@@ -7,7 +7,7 @@ export function createBridge(api) {
     onSnapshot(handler) {
       window.addEventListener("message", event => {
         const data = event.data;
-        if (data?.type === "snapshot" && Array.isArray(data.files)) handler(data);
+        if (data?.type === "snapshot" && Number.isSafeInteger(data.revision) && Array.isArray(data.files)) handler(data);
       });
     },
   };

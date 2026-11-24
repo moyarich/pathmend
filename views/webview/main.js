@@ -13,7 +13,8 @@ filter.addEventListener("input", () => {
   state.setFilter(filter.value);
   render();
 });
-document.getElementById("scan").addEventListener("click", () => bridge.send({ type: "scan" }));
+document.getElementById("problems").addEventListener("click", () => bridge.send({ type: "problems" }));
+document.getElementById("settings").addEventListener("click", () => bridge.send({ type: "settings" }));
 list.addEventListener("pm-reference-action", event => bridge.send(event.detail));
 list.addEventListener("pm-group-toggle", event => {
   const { path, expanded } = event.detail;

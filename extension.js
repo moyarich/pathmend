@@ -310,12 +310,7 @@ function confined(file) {
 async function showReferenceDetails(arg) {
   const f = liveFinding(arg);
   if (!f) return false;
-  const choice = await vscode.window.showInformationMessage(
-    "PathMend: " + f.code,
-    { modal: true, detail: formatFinding(f) },
-    "Open reference"
-  );
-  if (choice === "Open reference") return openReference(arg);
+  await detailsProvider.reveal({ file: f.file, line: f.line, col: f.col, code: f.code });
   return true;
 }
 
@@ -581,7 +576,7 @@ function activate(context) {
   detailsProvider = new ReferenceDetailsProvider(context.extensionUri, {
     getGroups, getSeverity: () => getConfig().severity,
     isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
-    open: openReference, fix: applyFix, scan: scanCommand,
+    open: openReference, fix: applyFix,
   });
   treeView = vscode.window.createTreeView(VIEW_ID, { treeDataProvider: treeProvider, showCollapseAll: true });
   const excluded = (uri) => {
@@ -626,6 +621,10 @@ function activate(context) {
     watcher,
     treeProvider.emitter,
     treeView,
+    treeView.onDidChangeSelection(event => {
+      const f = liveFinding(event.selection[0]);
+      detailsProvider.select(f ? { file: f.file, line: f.line, col: f.col, code: f.code } : null);
+    }),
     detailsProvider,
     vscode.window.registerWebviewViewProvider("pathmend.details", detailsProvider),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),

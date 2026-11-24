@@ -213,25 +213,8 @@ async function body(check, cfg) {
   const tsRow = all.find((r) => r.group === "packages/app/tsconfig.json" && r.label === "PM002  ./types");
   check("tsconfig typeRoots row labelled with the path", !!tsRow, all.filter((r) => r.group === "packages/app/tsconfig.json").map((r) => r.label));
 
-  // Exercise the details action without blocking on a modal during CI.
-  const originalDetailsPrompt = vscode.window.showInformationMessage;
-  let detailsPrompt;
-  try {
-    vscode.window.showInformationMessage = (message, options, ...items) => {
-      if (options && options.modal && message === "PathMend: PM003") {
-        detailsPrompt = { options, items };
-        return Promise.resolve(undefined);
-      }
-      return originalDetailsPrompt.call(vscode.window, message, options, ...items);
-    };
-    const shown = await vscode.commands.executeCommand("pathmend.showReferenceDetails", start.node);
-    check("details action exposes the complete diagnostic", shown === true && detailsPrompt &&
-      detailsPrompt.options.detail === start.item.tooltip && detailsPrompt.items.includes("Open reference"), detailsPrompt);
-    check("details action rejects forged references", await vscode.commands.executeCommand("pathmend.showReferenceDetails", { file: outside, line: 0, col: 0, code: "PM003" }) === false);
-  } finally {
-    vscode.window.showInformationMessage = originalDetailsPrompt;
-  }
-
+  check("details action opens the webview for a live reference", await vscode.commands.executeCommand("pathmend.showReferenceDetails", start.node) === true);
+  check("details action rejects forged references", await vscode.commands.executeCommand("pathmend.showReferenceDetails", { file: outside, line: 0, col: 0, code: "PM003" }) === false);
   check("details webview contributed", pkg.contributes.views.pathmend.some(v => v.id === "pathmend.details" && v.type === "webview"));
   await vscode.commands.executeCommand("pathmend.details.focus");
   check("details webview opens", await waitFor(() => api.isDetailsVisible(), 5000));

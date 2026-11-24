@@ -19,7 +19,8 @@ export class ReferenceList extends HTMLElement {
       for (const file of files) {
         total += file.findings.length;
         const group = document.createElement("pm-file-group");
-        group.update(file, snapshot.revision, state.isExpanded(file.path));
+        const selected = file.findings.some(f => f.id === snapshot.selectedId);
+        group.update(file, snapshot.revision, selected || state.isExpanded(file.path), snapshot.selectedId);
         results.append(group);
       }
       status.textContent = total ? total + " references shown" :

@@ -3,7 +3,7 @@ import "./reference-card.js";
 
 /** Group references by source file using native disclosure semantics. */
 export class FileGroup extends HTMLElement {
-  update(file, revision, expanded) {
+  update(file, revision, expanded, selectedId) {
     const group = element("details");
     group.open = expanded;
     group.append(element("summary", file.path + " (" + file.findings.length + ")"));
@@ -18,7 +18,7 @@ export class FileGroup extends HTMLElement {
     });
     for (const finding of file.findings) {
       const card = document.createElement("pm-reference-card");
-      card.update(finding, revision);
+      card.update(finding, revision, finding.id === selectedId);
       group.append(card);
     }
     this.replaceChildren(group);

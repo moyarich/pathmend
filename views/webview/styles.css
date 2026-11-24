@@ -1,40 +1,60 @@
-:root {
-  color-scheme: light dark;
-}
+/* Native workbench theme tokens, including high-contrast themes. */
+:root { color-scheme: light dark; }
 body {
   margin: 0;
-  padding: 8px 10px;
-  color: var(--vscode-foreground);
+  padding: 8px 12px;
+  color: var(--vscode-sideBar-foreground, var(--vscode-foreground));
   background: var(--vscode-sideBar-background);
   font: var(--vscode-font-size) var(--vscode-font-family);
+  line-height: 1.5;
 }
-header { display: grid; gap: 7px; }
+*, *::before, *::after { box-sizing: border-box; }
+header { display: grid; gap: 6px; }
+header label { color: var(--vscode-descriptionForeground); }
 input, button {
   font: inherit;
-  color: var(--vscode-input-foreground);
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, transparent);
-  padding: 5px 8px;
+  border: 1px solid var(--vscode-contrastBorder, transparent);
+  border-radius: 3px;
+  padding: 4px 8px;
   min-width: 0;
 }
+input {
+  width: 100%;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border-color: var(--vscode-input-border, var(--vscode-contrastBorder, transparent));
+}
+input::placeholder { color: var(--vscode-input-placeholderForeground); }
 button {
   cursor: pointer;
   color: var(--vscode-button-secondaryForeground);
   background: var(--vscode-button-secondaryBackground);
 }
 button:hover { background: var(--vscode-button-secondaryHoverBackground); }
+button.primary { color: var(--vscode-button-foreground); background: var(--vscode-button-background); }
+button.primary:hover { background: var(--vscode-button-hoverBackground); }
 button:focus-visible, input:focus-visible, summary:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
-.reference-status { color: var(--vscode-descriptionForeground); margin: 4px 0 8px; }
-details { border-top: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border)); }
-summary { cursor: pointer; padding: 8px 0; font-weight: 600; overflow-wrap: anywhere; }
-article { padding: 8px 0 10px 9px; border-left: 2px solid var(--vscode-editorWarning-foreground); min-width: 0; }
+.toolbar, .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.reference-status { color: var(--vscode-descriptionForeground); margin: 12px 0 8px; }
 pm-reference-list, pm-file-group, pm-reference-card { display: block; min-width: 0; }
-pm-reference-card + pm-reference-card { margin-top: 4px; }
+details { border-top: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border, transparent)); }
+summary { cursor: pointer; padding: 7px 4px; font-weight: 600; overflow-wrap: anywhere; }
+summary:hover { background: var(--vscode-list-hoverBackground); }
+article {
+  padding: 9px 8px 10px 10px;
+  border-inline-start: 2px solid var(--vscode-editorWarning-foreground);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+article:hover { background: var(--vscode-list-hoverBackground); }
+pm-reference-card + pm-reference-card { margin-top: 6px; }
 article.error { border-color: var(--vscode-editorError-foreground); }
 article.information, article.hint { border-color: var(--vscode-editorInfo-foreground); }
-.meta { color: var(--vscode-descriptionForeground); font-size: .9em; }
+article.selected { background: var(--vscode-list-inactiveSelectionBackground); color: var(--vscode-list-inactiveSelectionForeground, var(--vscode-foreground)); outline: 1px solid var(--vscode-contrastActiveBorder, var(--vscode-focusBorder)); outline-offset: -1px; }
+.meta { color: var(--vscode-descriptionForeground); font-size: .92em; }
 .path, .suggestion { font-family: var(--vscode-editor-font-family); overflow-wrap: anywhere; white-space: pre-wrap; }
 .path { font-weight: 600; margin: 5px 0; }
-.message { white-space: pre-wrap; overflow-wrap: anywhere; margin: 5px 0; }
-.suggestion { background: var(--vscode-textCodeBlock-background); padding: 6px; margin: 6px 0; }
-.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.message { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0; }
+.suggestion { background: var(--vscode-textCodeBlock-background); padding: 6px 8px; border-radius: 3px; margin: 6px 0; }
+.actions { margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }

@@ -155,6 +155,11 @@
           "command": "pathmend.scan",
           "when": "view == pathmend.references",
           "group": "navigation@2"
+        },
+        {
+          "command": "pathmend.scan",
+          "when": "view == pathmend.details",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [

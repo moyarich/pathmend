@@ -9,6 +9,8 @@ class ReferenceDetailsProvider {
     this.extensionUri = extensionUri;
     this.actions = actions;
     this.revision = 0;
+    this.ready = false;
+    this.selection = null;
     this.references = new Map();
     this.disposables = [];
   }
@@ -23,29 +25,53 @@ class ReferenceDetailsProvider {
     webview.options = { enableScripts: true, localResourceRoots: [assets] };
     const script = webview.asWebviewUri(vscode.Uri.joinPath(assets, "main.js"));
     const style = webview.asWebviewUri(vscode.Uri.joinPath(assets, "styles.css"));
-    webview.html = renderHtml(webview.cspSource, style, script);
     this.disposables.push(
       webview.onDidReceiveMessage(message => {
         this.handleMessage(message).catch(error => console.warn("PathMend details:", error.message));
       }),
-      view.onDidChangeVisibility(() => { if (view.visible) this.refresh(); }),
+      view.onDidChangeVisibility(() => {
+        if (view.visible) this.refresh();
+      }),
       view.onDidDispose(() => this.dispose())
     );
+    webview.html = renderHtml(webview.cspSource, style, script);
+    this.refresh();
   }
 
   refresh() {
-    if (!this.view?.visible) return;
+    if (!this.view) return;
     const { getGroups, getSeverity, isEnabled, hasWorkspace } = this.actions;
-    const snapshot = createSnapshot(getGroups(), getSeverity(), isEnabled(), hasWorkspace(), ++this.revision);
+    const groups = getGroups();
+    const broken = groups.reduce((count, group) => count + group.findings.filter(f => !f.info).length, 0);
+    this.view.badge = broken ? { value: broken, tooltip: broken + " broken path references" } : undefined;
+    if (!this.view.visible || !this.ready) return;
+    const snapshot = createSnapshot(groups, getSeverity(), isEnabled(), hasWorkspace(), ++this.revision);
     this.references = snapshot.references;
-    this.view.webview.postMessage({ type: "snapshot", ...snapshot.data }).then(undefined, () => {});
+    const selected = [...snapshot.references].find(([, ref]) =>
+      this.selection && ref.file === this.selection.file && ref.line === this.selection.line &&
+      ref.col === this.selection.col && ref.code === this.selection.code);
+    this.view.webview.postMessage({ type: "snapshot", ...snapshot.data, selectedId: selected?.[0] || null }).then(undefined, () => {});
+  }
+
+  select(ref) {
+    this.selection = ref;
+    this.refresh();
+  }
+
+  async reveal(ref) {
+    this.selection = ref;
+    if (this.view) this.view.show(false);
+    else await vscode.commands.executeCommand("pathmend.details.focus");
+    this.refresh();
   }
 
   /** Only allow explicit commands and IDs belonging to the latest rendered snapshot. */
   async handleMessage(message) {
     if (!message || typeof message !== "object") return;
-    if (message.type === "ready") return this.refresh();
-    if (message.type === "scan") return this.actions.scan();
+    if (message.type === "ready") { this.ready = true; return this.refresh(); }
+    if (!this.view?.visible || !this.ready) return;
+    if (message.type === "settings") return vscode.commands.executeCommand("workbench.action.openSettings", "pathmend");
+    if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");
     if (message.type !== "open" && message.type !== "fix") return;
     if (message.revision !== this.revision || typeof message.id !== "string") return;
     const ref = this.references.get(message.id);
@@ -55,6 +81,7 @@ class ReferenceDetailsProvider {
 
   dispose() {
     this.view = undefined;
+    this.ready = false;
     this.references.clear();
     for (const item of this.disposables.splice(0)) item.dispose();
   }
@@ -75,7 +102,7 @@ function renderHtml(cspSource, style, script) {
 <header>
   <label for="filter">Filter references</label>
   <input id="filter" type="search" placeholder="File, path, rule or message">
-  <button id="scan" type="button">Scan workspace</button>
+  <div class="toolbar"><button id="problems" type="button">Problems</button><button id="settings" type="button">Settings</button></div>
 </header>
 <main><pm-reference-list><p class="reference-status" role="status">Loading references…</p></pm-reference-list></main>
 <script type="module" src="${script}"></script>
