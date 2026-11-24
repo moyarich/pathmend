@@ -881,6 +881,13 @@ function packageScriptRefs(c, node, label, base, ctx) {
   });
 }
 
+/**
+ * Convert document scanner offsets into the core's single-line reference format.
+ * Relative module paths use extension/index fallbacks; other paths resolve literally.
+ * @param {{file: string, text: string, kind: string, starts: number[]}} c Classified document.
+ * @param {Object} settings Effective scanner settings from analyze().
+ * @returns {Object[]} Normalized references for validation and rename planning.
+ */
 function extractMarkdown(c, settings) {
   const codes = { markdown: "PM012", module: "PM013", jsx: "PM014", directive: "PM015" };
   return extractMarkdownPaths(c.text, {
