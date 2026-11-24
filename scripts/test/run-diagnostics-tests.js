@@ -1,5 +1,5 @@
 "use strict";
-// Fast Node-level check of analyzer.js against the fixture (no VS Code). The real editor run is
+// Fast Node-level check of the analyzer against the fixture (no VS Code). The real editor run is
 // test/vscode/index.js. Usage: node scripts/test/run-diagnostics-tests.js <scratch-dir>
 const fs = require("fs");
 const path = require("path");
@@ -73,7 +73,7 @@ if (extra.length || miss2.length) {
 }
 for (const f of res.findings) console.log(analyzer.toPosix(path.relative(ws, f.file)) + ":" + (f.line + 1) + ":" + (f.col + 1) + " " + f.code + " " + f.message + (f.fix ? '  FIX -> "' + f.fix + '"' : ""));
 const bad = calls.filter((c) => !analyzer.within(path.resolve(c.p), ws));
-console.log("fs calls from core:", calls.length, "outside workspace:", bad.length);
+console.log("fs calls from analyzer:", calls.length, "outside workspace:", bad.length);
 check("Filesystem calls stay in workspace", calls.length > 0 && !bad.length, { calls: calls.length, outside: bad });
 check("Outside directory is not accessed", !calls.some((c) => c.p.startsWith(outside)));
 check("Only supported files are read", !calls.some((c) => c.fn === "readFileSync" && !analyzer.classify(c.p)));
