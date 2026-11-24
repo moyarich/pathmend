@@ -3,14 +3,15 @@ const vscode = require("vscode");
 const fs = require("node:fs");
 const path = require("node:path");
 const analyzer = require("../../analyzer");
+const { evaluateRef } = require("../../analyzer/references/evaluate");
 const { canReplace } = require("../../analyzer/references/can-replace");
-const { validateReplacement, inspectReplacement } = require("../../analyzer/references/validate-replacement");
+const { inspectReplacement } = require("../../analyzer/references/validate-replacement");
 
 function createReplacementActions(runtime, liveFinding) {
   const environment = f => {
     const roots = runtime.roots().map(r => r.path);
     const cfg = runtime.getConfig();
-    const excluded = analyzer.makeMatcher(cfg.exclude || []);
+    const excluded = analyzer.makeMatcher([...(cfg.exclude || []), ...(cfg.ignoreReferences || [])]);
     return { guard: analyzer.createGuard(fs, roots), index: runtime.state.index, excluded, ref: f.ref };
   };
   function candidate(f, abs, env) {
@@ -22,12 +23,18 @@ function createReplacementActions(runtime, liveFinding) {
     const replacement = analyzer.formatPath(f.ref, abs, base);
     // Ensure the selected target is actually the path that the reference resolves to.
     if (!analyzer.within(abs, root) || (f.ref.bases || []).some(b => b.confine && !analyzer.within(abs, b.dir))) return null;
-    return validateReplacement(f.ref, replacement, env.guard, env.index) === "valid" ? replacement : null;
+    // A multi-base reference may resolve to an earlier, different target.
+    if (inspectReplacement(f.ref, replacement, env.guard, env.index) !== "valid") return null;
+    const value = f.ref.fmt === "wsvar" ? replacement.slice(f.ref.varPrefix.length).replace(/^\/+/, "") || "." :
+      f.ref.fmt === "root" ? replacement.replace(/^\/+/, "") || "." : replacement;
+    const resolved = evaluateRef({ ...f.ref, value, glob: false, anywhere: undefined }, {
+      guard: env.guard, index: env.index, ignored: () => false,
+    });
+    return resolved?.state === "ok" && path.resolve(resolved.hit || resolved.abs) === abs ? replacement : null;
   }
   async function pickReplacement(arg) {
     const f = liveFinding(arg);
     if (!f || !canReplace(f)) return null;
-    const env = environment(f);
     const selection = await vscode.window.showOpenDialog({
       defaultUri: vscode.Uri.file(f.ref.base),
       canSelectFiles: f.ref.kind !== "dir",
@@ -36,7 +43,9 @@ function createReplacementActions(runtime, liveFinding) {
       openLabel: "Use replacement path",
     });
     if (!selection?.length || selection[0].scheme !== "file" || liveFinding(arg) !== f) return null;
-    return candidate(f, path.resolve(selection[0].fsPath), environment(f));
+    const value = candidate(f, path.resolve(selection[0].fsPath), environment(f));
+    if (value === null) void vscode.window.showWarningMessage("PathMend: selected path is not an eligible replacement.");
+    return value;
   }
   function completeReplacement(arg, query) {
     const f = liveFinding(arg);
