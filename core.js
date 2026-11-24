@@ -1738,11 +1738,64 @@ function analyze(opts) {
 }
 
 /** Plan edits for references that pointed at a renamed path (computed from the pre-rename scan). */
+/**
+ * Map an original path through a simultaneous rename batch. The most specific
+ * source wins for nested moves; destinations are not recursively remapped.
+ * @param {string} original Absolute pre-move path.
+ * @param {{from: string, to: string}[]} renames Rename batch.
+ * @returns {{path: string, rename: Object|null}} Mapped path and matching move.
+ */
+function movedPath(original, renames) {
+  let match = null;
+  for (const rn of renames) {
+    const from = path.resolve(rn.from);
+    if (!within(original, from)) continue;
+    if (!match || from.length > match.from.length) match = { from, to: path.resolve(rn.to) };
+  }
+  return match
+    ? { path: path.resolve(match.to, path.relative(match.from, original)), rename: match }
+    : { path: original, rename: null };
+}
+
+/**
+ * Plan outgoing and incoming document reference edits from pre-move resolutions.
+ * @param {Object} ref Normalized document reference.
+ * @param {{from: string, to: string}[]} renames Rename batch.
+ * @param {function(string): boolean} isInside Workspace boundary predicate.
+ * @returns {Object|null} Edit targeting the post-move document, if necessary.
+ */
+function planDocumentRename(ref, renames, isInside) {
+  const r = ref.result;
+  const source = movedPath(ref.file, renames);
+  const target = movedPath(r.hit || r.abs, renames);
+  const change = target.rename || source.rename;
+  if (!change || !isInside(source.path) || !isInside(target.path)) return null;
+  // Preserve extensionless imports only when the original fallback still applies.
+  let newAbs = target.path;
+  if (r.hit && r.hit !== r.abs) {
+    const suffix = r.hit.slice(r.abs.length);
+    if (newAbs.endsWith(suffix)) newAbs = newAbs.slice(0, -suffix.length);
+  }
+  const base = path.dirname(source.path);
+  let newText = formatPath(ref, newAbs, base);
+  // JS imports and configured attributes must remain explicit relative paths.
+  if (ref.lead === "./" || /^\.\.\//.test(ref.value)) {
+    if (!/^\.\.?\//.test(newText) && newText !== ".") newText = "./" + newText;
+  }
+  if (newText === ref.display || encodeFor(ref, newText) === null) return null;
+  return { ref, file: source.path, newText, from: change.from, to: change.to, sourceMoved: !!source.rename };
+}
+
 function planRenames(refs, renames, isInside) {
   const plan = [];
   for (const ref of refs || []) {
     const r = ref.result;
     if (!r || r.state !== "ok" || r.anywhere || ref.escape === "noedit") continue;
+    if (ref.escape === "document-path") {
+      const edit = planDocumentRename(ref, renames, isInside);
+      if (edit) plan.push(edit);
+      continue;
+    }
     const target = r.hit || r.abs;
     for (const rn of renames) {
       const from = path.resolve(rn.from);
