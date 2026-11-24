@@ -19,7 +19,7 @@ npm test
 
 All three CI workflows publish GitHub Actions job summaries and native error annotations for failures. Vitest reports test counts and source locations when available; core reports diagnostic and filesystem checks; VS Code reports trusted and untrusted results separately. Reports are published even after a failed test step. Test exit codes still determine CI success.
 
-GitHub Actions runs Vitest and the core diagnostics fixture on Node.js 24, plus the trusted and untrusted VS Code integration suites on Ubuntu with a virtual display and screenshots disabled. Each suite has an independent workflow: [Vitest](.github/workflows/ci-test-vitest.yml), [core diagnostics](.github/workflows/ci-test-core.yml), and [VS Code integration](.github/workflows/ci-test-vscode.yml).
+GitHub Actions runs Vitest and the core diagnostics fixture on Node.js 24, plus the trusted and untrusted VS Code integration suites on Ubuntu with a virtual display and screenshots disabled by default. Each suite has an independent workflow: [Vitest](.github/workflows/ci-test-vitest.yml), [core diagnostics](.github/workflows/ci-test-core.yml), and [VS Code integration](.github/workflows/ci-test-vscode.yml).
 
 PathMend uses Vitest for automated tests and separate scripts for core diagnostics and VS Code integration testing.
 
@@ -128,7 +128,9 @@ If VS Code is installed elsewhere, update the application path.
 
 The VS Code integration runner can capture screenshots of important editor states for visual debugging.
 
-Screenshots are **enabled by default**.
+Screenshots are **enabled by default locally**. In GitHub Actions, screenshots are disabled for automatic runs.
+
+To capture screenshots in CI, open **Actions → CI - VS Code → Run workflow**, select a branch, and enable **Capture VS Code screenshots**. When the run finishes, download the `pathmend-vscode-screenshots` artifact from the run summary. Captured PNGs are uploaded even if functional tests fail and are retained for 14 days. If no PNGs were captured, the upload step emits a warning.
 
 ```bash
 # Integration tests with screenshots
