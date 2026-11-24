@@ -18,6 +18,7 @@ const { createCommands } = require("./commands/reference-commands");
 const { createBulkRepairs } = require("./commands/bulk-repairs");
 const { createRepairPreview } = require("./commands/repair-preview");
 const { createReplacementActions } = require("./commands/replacement-actions");
+const { createNavigationProviders } = require("./providers/navigation-providers");
 const { createCodeActionProvider } = require("./providers/code-action-provider");
 const { createRenameEvents } = require("./events/rename-events");
 const SOURCE = "PathMend";
@@ -113,6 +114,17 @@ function activate(context) {
   const replacements = createReplacementActions(runtime, liveFinding);
   const preview = createRepairPreview(runtime, liveFinding);
   const { bulkRepair } = createBulkRepairs(runtime, preview);
+  const navigation = createNavigationProviders(runtime);
+  async function inspectScope(uri) {
+    uri = uri || vscode.window.activeTextEditor?.document.uri;
+    if (!uri || uri.scheme !== "file" || !confined(uri.fsPath)) return;
+    await scan();
+    const scope = path.resolve(uri.fsPath);
+    const items = runtime.state.findings.filter(f => analyzer.within(f.file, scope)).map(f => ({label: viewPath(f.file) + ":" + (f.line + 1), description: f.ref.display, detail: f.message, f}));
+    if (!items.length) return vscode.window.showInformationMessage("PathMend: no broken references in selection.");
+    const selected = await vscode.window.showQuickPick(items, {title:"References in selection",matchOnDescription:true,matchOnDetail:true});
+    if (selected) await showReferenceDetails(selected.f);
+  }
   const referenceDetailsActions = {
     currentFile: () => { const doc = vscode.window.activeTextEditor?.document; return doc?.uri.scheme === "file" && insideWorkspace(doc.uri.fsPath) ? viewPath(doc.uri.fsPath) : null; },
     getGroups, getSeverity: () => getConfig().severity,
@@ -186,6 +198,11 @@ function activate(context) {
     vscode.commands.registerCommand("pathmend.exportResults", exportCurrentResults),
     vscode.commands.registerCommand("pathmend.openSettings", () => vscode.commands.executeCommand("workbench.action.openSettings", "pathmend")),
     vscode.commands.registerCommand("pathmend.applyFix", applyFix),
+    vscode.commands.registerCommand("pathmend.previewFix", (arg, replacement) => preview.previewFix(arg, replacement, applyFix)),
+    vscode.commands.registerCommand("pathmend.inspectScope", inspectScope),
+    vscode.languages.registerDocumentLinkProvider({scheme:"file"}, navigation),
+    vscode.languages.registerHoverProvider({scheme:"file"}, navigation),
+    vscode.languages.registerCodeLensProvider({scheme:"file"}, navigation),
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, { provideCodeActions }, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
     vscode.workspace.onDidSaveTextDocument((d) => {
       if (isConfigDoc(d)) scheduleScan(300);
