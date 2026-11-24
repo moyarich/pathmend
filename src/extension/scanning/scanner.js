@@ -42,7 +42,7 @@ function createScanner(runtime) {
       else stale = true;
     }
     const files = await collectConfigs(cfg);
-    if (seq !== runtime.state.seq) return SUPERSEDED;
+    if (runtime.state !== st || seq !== st.seq) return SUPERSEDED;
     const rs = roots();
     const guard = analyzer.createGuard(fs, rs.map((r) => r.path));
     const maxBytes = cfg.maxFileSizeKB * 1024;
@@ -75,7 +75,7 @@ function createScanner(runtime) {
         reportOutside: cfg.reportOutside,
       },
     });
-    if (seq !== runtime.state.seq) return SUPERSEDED;
+    if (runtime.state !== st || seq !== st.seq) return SUPERSEDED;
     runtime.state.refs = result.refs;
     runtime.state.findings = result.findings;
     runtime.state.fixes.clear();

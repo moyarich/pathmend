@@ -7,5 +7,5 @@ const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
 const entries = Object.entries(RULES);
 const items = manifest.contributes.configuration.properties["pathmend.disabledRules"].items;
 items.enum = [...entries.map(([code]) => code), ...entries.map(([, rule]) => rule.name)];
-items.enumDescriptions = [...entries.map(([, rule]) => rule.name + ": " + rule.description), ...entries.map(([code, rule]) => code + ": " + rule.description)];
+items.enumDescriptions = [...entries.map(([code, rule]) => rule.name + ": " + rule.description), ...entries.map(([code, rule]) => code + ": " + rule.description)];
 fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + "\n");

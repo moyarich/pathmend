@@ -21,8 +21,6 @@ function packageScriptRefs(c, node, label, base, ctx) {
   });
 }
 
-/**
-
 function extractPackage(c, ctx) {
   const tree = parseJsonc(c.text);
   if (!tree || tree.type !== "object") return [];

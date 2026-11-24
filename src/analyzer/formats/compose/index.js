@@ -3,7 +3,7 @@ const { extractCompose } = require("./extract");
 
 const format = {
   id: "compose",
-  patterns: ["**/{docker-compose,compose}{,.*}.{yml,yaml}"],
+  patterns: ["**/{docker-compose.yml,docker-compose.yaml,docker-compose.*.yml,docker-compose.*.yaml,compose.yml,compose.yaml,compose.*.yml,compose.*.yaml}"],
   order: 0,
   rules: {
     PM004: Object.freeze({
