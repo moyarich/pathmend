@@ -3,10 +3,12 @@ const vscode = require("vscode");
 const path = require("node:path");
 const fs = require("node:fs");
 const analyzer = require("../../analyzer");
+const { createExtractionCache } = require("../../analyzer/formats/extraction-cache");
 const SOURCE = "PathMend";
 
 function createScanner(runtime) {
   const { getConfig, roots, buildIndex, collectConfigs, openDocText, severityOf, updateStatus } = runtime;
+  const extractionCache = createExtractionCache();
   const SUPERSEDED = Symbol("superseded");
   
   /** Scan the workspace. If a newer scan starts meanwhile, resolves to that scan's result. */
@@ -23,6 +25,7 @@ function createScanner(runtime) {
     const seq = ++st.seq;
     const cfg = getConfig();
     if (!cfg.enabled) {
+      extractionCache.clear();
       st.diagnostics.clear();
       st.findings = [];
       st.refs = [];
@@ -68,6 +71,7 @@ function createScanner(runtime) {
     }
     const result = analyzer.analyze({
       configs,
+      extractionCache,
       roots: rs,
       guard,
       index,
