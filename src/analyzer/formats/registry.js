@@ -16,6 +16,8 @@ const formats = Object.freeze([
   require("./devcontainer").format,
   require("./gitmodules").format,
   require("./pyproject").format,
+  require("./vscode-workspace").format,
+  require("./pnpm-workspace").format,
   require("./yaml-paths").format,
 ]);
 const discoveryPatterns = Object.freeze([...new Set(formats.flatMap(format => format.patterns))]);
