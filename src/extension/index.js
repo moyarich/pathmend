@@ -15,6 +15,7 @@ const { getConfig } = require("./configuration");
 const { roots, rootFor, insideWorkspace, relPath, buildIndex, collectConfigs, openDocText, confined, isConfigDoc } = require("./workspace");
 const { createScanner } = require("./scanning/scanner");
 const { createCommands } = require("./commands/reference-commands");
+const { createRepairPreview } = require("./commands/repair-preview");
 const { createReplacementActions } = require("./commands/replacement-actions");
 const { createCodeActionProvider } = require("./providers/code-action-provider");
 const { createRenameEvents } = require("./events/rename-events");
@@ -113,6 +114,7 @@ function activate(context) {
     getGroups, getSeverity: () => getConfig().severity,
     isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
     open: openReference, fix: applyFix, ...replacements,
+    preview: (arg, replacement) => createRepairPreview(runtime, liveFinding).previewFix(arg, replacement, applyFix),
   };
   runtime.referenceDetailsSidebarProvider = new ReferenceDetailsSidebarProvider(context.extensionUri, referenceDetailsActions);
   runtime.referenceDetailsPanel = new ReferenceDetailsPanel(context.extensionUri, referenceDetailsActions);
