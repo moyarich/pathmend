@@ -544,7 +544,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "YAML property names to check for explicit relative local paths, including scalar lists. Applies to otherwise unclassified YAML files."
+          "description": "YAML property names to check for explicit relative local paths, including scalar lists. Existing format-specific references take precedence."
         }
       }
     },
