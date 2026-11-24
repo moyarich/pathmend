@@ -7,6 +7,16 @@
 - **Check local files used by `package.json` scripts.** Find missing entry points in commands such as `tsx scripts/build.ts`, `node ./scripts/start.js` and `bash scripts/setup.sh`, with the missing path highlighted as a PM001 diagnostic.
 - **Keep script commands in sync when files move.** When you rename or move a referenced file in VS Code, **Update all** can fix paths inside `package.json` scripts and `bin` entries while keeping command arguments and path formatting intact.
 
+- Markdown and MDX reference checks (PM012–PM015), including document-move rebasing.
+- Native Broken References and Reference Details views, with sidebar/editor placement, filtering, editable suggestions and confirmation for unverified replacements.
+- JSON diagnostic exports and compact Quick Actions.
+
+### Changed
+
+- Modular analyzer with format-owned discovery, extraction and rule metadata; separate VS Code integration modules.
+- Improved native notification readability and test reporting.
+- Preserved original diagnostic IDs and the MIT attribution to Jay Tank.
+
 ### Notes
 
 - PathMend only checks recognizable local script paths. Package commands, URLs, variable substitutions and ambiguous shell expressions are left alone to avoid false warnings. Scripts are never executed.

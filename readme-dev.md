@@ -37,23 +37,23 @@ The supplied folder is opened directly (not copied); edits and fixes affect that
 
 ## Running tests
 
-All three CI workflows upload their JSON test reports as separate artifacts (retained for 14 days), including on test failure when a report exists. All three CI workflows publish GitHub Actions job summaries and native error annotations for failures. Vitest reports test counts and source locations when available; core reports diagnostic and filesystem checks; VS Code reports trusted and untrusted results separately. Reports are published even after a failed test step. Test exit codes still determine CI success.
+All three CI workflows upload their JSON test reports as separate artifacts (retained for 14 days), including on test failure when a report exists. All three CI workflows publish GitHub Actions job summaries and native error annotations for failures. Vitest reports test counts and source locations when available; the analyzer fixture reports diagnostic and filesystem checks; VS Code reports trusted and untrusted results separately. Reports are published even after a failed test step. Test exit codes still determine CI success.
 
 Concurrency is scoped by workflow and event. New automatic runs cancel obsolete runs of the same workflow and ref; manual dispatches use a unique run ID so they do not cancel each other or automatic CI, including screenshot captures.
 
-GitHub Actions runs Vitest and the core diagnostics fixture on Node.js 24, plus the trusted and untrusted VS Code integration suites on Ubuntu with a virtual display and screenshots enabled on pull requests and disabled on automatic main pushes. Each suite has an independent workflow: [Vitest](.github/workflows/ci-test-vitest.yml), [core diagnostics](.github/workflows/ci-test-core.yml), and [VS Code integration](.github/workflows/ci-test-vscode.yml).
+GitHub Actions runs Vitest and the analyzer diagnostics fixture on Node.js 24, plus the trusted and untrusted VS Code integration suites on Ubuntu with a virtual display and screenshots enabled on pull requests and disabled on automatic main pushes. Each suite has an independent workflow: [Vitest](.github/workflows/ci-test-vitest.yml), [analyzer diagnostics](.github/workflows/ci-test-diagnostics.yml), and [VS Code integration](.github/workflows/ci-test-vscode.yml).
 
-PathMend uses Vitest for automated tests and separate scripts for core diagnostics and VS Code integration testing.
+PathMend uses Vitest for automated tests and separate scripts for analyzer diagnostics and VS Code integration testing.
 
 | Command                                                     | Description                                    |
 | ----------------------------------------------------------- | ---------------------------------------------- |
 | `npm test`                                                  | Run all Vitest tests                           |
 | `npm run test:watch`                                        | Re-run Vitest tests when files change          |
 | `npx vitest run test/unit/package-json/package-scripts.test.mjs` | Run package-script tests only                  |
-| `npm run test:core`                                         | Test core diagnostics using a sample workspace |
+| `npm run test:diagnostics`                                         | Test analyzer diagnostics using a sample workspace |
 | `npm run test:vscode`                                   | Run VS Code integration tests                  |
 
-**Note:** `npm test` does not include `scripts/test/run-diagnostics-tests.js` or `scripts/test/run-vscode-tests.js`. Run these separately when changing core diagnostics, file renaming, or editor behavior.
+**Note:** `npm test` does not include `scripts/test/run-diagnostics-tests.js` or `scripts/test/run-vscode-tests.js`. Run these separately when changing analyzer diagnostics, file renaming, or editor behavior.
 
 To add a Vitest test, create a `*.test.js`, `*.test.mjs`, or `*.spec.*` file.
 
@@ -286,3 +286,43 @@ This keeps tests reproducible and prevents changes to tracked fixtures.
 Suggested paths in Reference Details are editable before applying a fix. Reset restores the generated suggestion; custom replacements are validated using the original reference's resolution rules. If the target cannot be verified, a modal warning shows the original and replacement paths and offers Apply Anyway or Cancel. Invalid syntax, stale source edits and edits outside the workspace remain blocked. Drafts survive live diagnostic refreshes while the corresponding finding remains unchanged.
 
 Native notifications use short summaries. Replacement confirmations and error dialogs put paths in modal detail, and rename updates use the native Preview action for full file diffs. The Broken References picker is a navigation aid: selecting a result opens Reference Details for the complete message and suggestion. Native dialog dimensions and wrapping are controlled by VS Code and the operating system.
+
+## Source architecture
+
+The original PathMend by [Jay Tank](https://github.com/jay-tank/pathmend) is the foundation of this derivative. The original MIT notice is preserved.
+
+```text
+src/
+├── analyzer/
+│   ├── index.js
+│   ├── analyze.js
+│   ├── formats/       # format modules and registry
+│   ├── parsers/       # shared syntax readers
+│   ├── references/    # construction, evaluation, encoding and validation
+│   ├── workspace/     # filesystem guard and file index
+│   ├── rename/        # rename planning
+│   ├── rules/         # aggregated diagnostic metadata
+│   └── utils/
+└── extension/
+    ├── index.js
+    ├── configuration.js
+    ├── workspace/
+    ├── scanning/
+    ├── commands/
+    ├── providers/
+    └── events/
+views/                 # native view hosts and browser-side webview
+```
+
+The analyzer does not import VS Code. Extension modules consume the analyzer API; the browser webview communicates through validated host messages. All filesystem access in the analyzer is routed through its workspace guard. There are no runtime dependencies.
+
+## Adding file types and rules
+
+1. Create a module in `src/analyzer/formats/` with `patterns`, `match`, `rules`, `extract` and optional `prepare` and `order`.
+2. Register the module in `src/analyzer/formats/registry.js`. Discovery and classification use that registry.
+3. Return normalized references using the shared reference helpers. Reuse shared parsers when appropriate.
+4. Declare unique diagnostic codes and aliases in the format. Preserve existing IDs; shared rules are registered separately.
+5. Run `npm run sync:manifest` to synchronize the rule choices in VS Code settings. Update the user-facing rule and file-type tables where applicable.
+6. Add fixture cases and behavior-focused tests for valid, missing, ignored and outside-workspace targets. Run `npm test`, `npm run test:diagnostics` and `npm run test:vscode`.
+
+Optional preparation hooks support cross-document context such as npm workspace names and TypeScript inheritance. Extraction ordering ensures Compose context is available to Dockerfile extraction. Keep format-specific logic out of extension activation and analyzer orchestration.

@@ -134,13 +134,14 @@ async function body(check, cfg) {
   const calls = [];
   const names = ["statSync", "lstatSync", "readlinkSync", "realpathSync", "readFileSync", "existsSync", "accessSync", "openSync", "readdirSync", "stat", "lstat", "readFile", "readdir", "open", "access", "createReadStream"];
   const orig = {};
-  const mine = /[\\/]pathmend[\\/](core|extension)\.js/;
+  const sourceDir = path.join(EXT_DIR, "src") + path.sep;
+  const isPathMendCall = stack => stack.split("\n").some(line => line.includes(sourceDir));
   for (const n of names) {
     if (typeof fs[n] !== "function") continue;
     orig[n] = fs[n];
     fs[n] = function (p, ...rest) {
       const st = new Error().stack || "";
-      if (st.split("\n").some((l) => mine.test(l) && l.includes(EXT_DIR))) calls.push({ fn: n, p: String(p) });
+      if (isPathMendCall(st)) calls.push({ fn: n, p: String(p) });
       return orig[n].call(this, p, ...rest);
     };
   }
@@ -150,7 +151,7 @@ async function body(check, cfg) {
     porig[n] = fs.promises[n];
     fs.promises[n] = function (p, ...rest) {
       const st = new Error().stack || "";
-      if (st.includes(path.join(EXT_DIR, "core.js")) || st.includes(path.join(EXT_DIR, "extension.js"))) calls.push({ fn: "promises." + n, p: String(p) });
+      if (isPathMendCall(st)) calls.push({ fn: "promises." + n, p: String(p) });
       return porig[n].call(this, p, ...rest);
     };
   }
@@ -414,7 +415,7 @@ async function body(check, cfg) {
   list = diagList(ws);
   check("disabledRules hides PM006 and PM010", !list.some((x) => x.d.code === "PM006" || x.d.code === "PM010") && list.length > 0);
   check("view follows disabledRules", !rows(api).some((r) => /^PM00[6]|^PM010/.test(r.label)) && rows(api).length === list.length);
-  await conf.update("disabledRules", Object.keys(require("../../rules").RULES), vscode.ConfigurationTarget.Workspace);
+  await conf.update("disabledRules", Object.keys(require("../../src/analyzer/rules/registry").RULES), vscode.ConfigurationTarget.Workspace);
   await sleep(200);
   await api.scan();
   check("empty state: nothing to show -> no rows, no badge (welcome text shows)", api.getChildren().length === 0 && api.getBadge() === 0);

@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const [suite, file] = process.argv.slice(2);
-const titles = { vitest: "Vitest", core: "Core diagnostics", vscode: "VS Code integration" };
+const titles = { vitest: "Vitest", diagnostics: "Analyzer diagnostics", vscode: "VS Code integration" };
 const outcome = process.env.TEST_OUTCOME || "unknown";
 const lines = ["## " + (titles[suite] || "Tests"), "", "**Test step:** " + outcome, ""];
 
@@ -68,7 +68,7 @@ try {
       if (f.status === "failed" && !(f.assertionResults || []).some(t => t.status === "failed")) errors.push({ name: f.name, ok: false, detail: f.message, file: f.name });
     }
     failures(errors);
-  } else if (suite === "core") {
+  } else if (suite === "diagnostics") {
     const results = data.results;
     counts(results.filter(t => t.ok).length, results.filter(t => !t.ok).length);
     lines.push("| Check | Result |", "| --- | --- |");

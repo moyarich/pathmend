@@ -7,13 +7,13 @@ import path from "node:path";
 
 // Load both CommonJS modules through the same Node module cache.
 const require = createRequire(import.meta.url);
-const core = require("../../../core.js");
-const { RULES, resolveRuleId } = require("../../../rules.js");
+const analyzer = require("../../../src/analyzer/index.js");
+const { RULES, resolveRuleId } = require("../../../src/analyzer/rules/registry.js");
 
 describe("rule metadata", () => {
   it("preserves stable IDs and has unique descriptive aliases", () => {
     expect(Object.keys(RULES)).toEqual(Array.from({ length: 15 }, (_, i) => "PM" + String(i + 1).padStart(3, "0")));
-    expect(core.RULES).toBe(RULES);
+    expect(analyzer.RULES).toBe(RULES);
     expect(new Set(Object.values(RULES).map(rule => rule.name)).size).toBe(15);
     for (const [id, rule] of Object.entries(RULES)) {
       expect(resolveRuleId(id)).toBe(id);
@@ -41,12 +41,12 @@ describe("rule metadata", () => {
       const opts = {
         configs: [{ file: path.join(root, "package.json"), text: '{"main":"./missing.js"}' }],
         roots: [{ path: root, name: "test" }],
-        guard: core.createGuard(fs, [root]),
-        index: new core.FileIndex(),
+        guard: analyzer.createGuard(fs, [root]),
+        index: new analyzer.FileIndex(),
       };
-      expect(core.analyze(opts).findings.map(f => f.code)).toEqual(["PM001"]);
+      expect(analyzer.analyze(opts).findings.map(f => f.code)).toEqual(["PM001"]);
       for (const selector of ["PM001", "package-path-not-found"]) {
-        expect(core.analyze({ ...opts, settings: { disabledRules: [selector] } }).findings).toEqual([]);
+        expect(analyzer.analyze({ ...opts, settings: { disabledRules: [selector] } }).findings).toEqual([]);
       }
     } finally {
       fs.rmSync(root, { recursive: true, force: true });

@@ -4,7 +4,7 @@
  * Extract local file references from package.json scripts.
  *
  * This module only identifies path-like arguments and their source offsets.
- * core.js owns diagnostics, workspace guards, and rename planning.
+ * The analyzer owns diagnostics, workspace guards, and rename planning.
  *
  * A path argument to `npm exec --workspace NAME -- ...` resolves from the
  * named workspace's package directory. A workspace that cannot be resolved
