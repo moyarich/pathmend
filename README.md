@@ -40,7 +40,7 @@ A locally installed npm package exposes the `pathmend` command via its `bin` ent
 
 ## Supported files
 
-Workspace configuration checks include `.code-workspace` folder paths and unambiguous task/launch references, `pnpm-workspace.yaml` package patterns, npm/Yarn workspace package manifests, and local `file:`, `link:` and relative `workspace:` dependency paths. Named/version-only `workspace:` dependencies are not resolved yet. Workspace files must be inside an opened workspace folder; paths outside opened roots are not read.
+Workspace configuration checks include `.code-workspace` folder paths and unambiguous task/launch references, `pnpm-workspace.yaml` package patterns, npm/Yarn workspace package manifests, and local `file:`, `link:` and relative `workspace:` dependency paths. Named and version-only `workspace:` dependencies are checked against declared workspace membership; duplicate names are reported. Version range compatibility is not checked. Ambiguous npm script workspace names are skipped. Workspace files must be inside an opened workspace folder; paths outside opened roots are not read.
 
 Development configuration support includes VS Code tasks (literal commands and working directories), devcontainer Dockerfile/context/Compose references, gitmodules checkout paths (diagnostics only), Poetry/uv inline local dependencies in pyproject.toml and opt-in YAML path attributes. Set `pathmend.yaml.pathAttributes` to a list such as `["asset", "source"]` to check explicit `./` and `../` paths in otherwise unclassified YAML. Git submodules that are not initialized may report missing checkout paths.
 
