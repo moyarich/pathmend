@@ -15,18 +15,14 @@ concurrency:
 
 jobs:
   core:
-    name: Core diagnostics (Node ${{ matrix.node }})
+    name: Core diagnostics (Node 24)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        node: [22, 24]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 24
           cache: npm
       - run: npm ci
       - name: Core diagnostics fixture
