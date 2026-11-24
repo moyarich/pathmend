@@ -114,6 +114,7 @@ function activate(context) {
   const preview = createRepairPreview(runtime, liveFinding);
   const { bulkRepair } = createBulkRepairs(runtime, preview);
   const referenceDetailsActions = {
+    currentFile: () => { const doc = vscode.window.activeTextEditor?.document; return doc?.uri.scheme === "file" && insideWorkspace(doc.uri.fsPath) ? viewPath(doc.uri.fsPath) : null; },
     getGroups, getSeverity: () => getConfig().severity,
     isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
     open: openReference, fix: applyFix, ...replacements,
@@ -172,6 +173,7 @@ function activate(context) {
     }),
     runtime.referenceDetailsSidebarProvider,
     runtime.referenceDetailsPanel,
+    vscode.window.onDidChangeActiveTextEditor(() => refreshTree()),
     vscode.window.registerTreeDataProvider("pathmend.actions", createQuickActionsProvider()),
     vscode.window.registerWebviewViewProvider("pathmend.referenceDetails", runtime.referenceDetailsSidebarProvider),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
