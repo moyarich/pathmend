@@ -4,7 +4,7 @@
 // test/vscode/index.js inside it: once trusted (full suite), once in an untrusted workspace
 // (PathMend supports untrusted workspaces, so it must still work there). In the trusted run the
 // test requests meaningful workbench snapshots saved in screenshots/ (outside the temporary workspace).
-// Usage: node test/run-vscode.js [tmpBaseDir]
+// Usage: node test/vscode/run.js [tmpBaseDir]
 
 const fs = require("fs");
 const os = require("os");
@@ -22,10 +22,10 @@ if (screenshotsEnabled) {
     console.warn("Playwright unavailable; continuing functional tests without screenshots:", error.message);
   }
 }
-const { resolveVSCode } = require("./utils/vscode");
-const { prepare } = require("./prepare");
+const { resolveVSCode } = require("../utils/vscode");
+const { prepare } = require("../fixtures/prepare");
 
-const extDir = path.resolve(__dirname, "..");
+const extDir = path.resolve(__dirname, "../..");
 // Short paths matter on macOS because VS Code uses Unix-domain IPC sockets.
 const base = fs.realpathSync(fs.mkdtempSync(path.join(process.argv[2] || (process.platform === "darwin" ? "/tmp" : os.tmpdir()), "pm-vscode-")));
 const userDir = path.join(base, "user");
@@ -123,7 +123,7 @@ async function launch(executable, mode, extraArgs) {
     ...extraArgs,
     "--skip-welcome", "--skip-release-notes",
     "--extensionDevelopmentPath=" + extDir,
-    "--extensionTestsPath=" + path.join(__dirname, "vscode", "index.js"),
+    "--extensionTestsPath=" + path.join(__dirname, "index.js"),
     fx.ws,
   ];
   console.log(executable + " " + args.join(" "));

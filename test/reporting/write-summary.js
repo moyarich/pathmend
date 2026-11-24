@@ -75,7 +75,7 @@ try {
     for (const t of results) lines.push("| " + safe(t.name) + " | " + (t.ok ? "Passed" : "Failed") + " |");
     lines.push("", "**Diagnostics:** " + data.actualDiagnostics + " actual / " + data.expectedDiagnostics + " expected.", "",
       "**Filesystem calls:** " + data.filesystemCalls + " total, " + data.outsideCalls + " outside workspace.", "");
-    failures(results, "test/unit.js");
+    failures(results, "test/core/run.js");
   } else if (suite === "vscode") {
     counts(data.trusted.passed + data.untrusted.passed, data.trusted.failed + data.untrusted.failed);
     lines.push("| Workspace | Passed | Failed |", "| --- | ---: | ---: |");

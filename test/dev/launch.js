@@ -5,8 +5,8 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
-const { prepare } = require("./prepare");
-const { resolveVSCode } = require("./utils/vscode");
+const { prepare } = require("../fixtures/prepare");
+const { resolveVSCode } = require("../utils/vscode");
 
 async function main() {
   const args = process.argv.slice(2);
@@ -18,7 +18,7 @@ async function main() {
     throw new Error("Usage: npm run dev -- [--workspace <folder>]");
   }
   const executable = await resolveVSCode();
-  const extensionDir = path.resolve(__dirname, "..");
+  const extensionDir = path.resolve(__dirname, "../..");
   const base = fs.realpathSync(fs.mkdtempSync(path.join(process.platform === "darwin" ? "/tmp" : os.tmpdir(), "pm-dev-")));
   try {
     const userDir = path.join(base, "user");

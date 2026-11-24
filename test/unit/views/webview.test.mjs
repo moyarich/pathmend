@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { filterReferences } from "../../views/webview/state/filter.js";
-import { createViewState } from "../../views/webview/state/view-state.js";
+import { filterReferences } from "../../../views/webview/state/filter.js";
+import { createViewState } from "../../../views/webview/state/view-state.js";
 
 describe("reference webview", () => {
   it("filters complete messages and source paths without modifying the snapshot", () => {

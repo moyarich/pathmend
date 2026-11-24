@@ -11,10 +11,8 @@ on:
       - 'package-lock.json'
       - 'test/vscode/**'
       - 'test/fixtures/**'
-      - 'test/run-vscode.js'
-      - 'test/prepare.js'
-      - 'test/expected.js'
-      - 'test/write-summary.js'
+      - 'test/utils/**'
+      - 'test/reporting/**'
       - '.github/workflows/ci-test-vscode.yml'
   pull_request:
     paths:
@@ -24,10 +22,8 @@ on:
       - 'package-lock.json'
       - 'test/vscode/**'
       - 'test/fixtures/**'
-      - 'test/run-vscode.js'
-      - 'test/prepare.js'
-      - 'test/expected.js'
-      - 'test/write-summary.js'
+      - 'test/utils/**'
+      - 'test/reporting/**'
       - '.github/workflows/ci-test-vscode.yml'
   workflow_dispatch:
     inputs:
@@ -67,12 +63,12 @@ jobs:
         env:
           PM_TEST_RESULTS: ${{ runner.temp }}/vscode-results.json
           PM_DIAGNOSTIC_REPORTS: ${{ runner.temp }}/pathmend-diagnostics
-        run: xvfb-run -a -s "-screen 0 1920x1080x24" node test/run-vscode.js
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" node test/vscode/run.js
       - name: Publish test summary and annotations
         if: always()
         env:
           TEST_OUTCOME: ${{ steps.tests.outcome }}
-        run: node test/write-summary.js vscode "$RUNNER_TEMP/vscode-results.json"
+        run: node test/reporting/write-summary.js vscode "$RUNNER_TEMP/vscode-results.json"
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7

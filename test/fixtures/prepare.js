@@ -18,7 +18,7 @@ function prepare(target) {
   fs.rmSync(target, { recursive: true, force: true });
   const ws = path.join(target, "ws");
   const outside = path.join(target, "outside");
-  copyDir(path.join(__dirname, "fixtures", "ws"), ws);
+  copyDir(path.join(__dirname, "ws"), ws);
   fs.mkdirSync(outside, { recursive: true });
   fs.writeFileSync(path.join(outside, "secret.txt"), "top secret\n");
   fs.writeFileSync(path.join(outside, "package.json"), '{ "main": "leak-from-outside.js" }\n');

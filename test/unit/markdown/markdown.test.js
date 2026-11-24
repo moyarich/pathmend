@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import scanner from "../../markdown.js";
-import core from "../../core.js";
+import scanner from "../../../markdown.js";
+import core from "../../../core.js";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -81,8 +81,8 @@ describe("Markdown/MDX scanner", () => {
       const inside = p => core.within(p, root);
       const plan = core.planRenames(refs, [{ from: page, to: destination }], inside);
       expect(plan.map(p => [p.file, p.newText])).toEqual([
-        [destination, "../../docs/guide.md"],
-        [destination, "../../docs/Demo"],
+        [destination, "../../../docs/guide.md"],
+        [destination, "../../../docs/Demo"],
         [readme, "./archive/nested/page.mdx"],
       ]);
       expect(plan[0].ref.raw).toBe("./guide.md");

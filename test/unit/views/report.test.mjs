@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
-import { icons } from "../../views/webview/icons/geometry.js";
+import { icons } from "../../../views/webview/icons/geometry.js";
 const require = createRequire(import.meta.url);
-const { createReport } = require("../../views/report");
+const { createReport } = require("../../../views/report");
 
 describe("diagnostic export", () => {
   it("exports complete diagnostics and counts without transient IDs", () => {

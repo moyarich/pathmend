@@ -49,11 +49,11 @@ PathMend uses Vitest for automated tests and separate scripts for core diagnosti
 | ----------------------------------------------------------- | ---------------------------------------------- |
 | `npm test`                                                  | Run all Vitest tests                           |
 | `npm run test:watch`                                        | Re-run Vitest tests when files change          |
-| `npx vitest run test/package-json/package-scripts.test.mjs` | Run package-script tests only                  |
-| `node test/unit.js`                                         | Test core diagnostics using a sample workspace |
-| `node test/run-vscode.js`                                   | Run VS Code integration tests                  |
+| `npx vitest run test/unit/package-json/package-scripts.test.mjs` | Run package-script tests only                  |
+| `npm run test:core`                                         | Test core diagnostics using a sample workspace |
+| `npm run test:vscode`                                   | Run VS Code integration tests                  |
 
-**Note:** `npm test` does not include `test/unit.js` or `test/run-vscode.js`. Run these separately when changing core diagnostics, file renaming, or editor behavior.
+**Note:** `npm test` does not include `test/core/run.js` or `test/vscode/run.js`. Run these separately when changing core diagnostics, file renaming, or editor behavior.
 
 To add a Vitest test, create a `*.test.js`, `*.test.mjs`, or `*.spec.*` file.
 
@@ -62,7 +62,7 @@ To add a Vitest test, create a `*.test.js`, `*.test.mjs`, or `*.spec.*` file.
 Run the integration tests with:
 
 ```bash
-node test/run-vscode.js
+node test/vscode/run.js
 ```
 
 The runner launches an isolated VS Code instance and executes `test/vscode/index.js`. It disables the unrelated built-in `vscode.extension-editing` extension in the test host to avoid manifest parser errors on hostile fixtures. This does not change a user's normal VS Code installation or PathMend's filesystem checks.
@@ -102,7 +102,7 @@ Both suites use:
 test/fixtures/ws/packages/script-cases/
 ```
 
-`test/prepare.js` copies the fixtures into a temporary workspace before testing.
+`test/fixtures/prepare.js` copies the fixtures into a temporary workspace before testing.
 
 Tests only modify the temporary copy. They do not execute package script commands or modify tracked source files.
 
@@ -113,7 +113,7 @@ By default, `@vscode/test-electron` downloads a VS Code executable and caches it
 You can instead use an existing installation:
 
 ```bash
-VSCODE_EXECUTABLE_PATH=/path/to/vscode/electron node test/run-vscode.js
+VSCODE_EXECUTABLE_PATH=/path/to/vscode/electron node test/vscode/run.js
 ```
 
 To test a specific VS Code version, set `VSCODE_TEST_VERSION`.
@@ -139,7 +139,7 @@ fi
 export VSCODE_EXECUTABLE_PATH
 echo "Using VS Code: $VSCODE_EXECUTABLE_PATH"
 
-PM_SCREENSHOTS=0 node test/run-vscode.js
+PM_SCREENSHOTS=0 node test/vscode/run.js
 ```
 
 Remove `PM_SCREENSHOTS=0` to enable screenshots.
@@ -160,10 +160,10 @@ To capture screenshots in CI, open **Actions → CI - VS Code → Run workflow**
 
 ```bash
 # Integration tests with screenshots
-node test/run-vscode.js
+node test/vscode/run.js
 
 # Functional tests only (no Playwright)
-PM_SCREENSHOTS=0 node test/run-vscode.js
+PM_SCREENSHOTS=0 node test/vscode/run.js
 ```
 
 Disabling screenshots does not disable functional testing. The editor and sidebar still navigate through the same test states.
@@ -230,30 +230,35 @@ Screenshots are debugging artifacts, **not test assertions**. Functional checks 
 
 ## Test fixtures and structure
 
-Files in `test/fixtures/` are test inputs, not executable tests.
+Shared workspace inputs live in `test/fixtures/ws/`, isolated unit fixtures in `test/fixtures/unit/`, and executable unit tests under `test/unit/`.
 
 ```text
 test/
+├── core/run.js
+├── dev/launch.js
 ├── fixtures/
-│   ├── ws/                       # Sample workspace
-│   └── package-json/
-│       └── package.json          # Package-script test manifest
-├── package-json/
-│   └── package-scripts.test.mjs  # Vitest package-script tests
-├── prepare.js                    # Creates isolated test workspaces
-├── unit.js                       # Core diagnostics tests
-├── run-vscode.js                 # VS Code integration test launcher
+│   ├── expected.js
+│   ├── prepare.js
+│   ├── unit/package-json/package.json
+│   └── ws/
+├── reporting/write-summary.js
+├── unit/
+│   ├── markdown/
+│   ├── package-json/
+│   ├── rules/
+│   └── views/
+├── utils/vscode.js
 └── vscode/
-    ├── index.js                  # Editor integration tests
-    ├── usecases.js               # Script and reference regression tests
-    ├── monorepo.js               # File rename and reference updates
-    └── utils/
-        └── visual.js             # Editor layouts and screenshots
+    ├── run.js
+    ├── index.js
+    ├── monorepo.js
+    ├── usecases.js
+    └── utils/visual.js
 ```
 
 ### Fixture preparation
 
-For `test/unit.js` and `test/run-vscode.js`, `test/prepare.js`:
+For `test/core/run.js` and `test/vscode/run.js`, `test/fixtures/prepare.js`:
 
 1. Copies `test/fixtures/ws/` into a temporary workspace.
 2. Adds symlinks and other edge cases needed by the tests.
@@ -262,7 +267,7 @@ For `test/unit.js` and `test/run-vscode.js`, `test/prepare.js`:
 The Vitest package-script suite uses its dedicated manifest:
 
 ```text
-test/fixtures/package-json/package.json
+test/fixtures/unit/package-json/package.json
 ```
 
 This keeps tests reproducible and prevents changes to tracked fixtures.

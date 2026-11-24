@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const { fileGroups, createSnapshot } = require("../../views/model");
+const { fileGroups, createSnapshot } = require("../../../views/model");
 
 describe("reference details model", () => {
   it("preserves complete messages and maps opaque IDs to source references", () => {

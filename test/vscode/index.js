@@ -1,12 +1,12 @@
 "use strict";
 // Runs inside a real VS Code extension host (--extensionTestsPath), started by
-// test/run-vscode.js. Asserts exact diagnostics, the activity bar view (rows, badge, open and
+// test/vscode/run.js. Asserts exact diagnostics, the activity bar view (rows, badge, open and
 // fix commands, empty states), the Quick Fix, the rename prompt driven by onDidRenameFiles,
 // settings, the polling fallback, and that no fs call made by PathMend leaves the workspace.
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const expected = require("../expected");
+const expected = require("../fixtures/expected");
 
 const EXT_DIR = path.resolve(__dirname, "..", "..");
 const { sleep, waitFor, captureState } = require("./utils/visual");
