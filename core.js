@@ -13,6 +13,7 @@ const path = require("path");
 const { extractScriptPaths } = require("./package-scripts");
 
 const { RULES, resolveRuleId } = require("./rules");
+const { extractMarkdownPaths } = require("./markdown");
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -815,6 +816,8 @@ function classify(file) {
   const base = parts[parts.length - 1] || "";
   const parent = parts[parts.length - 2] || "";
   const grand = parts[parts.length - 3] || "";
+  if (/\.mdx$/i.test(base)) return "mdx";
+  if (/\.md$/i.test(base)) return "markdown";
   if (base === "package.json") return "package";
   if (/^[tj]sconfig(\..+)?\.json$/i.test(base)) return "tsconfig";
   if (/\.dockerignore$/i.test(base)) return null;
@@ -874,6 +877,27 @@ function packageScriptRefs(c, node, label, base, ctx) {
       endCol: position.col + value.length, value,
       escape: "json", code: "PM001", base: scriptBase, kind: "file",
       label: "package.json " + label,
+    });
+  });
+}
+
+function extractMarkdown(c, settings) {
+  const codes = { markdown: "PM012", module: "PM013", jsx: "PM014", directive: "PM015" };
+  return extractMarkdownPaths(c.text, {
+    mdx: c.kind === "mdx",
+    pathAttributes: settings.mdxPathAttributes,
+    directivePathAttributes: settings.directivePathAttributes,
+    multiPathAttributes: settings.multiPathAttributes,
+  }).map(ref => {
+    const p = posOf(c.starts, ref.start);
+    const module = ref.type === "module";
+    return mkRef({
+      file: c.file, line: p.line, col: p.col, endCol: p.col + ref.end - ref.start,
+      value: ref.value, base: path.dirname(c.file), code: codes[ref.type],
+      label: ref.type + (ref.attribute ? " " + ref.attribute : ""),
+      kind: module || ref.type === "directive" || ref.attribute === "src" ? "file" : "any",
+      alts: module && !path.extname(ref.value) ? [...TS_MODULE_ALTS, ".md", ".mdx", "/index.mdx"].filter(a => a !== "/package.json") : [],
+      escape: "document-path",
     });
   });
 }
@@ -1487,11 +1511,11 @@ function checkOne(ref, abs, env) {
   let st = env.guard.status(abs);
   if (st.state === "outside") return { state: "outside", abs };
   let hit = st.state === "missing" ? null : abs;
-  if (!hit) {
+  if (!hit || (ref.escape === "document-path" && ref.kind === "file" && st.state === "dir")) {
     for (const a of ref.alts || []) {
       const s2 = env.guard.status(abs + a);
       if (s2.state === "outside") return { state: "outside", abs };
-      if (s2.state !== "missing") {
+      if (s2.state !== "missing" && (ref.escape !== "document-path" || s2.state === "file")) {
         hit = abs + a;
         st = s2;
         break;
@@ -1558,6 +1582,10 @@ function encodeFor(ref, text) {
       return text.replace(/'/g, "''");
     case "plain":
       return /^[-?:,[\]{}#&*!|>'"%@`]|: | #|\s$/.test(text) ? null : text;
+    case "document-path":
+      // Conservative edits: do not introduce syntax delimiters, URI escapes,
+      // or separators that change the meaning of links, strings or lists.
+      return /[\s\\'"<>()\[\]{}#?%,&`]/.test(text) ? null : text;
     case "shell":
       return /[\s'"$`\\;&|<>()]/.test(text) ? null : text;
     default:
@@ -1629,6 +1657,7 @@ function analyze(opts) {
       else if (c.kind === "codeowners") list = extractCodeowners(c);
       else if (c.kind === "launch") list = extractLaunch(c, ctx);
       else if (c.kind === "dockerfile") list = extractDockerfile(c, ctx);
+      else if (c.kind === "markdown" || c.kind === "mdx") list = extractMarkdown(c, settings);
     } catch (_) {
       list = [];
     }

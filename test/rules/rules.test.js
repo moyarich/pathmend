@@ -10,9 +10,9 @@ const { RULES, resolveRuleId } = registry;
 
 describe("rule metadata", () => {
   it("preserves stable IDs and has unique descriptive aliases", () => {
-    expect(Object.keys(RULES)).toEqual(Array.from({ length: 11 }, (_, i) => "PM" + String(i + 1).padStart(3, "0")));
+    expect(Object.keys(RULES)).toEqual(Array.from({ length: 15 }, (_, i) => "PM" + String(i + 1).padStart(3, "0")));
     expect(core.RULES).toBe(RULES);
-    expect(new Set(Object.values(RULES).map(rule => rule.name)).size).toBe(11);
+    expect(new Set(Object.values(RULES).map(rule => rule.name)).size).toBe(15);
     for (const [id, rule] of Object.entries(RULES)) {
       expect(resolveRuleId(id)).toBe(id);
       expect(resolveRuleId(rule.name)).toBe(id);

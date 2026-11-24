@@ -1,7 +1,7 @@
 {
   "name": "pathmend",
   "displayName": "PathMend",
-  "description": "Find broken file paths in config files after you move or rename something: package.json main/bin/exports/files/scripts, tsconfig extends/include/references/paths/typeRoots, Dockerfile COPY/ADD, docker-compose build context, GitHub Actions working-directory/uses/run scripts, GitLab CI include, CODEOWNERS and launch.json. Suggests the moved file and updates references on rename. Only checks whether paths exist inside the workspace - runs no processes, so it works in untrusted workspaces.",
+  "description": "Find broken file paths in config files and Markdown/MDX documents after you move or rename something: package.json main/bin/exports/files/scripts, tsconfig extends/include/references/paths/typeRoots, Dockerfile COPY/ADD, docker-compose build context, GitHub Actions working-directory/uses/run scripts, GitLab CI include, CODEOWNERS and launch.json. Suggests the moved file and updates references on rename. Only checks whether paths exist inside the workspace - runs no processes, so it works in untrusted workspaces.",
   "version": "0.1.0",
   "publisher": "jaytankdev",
   "repository": {
@@ -26,7 +26,9 @@
     "github actions",
     "codeowners",
     "gitlab ci",
-    "devops"
+    "devops",
+    "markdown",
+    "mdx"
   ],
   "activationEvents": [
     "workspaceContains:**/package.json",
@@ -34,6 +36,8 @@
     "workspaceContains:**/Dockerfile*",
     "workspaceContains:.github/workflows",
     "workspaceContains:**/.gitlab-ci.yml",
+    "workspaceContains:**/*.md",
+    "workspaceContains:**/*.mdx",
     "onStartupFinished",
     "onView:pathmend.references"
   ],
@@ -108,7 +112,7 @@
       },
       {
         "view": "pathmend.references",
-        "contents": "No broken config paths found.\nPathMend checks the file paths in package.json, tsconfig / jsconfig, Dockerfile COPY / ADD, Compose build contexts, GitHub Actions workflows, GitLab CI includes, CODEOWNERS and .vscode/launch.json, and offers to update them when you rename a file in VS Code.\n[Scan workspace](command:pathmend.scan)",
+        "contents": "No broken paths found.\nPathMend checks the file paths in package.json, tsconfig / jsconfig, Dockerfile COPY / ADD, Compose build contexts, GitHub Actions workflows, GitLab CI includes, CODEOWNERS  .vscode/launch.json, Markdown and MDX, and offers to update them when you rename a file in VS Code.\n[Scan workspace](command:pathmend.scan)",
         "when": "config.pathmend.enabled && workbenchState != empty"
       }
     ],
@@ -198,6 +202,10 @@
               "PM009",
               "PM010",
               "PM011",
+              "PM012",
+              "PM013",
+              "PM014",
+              "PM015",
               "package-path-not-found",
               "tsconfig-path-not-found",
               "docker-source-not-found",
@@ -208,7 +216,11 @@
               "gitlab-include-not-found",
               "glob-no-matches",
               "outside-workspace",
-              "outside-docker-context"
+              "outside-docker-context",
+              "markdown-path-not-found",
+              "mdx-module-not-found",
+              "mdx-attribute-path-not-found",
+              "directive-path-not-found"
             ],
             "enumDescriptions": [
               "package-path-not-found: package.json path not found",
@@ -222,6 +234,10 @@
               "glob-no-matches: Glob matches no files",
               "outside-workspace: Path outside the workspace - not checked",
               "outside-docker-context: COPY / ADD source outside the Docker build context",
+              "markdown-path-not-found: Markdown link or image path not found",
+              "mdx-module-not-found: MDX import or export path not found",
+              "mdx-attribute-path-not-found: MDX JSX attribute path not found",
+              "directive-path-not-found: Markdown directive path not found",
               "PM001: package.json path not found",
               "PM002: tsconfig / jsconfig path not found",
               "PM003: Dockerfile COPY / ADD source not found",
@@ -232,7 +248,11 @@
               "PM008: GitLab CI local include not found",
               "PM009: Glob matches no files",
               "PM010: Path outside the workspace - not checked",
-              "PM011: COPY / ADD source outside the Docker build context"
+              "PM011: COPY / ADD source outside the Docker build context",
+              "PM012: Markdown link or image path not found",
+              "PM013: MDX import or export path not found",
+              "PM014: MDX JSX attribute path not found",
+              "PM015: Markdown directive path not found"
             ]
           },
           "default": [],
@@ -272,6 +292,39 @@
           "type": "number",
           "default": 512,
           "description": "Config files larger than this are skipped."
+        },
+        "pathmend.mdx.pathAttributes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "src",
+            "href"
+          ],
+          "description": "JSX attributes containing explicit relative file paths."
+        },
+        "pathmend.markdown.directivePathAttributes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "component",
+            "code",
+            "files"
+          ],
+          "description": "Markdown/MDX directive attributes containing explicit relative file paths."
+        },
+        "pathmend.markdown.multiPathAttributes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "files"
+          ],
+          "description": "Path attributes whose quoted values contain comma-separated paths."
         }
       }
     }

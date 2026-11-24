@@ -21,6 +21,7 @@ const core = require("./core");
 const SOURCE = "PathMend";
 const CONFIG_GLOB =
   "**/{package.json,tsconfig*.json,jsconfig*.json,Dockerfile,Dockerfile.*,*.Dockerfile,*.dockerfile,Containerfile,Containerfile.*,docker-compose*.yml,docker-compose*.yaml,compose*.yml,compose*.yaml,CODEOWNERS,launch.json,.gitlab-ci.yml,*.gitlab-ci.yml}";
+const MARKDOWN_GLOB = "**/*.{md,mdx,MD,MDX}";
 const GITHUB_GLOB = "**/.github/**/*.{yml,yaml}";
 const MAX_CONFIG_FILES = 2000;
 const VIEW_ID = "pathmend.references";
@@ -37,6 +38,9 @@ function getConfig() {
     exclude: c.get("exclude", ["**/node_modules/**", "**/.git/**", "**/dist/**"]),
     ignoreReferences: c.get("ignoreReferences", []),
     disabledRules: c.get("disabledRules", []),
+    mdxPathAttributes: c.get("mdx.pathAttributes", ["src", "href"]),
+    directivePathAttributes: c.get("markdown.directivePathAttributes", ["component", "code", "files"]),
+    multiPathAttributes: c.get("markdown.multiPathAttributes", ["files"]),
     severity: c.get("severity", "warning"),
     reportOutside: c.get("reportOutsideWorkspace", true),
     maxIndexedFiles: Math.max(100, c.get("maxIndexedFiles", 20000)),
@@ -98,7 +102,7 @@ async function collectConfigs(cfg) {
   const out = new Set();
   if (!roots().length) return [];
   const ex = excludeGlob(cfg);
-  for (const g of [CONFIG_GLOB, GITHUB_GLOB]) {
+  for (const g of [CONFIG_GLOB, GITHUB_GLOB, MARKDOWN_GLOB]) {
     const found = await vscode.workspace.findFiles(g, ex, MAX_CONFIG_FILES);
     for (const u of found) if (u.scheme === "file" && core.classify(u.fsPath)) out.add(path.resolve(u.fsPath));
   }
@@ -174,6 +178,9 @@ async function doScan(st) {
       exclude: cfg.exclude,
       ignoreReferences: cfg.ignoreReferences,
       disabledRules: cfg.disabledRules,
+      mdxPathAttributes: cfg.mdxPathAttributes,
+      directivePathAttributes: cfg.directivePathAttributes,
+      multiPathAttributes: cfg.multiPathAttributes,
       reportOutside: cfg.reportOutside,
     },
   });
@@ -229,8 +236,8 @@ function updateStatus() {
   }
   s.text = n ? "$(link) PathMend: " + n : "$(check) PathMend";
   s.tooltip = n
-    ? n + " broken config reference" + (n === 1 ? "" : "s") + " - click to list"
-    : state.refs.length + " config path reference" + (state.refs.length === 1 ? "" : "s") + " checked, none broken";
+    ? n + " broken path reference" + (n === 1 ? "" : "s") + " - click to list"
+    : state.refs.length + " path reference" + (state.refs.length === 1 ? "" : "s") + " checked, none broken";
   s.command = "pathmend.showBroken";
   s.show();
 }
@@ -308,7 +315,7 @@ function refreshTree() {
   if (treeProvider.emitter) treeProvider.emitter.fire(undefined);
   if (!treeView) return;
   const n = brokenCount();
-  treeView.badge = n ? { value: n, tooltip: n + " broken config reference" + (n === 1 ? "" : "s") } : undefined;
+  treeView.badge = n ? { value: n, tooltip: n + " broken path reference" + (n === 1 ? "" : "s") } : undefined;
 }
 
 /** Map a command argument (a tree node or {file,line,col,code}) to a live finding; never trust the object itself. */
@@ -493,7 +500,7 @@ async function onDidRename(e) {
   if (plan.length && cfg.renameUpdates !== "off") {
     const n = plan.length;
     const old = relPath(plan[0].from);
-    const msg = n + " config reference" + (n === 1 ? "" : "s") + " still point" + (n === 1 ? "s" : "") + " to " + old + " - update " + (n === 1 ? "it" : "all") + "?";
+    const msg = n + " path reference" + (n === 1 ? "" : "s") + " still point" + (n === 1 ? "s" : "") + " to " + old + " - update " + (n === 1 ? "it" : "all") + "?";
     state.lastPrompt = msg;
     state.lastPromptDone = Promise.resolve(vscode.window.showInformationMessage(msg, "Update all", "Preview", "Ignore")).then(
       (choice) => {
@@ -538,7 +545,7 @@ async function showBroken() {
   await scan();
   const list = state.findings || [];
   if (!list.length) {
-    vscode.window.showInformationMessage("PathMend: no broken config references.");
+    vscode.window.showInformationMessage("PathMend: no broken path references.");
     return;
   }
   const items = list.map((f) => ({
@@ -547,7 +554,7 @@ async function showBroken() {
     detail: f.message + (f.fix ? ' - did you mean "' + f.fix + '"?' : ""),
     f,
   }));
-  const pick = await vscode.window.showQuickPick(items, { placeHolder: "Broken config references", matchOnDescription: true, matchOnDetail: true });
+  const pick = await vscode.window.showQuickPick(items, { placeHolder: "Broken path references", matchOnDescription: true, matchOnDetail: true });
   if (!pick) return;
   await openReference(pick.f);
 }
@@ -556,7 +563,7 @@ async function scanCommand() {
   invalidateIndex();
   const f = await scan();
   const n = f.filter((x) => !x.info).length;
-  vscode.window.setStatusBarMessage("PathMend: " + n + " broken config reference" + (n === 1 ? "" : "s"), 4000);
+  vscode.window.setStatusBarMessage("PathMend: " + n + " broken path reference" + (n === 1 ? "" : "s"), 4000);
   return f;
 }
 
