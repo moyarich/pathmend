@@ -6,13 +6,25 @@ export class ReferenceCard extends HTMLElement {
   static requestSequence = 0;
   connectedCallback() { this.resumeValidation?.(); }
   disconnectedCallback() { this.cancelPending?.(); }
+  setBulkSelected(checked) { if (this.bulkCheckbox) this.bulkCheckbox.checked = checked; }
   update(f, revision, selected, draft) {
     this.cancelPending?.();
     this.resumeValidation = undefined;
     this.receiveReplacement = undefined;
     const card = element("article", undefined, "reference-card " + f.severity);
     if (selected) card.classList.add("selected");
+    const header = element("div", undefined, "card-header");
     const meta = element("div", undefined, "card-meta");
+    header.append(meta);
+    this.bulkCheckbox = undefined;
+    if (f.fix && f.repairable && !f.notChecked) {
+      const checkbox = this.bulkCheckbox = element("input", undefined, "bulk-reference-checkbox");
+      checkbox.type = "checkbox";
+      checkbox.setAttribute("aria-label", "Select suggested repair for " + f.path + " at line " + f.line);
+      checkbox.title = "Select suggested repair";
+      checkbox.addEventListener("change", () => this.dispatchEvent(new CustomEvent("pm-bulk-selection", {bubbles:true,detail:{ids:[f.id],checked:checkbox.checked}})));
+      header.append(checkbox);
+    }
     const severity = element("span", f.notChecked ? "Not checked" : f.severity, "severity-label");
     severity.prepend(icon(f.severity === "error" ? "circle-x" : f.severity === "warning" ? "triangle-alert" : "info"));
     meta.append(element("span", f.code, "rule-code"), severity, element("span", "L" + f.line + ":" + f.column, "location"));
@@ -22,7 +34,7 @@ export class ReferenceCard extends HTMLElement {
     const path = action(f.path, () => dispatch("open"));
     path.className = "path";
     path.title = "Open reference at line " + f.line + ", column " + f.column;
-    card.append(meta, path, element("div", f.rule, "rule-title"), element("p", f.message, "message"));
+    card.append(header, path, element("div", f.rule, "rule-title"), element("p", f.message, "message"));
     if (f.repairable || f.fix) {
       const suggestion = element("div", undefined, "suggestion");
       const label = element("label", f.fix ? "Suggested path" : "Replacement path", "suggestion-label");

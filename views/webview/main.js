@@ -10,6 +10,23 @@ const filter = document.getElementById("filter");
 const severity = document.getElementById("severity");
 const clear = document.getElementById("clear-filter");
 const toggleGroups = document.getElementById("toggle-groups");
+const selectVisible = document.getElementById("select-visible");
+const clearSelection = document.getElementById("clear-selection");
+const bulkRepair = document.getElementById("bulk-repair");
+function updateBulkSelection() {
+  const ids=state.bulk.eligibleIds(state.visibleFiles);
+  Object.assign(selectVisible,state.bulk.status(ids));
+  const count=state.bulk.count;
+  const hidden=count-ids.filter(id=>state.bulk.has(id)).length;
+  clearSelection.disabled=!count;
+  bulkRepair.disabled=!count;
+  bulkRepair.textContent="Bulk repairs ("+count+")";
+  document.getElementById("selection-status").textContent=count+" selected"+(hidden?" ("+hidden+" hidden by filters)":"");
+  list.updateBulkSelection();
+}
+selectVisible.addEventListener("change",()=>{state.bulk.set(state.bulk.eligibleIds(state.visibleFiles),selectVisible.checked);updateBulkSelection();});
+clearSelection.addEventListener("click",()=>{state.bulk.clear();updateBulkSelection();});
+list.addEventListener("pm-bulk-selection",event=>{state.bulk.set(event.detail.ids,event.detail.checked);updateBulkSelection();});
 
 for (const [id, name] of Object.entries({ "clear-filter": "x", problems: "circle-alert", settings: "settings", export: "download" })) {
   const button = document.getElementById(id);
@@ -46,6 +63,7 @@ const render = () => {
   clear.hidden = !state.filter;
   updateGroupToggle();
   list.update(state);
+  updateBulkSelection();
 };
 function setFilter(value) {
   filter.value = value;
@@ -62,7 +80,7 @@ toggleGroups.addEventListener("click", () => { state.toggleGroups(); render(); }
 document.getElementById("editor")?.addEventListener("click", () => bridge.send({ type: "editor" }));
 document.getElementById("sidebar")?.addEventListener("click", () => bridge.send({ type: "sidebar" }));
 document.getElementById("problems").addEventListener("click", () => bridge.send({ type: "problems" }));
-document.getElementById("bulk-repair").addEventListener("click", () => bridge.send({ type: "bulk-repair" }));
+bulkRepair.addEventListener("click", () => { if(state.bulk.count) bridge.send({ type: "bulk-repair", revision:state.snapshot.revision, ids:state.bulk.ids }); });
 document.getElementById("export").addEventListener("click", () => bridge.send({ type: "export" }));
 document.getElementById("settings").addEventListener("click", () => bridge.send({ type: "settings" }));
 list.addEventListener("pm-reference-action", event => bridge.send(event.detail));

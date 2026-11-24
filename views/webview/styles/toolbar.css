@@ -45,3 +45,8 @@
   align-items: center;
 }
 .toolbar button { padding-inline: 5px; }
+
+ .bulk-selection-row { display: grid; grid-template-columns: minmax(0, 1fr) auto var(--pm-checkbox-size); align-items: center; gap: var(--pm-space-1); padding-inline-end: var(--pm-bulk-edge); font-size: .92em; }
+.selection-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pm-space-1); min-inline-size: 0; }
+.bulk-selection-row [role="status"] { color: var(--pm-muted); }
+.checkbox-label { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--pm-space-1); }

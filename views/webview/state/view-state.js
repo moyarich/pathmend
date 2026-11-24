@@ -1,3 +1,4 @@
+import { createBulkSelection } from "./bulk-selection.js";
 import { filterReferences } from "./filter.js";
 
 /** Keep transient diagnostics separate from persisted presentation preferences. */
@@ -8,6 +9,7 @@ export function createViewState(storage) {
   let filter = typeof saved.filter === "string" ? saved.filter : "";
   let severity = TYPES.has(saved.severity) ? saved.severity : "all";
   let snapshot;
+  const bulk = createBulkSelection();
   let options = { fileType: "", rule: "", currentOnly: false, sort: "path", ...saved.options };
   const activeOptions = () => ({ ...options, currentFile: snapshot?.currentFile });
   const collapsed = new Set(Array.isArray(saved.collapsed) ? saved.collapsed : []);
@@ -39,7 +41,8 @@ export function createViewState(storage) {
     get visibleFiles() { return visibleFiles(); },
     setOption(key, value) { if (Object.hasOwn(options, key)) { options = { ...options, [key]: value }; persist(); } },
     get snapshot() { return snapshot; },
-    setSnapshot(value) { snapshot = value; },
+    bulk,
+    setSnapshot(value) { snapshot = value; bulk.reset(value); },
     setFilter(value) { filter = value; persist(); },
     setSeverity(value) { if (TYPES.has(value)) { severity = value; persist(); } },
     isExpanded(path) { return !!filter.trim() || !collapsed.has(path); },

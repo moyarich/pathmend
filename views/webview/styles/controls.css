@@ -32,3 +32,39 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
   outline: 1px solid var(--pm-focus);
   outline-offset: -1px;
 }
+
+:root {
+  --pm-checkbox-size: 16px;
+  --pm-bulk-edge: 4px;
+}
+input[type="checkbox"] {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  inline-size: var(--pm-checkbox-size);
+  block-size: var(--pm-checkbox-size);
+  min-block-size: var(--pm-checkbox-size);
+  padding: 0;
+  margin: 0;
+  flex: none;
+  border: 1px solid var(--vscode-checkbox-border, var(--vscode-input-border, var(--pm-muted)));
+  border-radius: 3px;
+  color: var(--vscode-checkbox-foreground, var(--pm-foreground));
+  background: var(--vscode-checkbox-background, var(--pm-surface));
+  cursor: pointer;
+}
+input[type="checkbox"]:checked::before {
+  content: "";
+  inline-size: 5px;
+  block-size: 9px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+input[type="checkbox"]:indeterminate::before {
+  content: "";
+  inline-size: 8px;
+  block-size: 2px;
+  background: currentColor;
+}
+input[type="checkbox"]:disabled { opacity: .5; cursor: default; }

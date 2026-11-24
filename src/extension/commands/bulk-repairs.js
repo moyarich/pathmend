@@ -5,19 +5,24 @@ const analyzer = require("../../analyzer");
 const { proposeRepairs } = require("../../analyzer/references/propose-repairs");
 
 function createBulkRepairs(runtime, preview) {
-  async function bulkRepair() {
+  async function bulkRepair(references) {
     const warn = message => { void vscode.window.showWarningMessage("PathMend: " + message); return false; };
     const validate = p => analyzer.validateReplacement(p.f.ref, p.chosen,
       analyzer.createGuard(fs, runtime.roots().map(r => r.path)), runtime.state.index) === "valid";
     try {
+      const direct = Array.isArray(references);
+      const findings = runtime.state?.findings || [];
+      const requested = direct ? references.map(ref => findings.find(f => f.file === ref.file && f.line === ref.line && f.col === ref.col && f.code === ref.code)) : findings;
+      if (direct && (!requested.length || requested.some(f => !f?.fix || f.info))) return warn("A selected suggestion is unavailable. Scan again.");
       const candidates = [];
-      for (const f of runtime.state?.findings || []) {
+      for (const f of requested) {
         if (!f.fix) continue;
         const p = await preview.prepare(f, f.fix);
         if (p && p.validation === "valid") candidates.push(p);
       }
+      if (direct && candidates.length !== requested.length) return warn("A selected suggestion could not be verified. Nothing was applied.");
       if (!candidates.length) return warn("No verified suggestions available.");
-      const selected = await vscode.window.showQuickPick(candidates.map(p => ({
+      const selected = direct ? candidates.map(p => ({p})) : await vscode.window.showQuickPick(candidates.map(p => ({
         label: runtime.viewPath(p.f.file) + ":" + (p.f.line + 1),
         description: p.f.ref.display + " → " + p.chosen,
         picked: true, p,
