@@ -57,4 +57,44 @@ describe("Markdown/MDX scanner", () => {
       expect(core.encodeFor(plan[0].ref, "./new name.md")).toBeNull();
     } finally { fs.rmSync(root, { recursive: true, force: true }); }
   });
+  it("rebases outgoing paths and edits incoming links at their post-move locations", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "pathmend-move-"));
+    try {
+      const docs = path.join(root, "docs");
+      fs.mkdirSync(docs);
+      const page = path.join(docs, "page.mdx");
+      const guide = path.join(docs, "guide.md");
+      const demo = path.join(docs, "Demo.tsx");
+      const readme = path.join(root, "README.md");
+      fs.writeFileSync(page, "");
+      fs.writeFileSync(guide, "");
+      fs.writeFileSync(demo, "");
+      const { refs } = core.analyze({
+        configs: [
+          { file: page, text: '[Guide](./guide.md#intro)\nimport Demo from "./Demo"' },
+          { file: readme, text: '[Page](./docs/page.mdx)' },
+        ],
+        roots: [{ path: root, name: "test" }],
+        guard: core.createGuard(fs, [root]), index: new core.FileIndex(),
+      });
+      const destination = path.join(root, "archive", "nested", "page.mdx");
+      const inside = p => core.within(p, root);
+      const plan = core.planRenames(refs, [{ from: page, to: destination }], inside);
+      expect(plan.map(p => [p.file, p.newText])).toEqual([
+        [destination, "../../docs/guide.md"],
+        [destination, "../../docs/Demo"],
+        [readme, "./archive/nested/page.mdx"],
+      ]);
+      expect(plan[0].ref.raw).toBe("./guide.md");
+      const folder = path.join(root, "archive");
+      const folderPlan = core.planRenames(refs, [{ from: docs, to: folder }], inside);
+      expect(folderPlan.map(p => p.newText)).toEqual(["./archive/page.mdx"]);
+      const combined = core.planRenames(refs, [
+        { from: page, to: destination },
+        { from: guide, to: path.join(root, "archive", "guide.md") },
+      ], inside);
+      expect(combined[0].newText).toBe("../guide.md");
+      expect(core.planRenames(refs, [{ from: page, to: path.join(root, "..", "outside.mdx") }], inside)).toEqual([]);
+    } finally { fs.rmSync(root, { recursive: true, force: true }); }
+  });
 });
