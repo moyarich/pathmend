@@ -1,6 +1,6 @@
-import { element } from "../utils/dom.js";
-import { filterReferences } from "../state/filter.js";
-import "./file-group.js";
+import { element } from "../../utils/dom.js";
+import { filterReferences } from "../../state/filter.js";
+import "../file-group/file-group.js";
 
 /** Render the current snapshot, preserving native keyboard and theme behavior. */
 export class ReferenceList extends HTMLElement {

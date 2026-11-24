@@ -1,6 +1,6 @@
-import { element } from "../utils/dom.js";
-import { icon } from "../icons/registry.js";
-import "./reference-card.js";
+import { element } from "../../utils/dom.js";
+import { icon } from "../../icons/registry.js";
+import "../reference-card/reference-card.js";
 
 /** Group references by source file using native disclosure semantics. */
 export class FileGroup extends HTMLElement {

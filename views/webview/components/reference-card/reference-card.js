@@ -1,5 +1,5 @@
-import { element, action } from "../utils/dom.js";
-import { icon } from "../icons/registry.js";
+import { element, action } from "../../utils/dom.js";
+import { icon } from "../../icons/registry.js";
 
 /** Present one diagnostic and emit actions without depending on the VS Code API. */
 export class ReferenceCard extends HTMLElement {

@@ -3,6 +3,6 @@
 @import "./styles/base.css";
 @import "./styles/controls.css";
 @import "./styles/toolbar.css";
-@import "./components/reference-list.css";
-@import "./components/file-group.css";
-@import "./components/reference-card.css";
+@import "./components/reference-list/reference-list.css";
+@import "./components/file-group/file-group.css";
+@import "./components/reference-card/reference-card.css";

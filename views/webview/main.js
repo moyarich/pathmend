@@ -1,6 +1,6 @@
 import { createBridge } from "./api/bridge.js";
 import { createViewState } from "./state/view-state.js";
-import "./components/reference-list.js";
+import "./components/reference-list/reference-list.js";
 import { icon } from "./icons/registry.js";
 
 const bridge = createBridge(acquireVsCodeApi());
