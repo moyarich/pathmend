@@ -21,7 +21,7 @@ npm test
 npm run dev
 ```
 
-Launches an isolated VS Code Extension Development Host with the current PathMend source and a disposable copy of the sample test workspace. It uses the existing `@vscode/test-electron` download/cache and respects `VSCODE_EXECUTABLE_PATH` and `VSCODE_TEST_VERSION`. No integration assertions, screenshots, or automated fixes are run. Close the development window to remove the temporary profile and fixture.
+Launches an isolated VS Code Extension Development Host with the current PathMend source and a disposable copy of the sample test workspace. It uses the existing `@vscode/test-electron` download/cache and respects `VSCODE_EXECUTABLE_PATH` and `VSCODE_TEST_VERSION`. No integration assertions, screenshots, or automated fixes are run. In the default fixture workspace, VS Code npm task detection and the built-in npm and extension manifest editing extensions are disabled to avoid unrelated parser errors on deliberately hostile manifests. Custom workspace launches keep those built-in extensions available. Close the development window to remove the temporary profile and fixture.
 
 The sample workspace includes `docs/markdown-example.md` and `docs/mdx-example.mdx`, with valid and broken Markdown links, images, reference definitions, MDX imports, JSX attributes and code-preview directives. Open either file to exercise diagnostics and suggested fixes (PM012–PM015).
 
@@ -65,7 +65,7 @@ Run the integration tests with:
 node scripts/test/run-vscode-tests.js
 ```
 
-The runner launches an isolated VS Code instance and executes `test/vscode/index.js`. It disables the unrelated built-in `vscode.extension-editing` extension in the test host to avoid manifest parser errors on hostile fixtures. This does not change a user's normal VS Code installation or PathMend's filesystem checks.
+The runner launches an isolated VS Code instance and executes `test/vscode/index.js`. It disables npm task detection (`npm.autoDetect: off`) and the unrelated built-in `vscode.npm` and `vscode.extension-editing` extensions in the test host to avoid manifest parser errors on hostile fixtures. This does not change a user's normal VS Code installation or PathMend's filesystem checks.
 
 Tests cover both **trusted and untrusted workspaces**. The trusted workspace also runs these additional suites:
 

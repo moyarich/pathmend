@@ -27,6 +27,7 @@ async function main() {
     fs.mkdirSync(settingsDir, { recursive: true });
     fs.mkdirSync(extensionsDir, { recursive: true });
     fs.writeFileSync(path.join(settingsDir, "settings.json"), JSON.stringify({
+      ...(!args.length ? { "npm.autoDetect": "off" } : {}),
       "extensions.autoUpdate": false,
       "extensions.autoCheckUpdates": false,
       "telemetry.telemetryLevel": "off",
@@ -42,7 +43,7 @@ async function main() {
       "--user-data-dir", userDir,
       "--extensions-dir", extensionsDir,
       "--disable-extensions",
-      ...(!args.length ? ["--disable-extension", "vscode.extension-editing"] : []),
+      ...(!args.length ? ["--disable-extension", "vscode.extension-editing", "--disable-extension", "vscode.npm"] : []),
       "--skip-welcome", "--skip-release-notes",
       "--extensionDevelopmentPath=" + extensionDir,
       workspace,
