@@ -1,7 +1,7 @@
 "use strict";
 const path = require("node:path");
 const { toPosix, within, isUrl, isGlob, hasControl } = require("../utils/paths");
-const { globToRegex } = require("../utils/glob");
+const { globToRegex, makeMatcher } = require("../utils/glob");
 
 function staticPrefix(abs) {
   const parts = abs.split(path.sep);
@@ -18,13 +18,28 @@ function checkOne(ref, abs, env) {
   if (!root) return { state: "outside", abs };
   const rel = toPosix(path.relative(root, abs));
   if (env.ignored(abs, root)) return { state: "skip", abs };
+  const excluded = makeMatcher(ref.workspaceExclusions || []);
+  const workspaceExcluded = target => excluded(toPosix(path.relative(ref.base, target)));
+  if (!ref.glob && workspaceExcluded(abs)) return { state: "skip", abs };
   if (ref.glob) {
     const prefix = staticPrefix(abs);
     const ps = env.guard.status(prefix);
     if (ps.state === "outside") return { state: "outside", abs };
     if (env.ignored(prefix, root)) return { state: "skip", abs };
     if (ps.state === "missing") return { state: "glob", abs };
-    if (env.index.match(root, globToRegex(rel, ref.glob === "any"), ref.kind)) return { state: "ok", abs, hit: abs };
+    if (ref.needFileIn) {
+      const re = globToRegex(rel, ref.glob === "any");
+      if (!re) return {state:"skip",abs};
+      let matched = false;
+      for (const target of env.index.paths("dir")) {
+        if (!within(target, root) || !re.test(toPosix(path.relative(root,target)))) continue;
+        if (workspaceExcluded(target) || env.ignored(target,root)) continue;
+        matched = true;
+        if (env.guard.status(target).state !== "dir") continue;
+        if (ref.needFileIn.some(name=>env.guard.status(path.join(target,name)).state==="file")) return {state:"ok",abs,hit:abs};
+      }
+      if (!matched && ref.workspaceExclusions?.length) return {state:"skip",abs};
+    } else if (env.index.match(root, globToRegex(rel, ref.glob === "any"), ref.kind)) return { state: "ok", abs, hit: abs };
     return { state: env.index.truncated ? "skip" : "glob", abs };
   }
   if (ref.anywhere) {
