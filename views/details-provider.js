@@ -76,9 +76,8 @@ function renderHtml(cspSource, style, script) {
   <label for="filter">Filter references</label>
   <input id="filter" type="search" placeholder="File, path, rule or message">
   <button id="scan" type="button">Scan workspace</button>
-  <p id="status" role="status" aria-live="polite">Loading references…</p>
 </header>
-<main id="results"></main>
+<main><pm-reference-list><p class="reference-status" role="status">Loading references…</p></pm-reference-list></main>
 <script type="module" src="${script}"></script>
 </body>
 </html>`;

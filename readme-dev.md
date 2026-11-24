@@ -146,7 +146,7 @@ Disabling screenshots does not disable functional testing. The editor and sideba
 
 ### Reference Details webview
 
-The native tree and webview share the model in `views/model.js`. `views/details-provider.js` owns the host lifecycle and validates commands. The browser entry point `views/webview/main.js` wires together the bridge, state and renderer. Filtering and DOM helpers are separate modules; file groups and reference cards live under `views/webview/components/`. Native browser ES modules load directly from extension-owned assets without a bundler.
+The native tree and webview share the model in `views/model.js`. `views/details-provider.js` owns the host lifecycle and validates commands. The browser entry point `views/webview/main.js` wires together the bridge, state and native custom elements. Filtering and DOM helpers are separate modules; `pm-reference-list`, `pm-file-group` and `pm-reference-card` live under `views/webview/components/`. The components use light DOM and shared VS Code theme styles, and emit bubbling custom events rather than calling the extension host directly. Native browser ES modules load directly from extension-owned assets without a bundler.
 
 ### Captured screenshots
 

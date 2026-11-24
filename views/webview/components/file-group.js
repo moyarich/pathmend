@@ -1,16 +1,28 @@
 import { element } from "../dom.js";
-import { referenceCard } from "./reference-card.js";
+import "./reference-card.js";
 
-/** Render a collapsible source-file group. */
-export function fileGroup(file, revision, state, send) {
-  const group = element("details");
-  group.open = state.isExpanded(file.path);
-  group.append(element("summary", file.path + " (" + file.findings.length + ")"));
-  group.addEventListener("toggle", () => {
-    if (group.isConnected) state.setExpanded(file.path, group.open);
-  });
-  for (const finding of file.findings) {
-    group.append(referenceCard(finding, revision, send));
+/** Group references by source file using native disclosure semantics. */
+export class FileGroup extends HTMLElement {
+  update(file, revision, expanded) {
+    const group = element("details");
+    group.open = expanded;
+    group.append(element("summary", file.path + " (" + file.findings.length + ")"));
+    let previous = expanded;
+    group.addEventListener("toggle", () => {
+      if (!group.isConnected || group.open === previous) return;
+      previous = group.open;
+      this.dispatchEvent(new CustomEvent("pm-group-toggle", {
+        bubbles: true,
+        detail: { path: file.path, expanded: group.open },
+      }));
+    });
+    for (const finding of file.findings) {
+      const card = document.createElement("pm-reference-card");
+      card.update(finding, revision);
+      group.append(card);
+    }
+    this.replaceChildren(group);
   }
-  return group;
 }
+
+customElements.define("pm-file-group", FileGroup);

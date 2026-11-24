@@ -24,11 +24,12 @@ button {
 }
 button:hover { background: var(--vscode-button-secondaryHoverBackground); }
 button:focus-visible, input:focus-visible, summary:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
-#status { color: var(--vscode-descriptionForeground); margin: 4px 0 8px; }
+.reference-status { color: var(--vscode-descriptionForeground); margin: 4px 0 8px; }
 details { border-top: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border)); }
 summary { cursor: pointer; padding: 8px 0; font-weight: 600; overflow-wrap: anywhere; }
 article { padding: 8px 0 10px 9px; border-left: 2px solid var(--vscode-editorWarning-foreground); min-width: 0; }
-article + article { margin-top: 4px; }
+pm-reference-list, pm-file-group, pm-reference-card { display: block; min-width: 0; }
+pm-reference-card + pm-reference-card { margin-top: 4px; }
 article.error { border-color: var(--vscode-editorError-foreground); }
 article.information, article.hint { border-color: var(--vscode-editorInfo-foreground); }
 .meta { color: var(--vscode-descriptionForeground); font-size: .9em; }
