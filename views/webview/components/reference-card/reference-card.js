@@ -3,9 +3,13 @@ import { icon } from "../../icons/registry.js";
 
 /** Present one diagnostic and emit actions without depending on the VS Code API. */
 export class ReferenceCard extends HTMLElement {
+  static requestSequence = 0;
+  connectedCallback() { this.resumeValidation?.(); }
   disconnectedCallback() { this.cancelPending?.(); }
   update(f, revision, selected, draft) {
     this.cancelPending?.();
+    this.resumeValidation = undefined;
+    this.receiveReplacement = undefined;
     const card = element("article", undefined, "reference-card " + f.severity);
     if (selected) card.classList.add("selected");
     const meta = element("div", undefined, "card-meta");
@@ -60,12 +64,13 @@ export class ReferenceCard extends HTMLElement {
       };
       const scheduleValidation = () => {
         clearTimeout(validationTimer);
-        const current = ++validationRequest;
+        const current = validationRequest = ++ReferenceCard.requestSequence;
         if (!input.value.trim()) { displayValidation("invalid"); feedback.textContent = ""; return; }
         displayValidation("pending");
         validationTimer = setTimeout(() => { if (this.isConnected) dispatch("validate-replacement", { replacement: input.value, request: current }); }, 180);
       };
-      const ask = type => dispatch(type, { replacement: input.value, request: ++request });
+      this.resumeValidation = scheduleValidation;
+      const ask = type => dispatch(type, { replacement: input.value, request: request = ++ReferenceCard.requestSequence });
       const browse = action("Browse…", () => { clearTimeout(timer); ask("pick-replacement"); });
       browse.classList.add("quiet");
       const schedule = () => { clearTimeout(timer); request++; choices.hidden = true; timer = setTimeout(() => { if (this.isConnected) ask("complete-replacement"); }, 200); };
