@@ -40,7 +40,8 @@
     "workspaceContains:**/*.mdx",
     "onStartupFinished",
     "onView:pathmend.references",
-    "onView:pathmend.referenceDetails"
+    "onView:pathmend.referenceDetails",
+    "onWebviewPanel:pathmend.referenceDetailsEditor"
   ],
   "main": "./src/extension/index.js",
   "icon": "icon.png",
