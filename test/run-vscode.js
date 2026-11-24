@@ -190,7 +190,7 @@ async function launch(executable, mode, extraArgs) {
   const res = JSON.parse(fs.readFileSync(resultFile, "utf8"));
   fs.unlinkSync(resultFile);
   for (const t of res.results) console.log((t.ok ? "PASS " : "FAIL ") + t.name + (t.detail !== undefined ? " :: " + JSON.stringify(t.detail) : ""));
-  if (status !== 0) {
+  if (status !== 0 && !(status === 1 && res.failed > 0)) {
     res.failed += 1;
     res.results.push({ name: "Editor exit status", ok: false, detail: status });
   }

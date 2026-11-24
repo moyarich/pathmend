@@ -501,7 +501,7 @@ async function onDidRename(e) {
     const n = plan.length;
     const old = relPath(plan[0].from);
     const msg = plan.some(p => p.sourceMoved)
-      ? n + " relative path reference" + (n === 1 ? "" : "s") + " need updating after the move - update " + (n === 1 ? "it" : "all") + "?"
+      ? n + " relative path reference" + (n === 1 ? "" : "s") + (n === 1 ? " needs" : " need") + " updating after the move - update " + (n === 1 ? "it" : "all") + "?"
       : n + " path reference" + (n === 1 ? "" : "s") + " still point" + (n === 1 ? "s" : "") + " to " + old + " - update " + (n === 1 ? "it" : "all") + "?";
     state.lastPrompt = msg;
     state.lastPromptDone = Promise.resolve(vscode.window.showInformationMessage(msg, "Update all", "Preview", "Ignore")).then(
