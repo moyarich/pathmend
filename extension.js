@@ -686,6 +686,14 @@ function activate(context) {
     })
   );
   const ready = scan().catch(() => []);
+  // Only the interactive launcher opts in; installed extensions and CI never steal focus.
+  if (context.extensionMode === vscode.ExtensionMode.Development && process.env.PATHMEND_DEV_OPEN_DETAILS === "1") {
+    void ready.then(async () => {
+      if (!state) return;
+      await vscode.commands.executeCommand("workbench.view.extension.pathmend");
+      await openDetails();
+    }).catch(error => console.warn("PathMend development view:", error.message));
+  }
   return {
     ready,
     scan: () => scan(),

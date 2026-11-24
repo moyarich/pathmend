@@ -25,7 +25,7 @@ Launches an isolated VS Code Extension Development Host with the current PathMen
 
 The sample workspace includes `docs/markdown-example.md` and `docs/mdx-example.mdx`, with valid and broken Markdown links, images, reference definitions, MDX imports, JSX attributes and code-preview directives. Open either file to exercise diagnostics and suggested fixes (PM012–PM015).
 
-Open PathMend in the Activity Bar, or use **PathMend: Open Reference Details** from the Command Palette. After source edits, run **Developer: Reload Window** in the development host to load the changes.
+The PathMend Activity Bar container and Reference Details webview open automatically after the initial scan. You can reopen them from the Activity Bar or use **PathMend: Open Reference Details** from the Command Palette. Automatic opening is restricted to the interactive development launcher and does not affect installed extensions or automated integration tests. After source edits, run **Developer: Reload Window** in the development host to load the changes.
 
 To use an existing folder instead of the fixture:
 
