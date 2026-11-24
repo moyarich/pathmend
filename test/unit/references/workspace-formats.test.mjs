@@ -18,7 +18,8 @@ it("checks workspace folder paths, membership and local dependency protocols",()
     {file:path.join(root,"package.json"),text:JSON.stringify({workspaces:["packages/*","!packages/excluded"],dependencies:{ok:"file:./packages/valid",missing:"link:./missing",local:"workspace:./missing",named:"workspace:*",remote:"^1.0.0"}})}
    ];
    const result=analyzer.analyze({configs,roots:[{path:root,name:"test"}],guard:analyzer.createGuard(fs,[root]),index});
-   expect(result.findings.map(f=>f.code).sort()).toEqual(["PM010","PM024","PM026","PM026"]);
+   expect(result.findings.map(f=>f.code).sort()).toEqual(["PM010","PM024","PM026","PM026","PM027"]);
+   expect(result.findings.filter(f=>f.code==="PM027").map(f=>f.ref.raw)).toEqual(["workspace:*"]);
    expect(result.refs.filter(r=>r.code==="PM026").map(r=>r.raw)).toEqual(["./packages/valid","./missing","./missing"]);
  } finally {fs.rmSync(root,{recursive:true,force:true});}
 });
