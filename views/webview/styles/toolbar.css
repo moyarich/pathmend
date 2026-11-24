@@ -45,3 +45,8 @@
   align-items: center;
 }
 .toolbar button { padding-inline: 5px; }
+
+.bulk-selection-row { display:flex; flex-wrap:wrap; align-items:center; gap:2px var(--pm-space-1); font-size:.92em; }
+.bulk-selection-row label { display:inline-flex; align-items:center; gap:4px; }
+.bulk-selection-row [role="status"] { color:var(--pm-muted); }
+.bulk-file-checkbox, .bulk-reference-checkbox, #select-visible { inline-size:14px; block-size:14px; margin:2px; flex:none; accent-color:var(--vscode-checkbox-selectBackground, var(--vscode-button-background)); cursor:pointer; }
