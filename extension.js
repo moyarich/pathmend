@@ -20,6 +20,7 @@ const core = require("./core");
 const { createTreeProvider } = require("./views/tree-provider");
 const { fileGroups, findingDetails } = require("./views/model");
 const { ReferenceDetailsProvider } = require("./views/details-provider");
+const { ReferenceDetailsPanel } = require("./views/details-panel");
 const { createReport } = require("./views/report");
 const { exportResults } = require("./views/export-results");
 
@@ -262,6 +263,7 @@ function viewPath(file) {
 
 let treeProvider = null;
 let detailsProvider = null;
+let detailsPanel = null;
 
 function getGroups() {
   return fileGroups(state ? state.findings : [], viewPath);
@@ -276,6 +278,7 @@ let treeView = null;
 function refreshTree() {
   if (treeProvider) treeProvider.emitter.fire(undefined);
   if (detailsProvider) detailsProvider.refresh();
+  if (detailsPanel) detailsPanel.refresh();
   if (!treeView) return;
   const n = brokenCount();
   treeView.badge = n ? { value: n, tooltip: n + " broken path reference" + (n === 1 ? "" : "s") } : undefined;
@@ -590,11 +593,13 @@ function activate(context) {
     lastPromptDone: null,
   };
   treeProvider = createTreeProvider({ getGroups, getSeverity: () => getConfig().severity, findingDetails: formatFinding });
-  detailsProvider = new ReferenceDetailsProvider(context.extensionUri, {
+  const detailsActions = {
     getGroups, getSeverity: () => getConfig().severity,
     isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
     open: openReference, fix: applyFix,
-  });
+  };
+  detailsProvider = new ReferenceDetailsProvider(context.extensionUri, detailsActions);
+  detailsPanel = new ReferenceDetailsPanel(context.extensionUri, detailsActions);
   treeView = vscode.window.createTreeView(VIEW_ID, { treeDataProvider: treeProvider, showCollapseAll: true });
   const excluded = (uri) => {
     const r = rootFor(path.resolve(uri.fsPath), roots());
@@ -640,15 +645,19 @@ function activate(context) {
     treeView,
     treeView.onDidChangeSelection(event => {
       const f = liveFinding(event.selection[0]);
-      detailsProvider.select(f ? { file: f.file, line: f.line, col: f.col, code: f.code } : null);
+      const ref = f ? { file: f.file, line: f.line, col: f.col, code: f.code } : null;
+      detailsProvider.select(ref);
+      detailsPanel.select(ref);
     }),
     detailsProvider,
+    detailsPanel,
     vscode.window.registerWebviewViewProvider("pathmend.details", detailsProvider),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
     vscode.commands.registerCommand("pathmend.openReference", openReference),
     vscode.commands.registerCommand("pathmend.showReferenceDetails", showReferenceDetails),
     vscode.commands.registerCommand("pathmend.openDetails", openDetails),
+    vscode.commands.registerCommand("pathmend.openDetailsInEditor", () => detailsPanel.reveal()),
     vscode.commands.registerCommand("pathmend.exportResults", exportCurrentResults),
     vscode.commands.registerCommand("pathmend.applyFix", applyFix),
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, { provideCodeActions }, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
@@ -722,6 +731,7 @@ function deactivate() {
   treeView = null;
   treeProvider = null;
   detailsProvider = null;
+  detailsPanel = null;
 }
 
 module.exports = { activate, deactivate };

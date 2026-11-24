@@ -96,6 +96,12 @@
         "title": "Export Results",
         "category": "PathMend",
         "icon": "$(export)"
+      },
+      {
+        "command": "pathmend.openDetailsInEditor",
+        "title": "Open Reference Details in Editor",
+        "category": "PathMend",
+        "icon": "$(open-preview)"
       }
     ],
     "viewsContainers": {
@@ -187,6 +193,16 @@
           "command": "pathmend.exportResults",
           "when": "view == pathmend.details",
           "group": "navigation@2"
+        },
+        {
+          "command": "pathmend.openDetailsInEditor",
+          "when": "view == pathmend.details",
+          "group": "navigation@3"
+        },
+        {
+          "command": "pathmend.openDetailsInEditor",
+          "when": "view == pathmend.references",
+          "group": "2_views@1"
         }
       ],
       "view/item/context": [
@@ -222,6 +238,10 @@
         {
           "command": "pathmend.exportResults",
           "group": "2_actions@2"
+        },
+        {
+          "command": "pathmend.openDetailsInEditor",
+          "group": "1_views@3"
         }
       ]
     },
