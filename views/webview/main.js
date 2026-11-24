@@ -28,7 +28,21 @@ function updateGroupToggle() {
   toggleGroups.setAttribute("aria-label", label);
   toggleGroups.replaceChildren(icon(allExpanded ? "chevrons-down-up" : "chevrons-up-down"));
 }
+const controls = { fileType: document.getElementById("file-type"), rule: document.getElementById("rule"), sort: document.getElementById("sort"), currentOnly: document.getElementById("current-only") };
+for (const [key, control] of Object.entries(controls)) {
+  control.addEventListener("change", () => { state.setOption(key, key === "currentOnly" ? control.checked : control.value); render(); });
+}
+function syncOptions(control, values, label, selected) {
+  const options = [...new Set([...values, ...(selected ? [selected] : [])])].sort();
+  control.replaceChildren(new Option(label, ""), ...options.map(value => new Option(value, value)));
+  control.value = selected;
+}
 const render = () => {
+  const files = state.snapshot?.files || [];
+  syncOptions(controls.fileType, files.map(f => /\.([^./]+)$/.exec(f.path)?.[1]?.toLowerCase()).filter(Boolean), "All file types", state.options.fileType);
+  syncOptions(controls.rule, files.flatMap(f => f.findings.map(r => r.code)), "All rules", state.options.rule);
+  controls.sort.value = state.options.sort;
+  controls.currentOnly.checked = state.options.currentOnly;
   clear.hidden = !state.filter;
   updateGroupToggle();
   list.update(state);
