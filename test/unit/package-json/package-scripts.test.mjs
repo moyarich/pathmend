@@ -54,8 +54,8 @@ describe("isolated script path extraction", () => {
     const command = "npm exec --workspace @scope/playground -- vite build --anything ../../tests/vite.config.js";
     expect(scriptPaths.extractScriptPaths(command, "/workspace", dirs))
       .toEqual([{
-        value: "../../../tests/vite.config.js",
-        offset: command.indexOf("../../../tests/vite.config.js"),
+        value: "../../tests/vite.config.js",
+        offset: command.indexOf("../../tests/vite.config.js"),
         base: "/workspace/packages/playground",
       }]);
     expect(scriptPaths.extractScriptPaths(command, "/workspace", new Map())).toEqual([]);
@@ -203,7 +203,7 @@ describe("package.json script paths", () => {
     const packageData = JSON.parse(fs.readFileSync(manifest, "utf8"));
     const prefix = "npm exec --workspace @moyarich/moyaforge-playground -- vite build --config ";
     packageData.scripts["test:consumer:browser"] =
-      prefix + "../../../vite-consumer-build/vite.config.js";
+      prefix + "../../vite-consumer-build/vite.config.js";
     fs.writeFileSync(manifest, JSON.stringify(packageData, null, 2) + "\n");
 
     const inspect = () => {
@@ -226,13 +226,13 @@ describe("package.json script paths", () => {
       f.ref.label === "package.json scripts.test:consumer:browser");
     expect(finding).toBeDefined();
     expect(finding.code).toBe("PM001");
-    expect(finding.ref.value).toBe("../../../vite-consumer-build/vite.config.js");
+    expect(finding.ref.value).toBe("../../vite-consumer-build/vite.config.js");
     expect(finding.ref.base).toBe(workspaceDir);
     const line = fs.readFileSync(manifest, "utf8").split("\n")[finding.ref.line];
     expect(line.slice(finding.ref.col, finding.ref.endCol)).toBe(finding.ref.value);
 
     packageData.scripts["test:consumer:browser"] =
-      prefix + "../../../tests/vite-consumer-build/vite.config.js";
+      prefix + "../../tests/vite-consumer-build/vite.config.js";
     fs.writeFileSync(manifest, JSON.stringify(packageData, null, 2) + "\n");
     const valid = inspect();
     expect(valid.findings.filter(f =>
@@ -243,7 +243,7 @@ describe("package.json script paths", () => {
       { from: correctConfig, to: renamedConfig },
     ], valid.guard.inside);
     expect(plan).toHaveLength(1);
-    expect(plan[0].newText).toBe("../../../tests/vite-consumer-build/renamed.config.js");
+    expect(plan[0].newText).toBe("../../tests/vite-consumer-build/renamed.config.js");
     fs.renameSync(correctConfig, renamedConfig);
     applyPlan(plan);
     expect(inspect().findings.filter(f =>
