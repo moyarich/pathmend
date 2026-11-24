@@ -72,6 +72,12 @@ class FileIndex {
       (e) => (kind === "dir" ? e.dir : kind === "file" ? !e.dir : true) && (!scopeRel || e.rel.startsWith(scopeRel + "/"))
     );
   }
+  *paths(kind = "any") {
+    for (const [root, entries] of this.roots) {
+      if (kind !== "dir") for (const rel of entries.files) yield path.resolve(root, rel);
+      if (kind !== "file") for (const rel of entries.dirs) yield path.resolve(root, rel);
+    }
+  }
   suggest(root, rel, kind, confineRel) {
     const r = this.roots.get(root);
     if (!r || !rel) return null;

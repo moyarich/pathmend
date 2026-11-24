@@ -68,6 +68,10 @@ Use this view in the sidebar or an editor tab to:
 
 Set the preferred location with `pathmend.referenceDetails.defaultLocation`. The explicit **Open Reference Details in Editor** and **Open Reference Details in Sidebar** commands override that preference.
 
+### Choose a replacement path
+
+Use **Browse…** to select a file or folder using the native VS Code picker. Typing in the replacement field offers matching indexed workspace paths. Only eligible paths within the workspace and reference context are offered; excluded paths are omitted. Suggestions are limited to indexed paths and may not include every file.
+
 ### Apply a suggested path
 
 PathMend looks for the same filename elsewhere in the workspace first, then for similar names. Suggestions preserve the original path conventions where possible.

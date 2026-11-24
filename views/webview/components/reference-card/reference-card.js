@@ -33,16 +33,35 @@ export class ReferenceCard extends HTMLElement {
       fix.classList.add("primary");
       const reset = action("Reset", () => {
         input.value = f.fix ?? "";
+        clearTimeout(timer); request++; choices.hidden = true;
         update();
         input.focus();
       });
       reset.classList.add("quiet");
+      const choices = element("select", undefined, "replacement-choices");
+      choices.hidden = true;
+      choices.setAttribute("aria-label", "Matching workspace paths");
+      let request = 0, timer;
+      const ask = type => dispatch(type, { replacement: input.value, request: ++request });
+      const browse = action("Browse…", () => { clearTimeout(timer); ask("pick-replacement"); });
+      browse.classList.add("quiet");
+      const schedule = () => { clearTimeout(timer); request++; choices.hidden = true; timer = setTimeout(() => { if (this.isConnected) ask("complete-replacement"); }, 200); };
+      this.receiveReplacement = message => {
+        if (message.revision !== revision || message.id !== f.id || message.request !== request) return;
+        if (message.action === "pick-replacement" && typeof message.result === "string") { input.value = message.result; update(); }
+        if (message.action === "complete-replacement" && Array.isArray(message.result)) {
+          choices.replaceChildren(element("option", "Choose a matching path…"));
+          for (const value of message.result) { const option = element("option", value); option.value = value; choices.append(option); }
+          choices.hidden = !message.result.length;
+        }
+      };
+      choices.addEventListener("change", () => { if (choices.selectedIndex > 0) { input.value = choices.value; update(); choices.hidden = true; } });
       const update = () => {
         draft.save(input.value);
         fix.disabled = !input.value.trim();
         reset.disabled = input.value === (f.fix ?? "");
       };
-      input.addEventListener("input", update);
+      input.addEventListener("input", () => { update(); schedule(); });
       input.addEventListener("keydown", event => {
         if (event.key === "Enter" && !fix.disabled) {
           event.preventDefault();
@@ -50,8 +69,8 @@ export class ReferenceCard extends HTMLElement {
         }
       });
       const buttons = element("div", undefined, "suggestion-actions");
-      buttons.append(fix, reset);
-      suggestion.append(label, buttons);
+      buttons.append(fix, reset, browse);
+      suggestion.append(label, choices, buttons);
       update();
       card.append(suggestion);
     }

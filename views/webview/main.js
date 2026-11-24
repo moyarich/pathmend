@@ -56,6 +56,9 @@ list.addEventListener("pm-group-toggle", event => {
   state.setExpanded(path, expanded);
   updateGroupToggle();
 });
+window.addEventListener("message", event => {
+  if (event.data?.type === "replacement-result") for (const card of list.querySelectorAll("pm-reference-card")) card.receiveReplacement?.(event.data);
+});
 bridge.onSnapshot(snapshot => {
   state.setSnapshot(snapshot);
   render();
