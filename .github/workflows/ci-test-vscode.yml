@@ -11,7 +11,7 @@ on:
       - 'package-lock.json'
       - 'test/vscode/**'
       - 'test/fixtures/**'
-      - 'scripts/test/vscode.js'
+      - 'scripts/test/run-vscode-tests.js'
       - 'scripts/utils/**'
       - 'scripts/reporting/**'
       - '.github/workflows/ci-test-vscode.yml'
@@ -23,7 +23,7 @@ on:
       - 'package-lock.json'
       - 'test/vscode/**'
       - 'test/fixtures/**'
-      - 'scripts/test/vscode.js'
+      - 'scripts/test/run-vscode-tests.js'
       - 'scripts/utils/**'
       - 'scripts/reporting/**'
       - '.github/workflows/ci-test-vscode.yml'
@@ -65,7 +65,7 @@ jobs:
         env:
           PM_TEST_RESULTS: ${{ runner.temp }}/vscode-results.json
           PM_DIAGNOSTIC_REPORTS: ${{ runner.temp }}/pathmend-diagnostics
-        run: xvfb-run -a -s "-screen 0 1920x1080x24" node scripts/test/vscode.js
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" node scripts/test/run-vscode-tests.js
       - name: Publish test summary and annotations
         if: always()
         env:

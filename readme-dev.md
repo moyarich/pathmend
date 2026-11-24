@@ -53,7 +53,7 @@ PathMend uses Vitest for automated tests and separate scripts for core diagnosti
 | `npm run test:core`                                         | Test core diagnostics using a sample workspace |
 | `npm run test:vscode`                                   | Run VS Code integration tests                  |
 
-**Note:** `npm test` does not include `scripts/test/core.js` or `scripts/test/vscode.js`. Run these separately when changing core diagnostics, file renaming, or editor behavior.
+**Note:** `npm test` does not include `scripts/test/run-diagnostics-tests.js` or `scripts/test/run-vscode-tests.js`. Run these separately when changing core diagnostics, file renaming, or editor behavior.
 
 To add a Vitest test, create a `*.test.js`, `*.test.mjs`, or `*.spec.*` file.
 
@@ -62,7 +62,7 @@ To add a Vitest test, create a `*.test.js`, `*.test.mjs`, or `*.spec.*` file.
 Run the integration tests with:
 
 ```bash
-node scripts/test/vscode.js
+node scripts/test/run-vscode-tests.js
 ```
 
 The runner launches an isolated VS Code instance and executes `test/vscode/index.js`. It disables the unrelated built-in `vscode.extension-editing` extension in the test host to avoid manifest parser errors on hostile fixtures. This does not change a user's normal VS Code installation or PathMend's filesystem checks.
@@ -113,7 +113,7 @@ By default, `@vscode/test-electron` downloads a VS Code executable and caches it
 You can instead use an existing installation:
 
 ```bash
-VSCODE_EXECUTABLE_PATH=/path/to/vscode/electron node scripts/test/vscode.js
+VSCODE_EXECUTABLE_PATH=/path/to/vscode/electron node scripts/test/run-vscode-tests.js
 ```
 
 To test a specific VS Code version, set `VSCODE_TEST_VERSION`.
@@ -139,7 +139,7 @@ fi
 export VSCODE_EXECUTABLE_PATH
 echo "Using VS Code: $VSCODE_EXECUTABLE_PATH"
 
-PM_SCREENSHOTS=0 node scripts/test/vscode.js
+PM_SCREENSHOTS=0 node scripts/test/run-vscode-tests.js
 ```
 
 Remove `PM_SCREENSHOTS=0` to enable screenshots.
@@ -160,10 +160,10 @@ To capture screenshots in CI, open **Actions → CI - VS Code → Run workflow**
 
 ```bash
 # Integration tests with screenshots
-node scripts/test/vscode.js
+node scripts/test/run-vscode-tests.js
 
 # Functional tests only (no Playwright)
-PM_SCREENSHOTS=0 node scripts/test/vscode.js
+PM_SCREENSHOTS=0 node scripts/test/run-vscode-tests.js
 ```
 
 Disabling screenshots does not disable functional testing. The editor and sidebar still navigate through the same test states.
@@ -238,8 +238,8 @@ Shared workspace inputs live in `test/fixtures/ws/`, isolated unit fixtures in `
 scripts/
 ├── dev/launch.js
 ├── test/
-│   ├── core.js
-│   └── vscode.js
+│   ├── run-diagnostics-tests.js
+│   └── run-vscode-tests.js
 ├── reporting/write-summary.js
 └── utils/resolve-vscode.js
 
@@ -263,7 +263,7 @@ test/
 
 ### Fixture preparation
 
-For `scripts/test/core.js` and `scripts/test/vscode.js`, `test/fixtures/prepare.js`:
+For `scripts/test/run-diagnostics-tests.js` and `scripts/test/run-vscode-tests.js`, `test/fixtures/prepare.js`:
 
 1. Copies `test/fixtures/ws/` into a temporary workspace.
 2. Adds symlinks and other edge cases needed by the tests.

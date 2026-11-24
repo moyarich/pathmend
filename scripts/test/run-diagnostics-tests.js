@@ -1,6 +1,6 @@
 "use strict";
 // Fast Node-level check of core.js against the fixture (no VS Code). The real editor run is
-// test/vscode/index.js. Usage: node scripts/test/core.js <scratch-dir>
+// test/vscode/index.js. Usage: node scripts/test/run-diagnostics-tests.js <scratch-dir>
 const fs = require("fs");
 const path = require("path");
 const { prepare } = require("../../test/fixtures/prepare");

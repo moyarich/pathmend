@@ -413,8 +413,8 @@
     "dev": "node scripts/dev/launch.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:core": "node scripts/test/core.js",
-    "test:vscode": "node scripts/test/vscode.js"
+    "test:core": "node scripts/test/run-diagnostics-tests.js",
+    "test:vscode": "node scripts/test/run-vscode-tests.js"
   },
   "devDependencies": {
     "@vscode/test-electron": "^2.5.2",

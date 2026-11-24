@@ -4,7 +4,7 @@
 // test/vscode/index.js inside it: once trusted (full suite), once in an untrusted workspace
 // (PathMend supports untrusted workspaces, so it must still work there). In the trusted run the
 // test requests meaningful workbench snapshots saved in screenshots/ (outside the temporary workspace).
-// Usage: node scripts/test/vscode.js [tmpBaseDir]
+// Usage: node scripts/test/run-vscode-tests.js [tmpBaseDir]
 
 const fs = require("fs");
 const os = require("os");

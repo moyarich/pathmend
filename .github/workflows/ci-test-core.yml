@@ -29,7 +29,7 @@ jobs:
         id: tests
         env:
           PM_TEST_RESULTS: ${{ runner.temp }}/core-results.json
-        run: node scripts/test/core.js "$RUNNER_TEMP/pathmend-unit"
+        run: node scripts/test/run-diagnostics-tests.js "$RUNNER_TEMP/pathmend-unit"
       - name: Publish test summary and annotations
         if: always()
         env:
