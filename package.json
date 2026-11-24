@@ -355,6 +355,9 @@
               "PM021",
               "PM022",
               "PM023",
+              "PM024",
+              "PM025",
+              "PM026",
               "package-path-not-found",
               "tsconfig-path-not-found",
               "docker-source-not-found",
@@ -377,7 +380,10 @@
               "devcontainer-path-not-found",
               "gitmodule-path-not-found",
               "python-dependency-path-not-found",
-              "yaml-attribute-path-not-found"
+              "yaml-attribute-path-not-found",
+              "workspace-folder-path-not-found",
+              "pnpm-workspace-path-not-found",
+              "local-package-path-not-found"
             ],
             "enumDescriptions": [
               "package-path-not-found: package.json path not found",
@@ -403,6 +409,9 @@
               "gitmodule-path-not-found: Git submodule checkout path not found",
               "python-dependency-path-not-found: Python local dependency path not found",
               "yaml-attribute-path-not-found: Configured YAML local path attribute not found",
+              "workspace-folder-path-not-found: VS Code workspace folder or configuration path not found",
+              "pnpm-workspace-path-not-found: pnpm workspace package path not found",
+              "local-package-path-not-found: Local package dependency path not found",
               "PM001: package.json path not found",
               "PM002: tsconfig / jsconfig path not found",
               "PM003: Dockerfile COPY / ADD source not found",
@@ -425,7 +434,10 @@
               "PM020: Dev container local configuration path not found",
               "PM021: Git submodule checkout path not found",
               "PM022: Python local dependency path not found",
-              "PM023: Configured YAML local path attribute not found"
+              "PM023: Configured YAML local path attribute not found",
+              "PM024: VS Code workspace folder or configuration path not found",
+              "PM025: pnpm workspace package path not found",
+              "PM026: Local package dependency path not found"
             ]
           },
           "default": [],
