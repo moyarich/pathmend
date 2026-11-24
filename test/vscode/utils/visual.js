@@ -68,6 +68,17 @@ async function screenshotView() {
 // here so index.js remains focused on PathMend behavior.
 async function showState(name, ws) {
   switch (name) {
+    case "source-diagnostics":
+      await screenshotEditor(ws, "modern-coverage/entry.ts", 0);
+      await screenshotView();
+      await vscode.commands.executeCommand("workbench.actions.view.problems");
+      break;
+    case "reference-details-editor":
+    case "reference-details-filtered":
+    case "reference-details-collapsed":
+      await vscode.commands.executeCommand("workbench.action.closePanel");
+      await vscode.commands.executeCommand("pathmend.openReferenceDetailsInEditor");
+      break;
     case "diagnostics-panel":
       await screenshotEditor(ws, "Dockerfile", 5);
       await screenshotView();
@@ -123,7 +134,7 @@ async function captureState(cfg, name, ws) {
     await sleep(500);
     await screenshot(cfg, name);
   }
-  if (name === "diagnostics-panel") {
+  if (name === "diagnostics-panel" || name === "source-diagnostics") {
     // The Problems panel should not obscure subsequent editor interactions.
     try {
       await vscode.commands.executeCommand("workbench.action.closePanel");

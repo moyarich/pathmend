@@ -92,6 +92,8 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: pathmend-vscode-screenshots
-          path: screenshots/*.png
+          path: |
+            screenshots/*.png
+            screenshots/manifest.json
           retention-days: 14
           if-no-files-found: warn

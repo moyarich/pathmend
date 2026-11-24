@@ -81,6 +81,11 @@ try {
     lines.push("| Workspace | Passed | Failed |", "| --- | ---: | ---: |");
     for (const mode of ["trusted", "untrusted"]) lines.push("| " + mode + " | " + data[mode].passed + " | " + data[mode].failed + " |");
     lines.push("");
+    if (data.screenshots?.length) {
+      lines.push("### Screenshot checkpoints", "", "| Checkpoint | Result |", "| --- | --- |");
+      for (const shot of data.screenshots) lines.push("| " + safe(shot.name) + " | " + safe(shot.status === "captured" ? "Captured" : shot.reason || shot.status) + " |");
+      lines.push("");
+    }
     failures(["trusted", "untrusted"].flatMap(mode => data[mode].results.map(t => ({ ...t, name: mode + ": " + t.name }))));
   }
 } catch (error) {
