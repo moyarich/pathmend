@@ -29,10 +29,17 @@ jobs:
         id: tests
         env:
           PM_TEST_RESULTS: ${{ runner.temp }}/core-results.json
-        run: node test/unit.js "$RUNNER_TEMP/pathmend-unit"
+        run: node scripts/test/run-diagnostics-tests.js "$RUNNER_TEMP/pathmend-unit"
       - name: Publish test summary and annotations
         if: always()
         env:
           TEST_OUTCOME: ${{ steps.tests.outcome }}
-        run: node test/write-summary.js core "$RUNNER_TEMP/core-results.json"
-
+        run: node scripts/reporting/write-summary.js core "$RUNNER_TEMP/core-results.json"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pathmend-core-results
+          path: ${{ runner.temp }}/core-results.json
+          retention-days: 14
+          if-no-files-found: warn

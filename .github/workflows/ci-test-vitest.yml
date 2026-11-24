@@ -32,4 +32,12 @@ jobs:
         if: always()
         env:
           TEST_OUTCOME: ${{ steps.tests.outcome }}
-        run: node test/write-summary.js vitest "$RUNNER_TEMP/vitest-results.json"
+        run: node scripts/reporting/write-summary.js vitest "$RUNNER_TEMP/vitest-results.json"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pathmend-vitest-results
+          path: ${{ runner.temp }}/vitest-results.json
+          retention-days: 14
+          if-no-files-found: warn

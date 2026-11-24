@@ -39,7 +39,8 @@
     "workspaceContains:**/*.md",
     "workspaceContains:**/*.mdx",
     "onStartupFinished",
-    "onView:pathmend.references"
+    "onView:pathmend.references",
+    "onView:pathmend.referenceDetails"
   ],
   "main": "./extension.js",
   "icon": "icon.png",
@@ -58,26 +59,61 @@
     "commands": [
       {
         "command": "pathmend.scan",
-        "title": "Scan workspace",
+        "title": "Scan Workspace",
         "category": "PathMend",
         "icon": "$(refresh)"
       },
       {
         "command": "pathmend.showBroken",
-        "title": "Show broken references",
+        "title": "Show Broken References",
         "category": "PathMend",
         "icon": "$(list-filter)"
       },
       {
         "command": "pathmend.openReference",
-        "title": "Open reference",
+        "title": "Open Source File",
         "category": "PathMend"
       },
       {
         "command": "pathmend.applyFix",
-        "title": "Apply suggested path",
+        "title": "Apply Suggested Fix",
         "category": "PathMend",
         "icon": "$(lightbulb-autofix)"
+      },
+      {
+        "command": "pathmend.showReferenceDetails",
+        "title": "Show Reference Details",
+        "category": "PathMend"
+      },
+      {
+        "command": "pathmend.openReferenceDetails",
+        "title": "Open Reference Details",
+        "category": "PathMend",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "pathmend.exportResults",
+        "title": "Export Results as JSON",
+        "category": "PathMend",
+        "icon": "$(save)"
+      },
+      {
+        "command": "pathmend.openReferenceDetailsInEditor",
+        "title": "Open Reference Details in Editor",
+        "category": "PathMend",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "pathmend.openSettings",
+        "title": "Open PathMend Settings",
+        "category": "PathMend",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "pathmend.openReferenceDetailsInSidebar",
+        "title": "Open Reference Details in Sidebar",
+        "category": "PathMend",
+        "icon": "$(layout-sidebar-left)"
       }
     ],
     "viewsContainers": {
@@ -92,10 +128,24 @@
     "views": {
       "pathmend": [
         {
+          "id": "pathmend.actions",
+          "name": "Quick Actions",
+          "icon": "media/activity.svg",
+          "contextualTitle": "PathMend"
+        },
+        {
           "id": "pathmend.references",
           "name": "Broken References",
           "icon": "media/activity.svg",
           "contextualTitle": "PathMend"
+        },
+        {
+          "type": "webview",
+          "id": "pathmend.referenceDetails",
+          "name": "Reference Details",
+          "icon": "media/activity.svg",
+          "contextualTitle": "PathMend",
+          "visibility": "collapsed"
         }
       ]
     },
@@ -125,6 +175,10 @@
         {
           "command": "pathmend.applyFix",
           "when": "false"
+        },
+        {
+          "command": "pathmend.showReferenceDetails",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -137,6 +191,36 @@
           "command": "pathmend.scan",
           "when": "view == pathmend.references",
           "group": "navigation@2"
+        },
+        {
+          "command": "pathmend.scan",
+          "when": "view == pathmend.referenceDetails",
+          "group": "navigation@1"
+        },
+        {
+          "command": "pathmend.openReferenceDetails",
+          "when": "view == pathmend.references",
+          "group": "navigation@3"
+        },
+        {
+          "submenu": "pathmend.menu",
+          "when": "view == pathmend.references || view == pathmend.referenceDetails",
+          "group": "1_pathmend"
+        },
+        {
+          "command": "pathmend.exportResults",
+          "when": "view == pathmend.referenceDetails",
+          "group": "navigation@2"
+        },
+        {
+          "command": "pathmend.openReferenceDetailsInEditor",
+          "when": "view == pathmend.referenceDetails",
+          "group": "navigation@3"
+        },
+        {
+          "command": "pathmend.openReferenceDetailsInEditor",
+          "when": "view == pathmend.references",
+          "group": "2_views@1"
         }
       ],
       "view/item/context": [
@@ -149,6 +233,41 @@
           "command": "pathmend.applyFix",
           "when": "view == pathmend.references && viewItem == finding.fixable",
           "group": "1_actions@1"
+        },
+        {
+          "command": "pathmend.showReferenceDetails",
+          "when": "view == pathmend.references && (viewItem == finding || viewItem == finding.fixable)",
+          "group": "1_actions@2"
+        }
+      ],
+      "pathmend.menu": [
+        {
+          "command": "pathmend.showBroken",
+          "group": "1_views@1"
+        },
+        {
+          "command": "pathmend.openReferenceDetails",
+          "group": "1_views@2"
+        },
+        {
+          "command": "pathmend.openReferenceDetailsInEditor",
+          "group": "1_views@4"
+        },
+        {
+          "command": "pathmend.scan",
+          "group": "2_actions@1"
+        },
+        {
+          "command": "pathmend.exportResults",
+          "group": "2_actions@2"
+        },
+        {
+          "command": "pathmend.openSettings",
+          "group": "3_settings@1"
+        },
+        {
+          "command": "pathmend.openReferenceDetailsInSidebar",
+          "group": "1_views@3"
         }
       ]
     },
@@ -325,13 +444,37 @@
             "files"
           ],
           "description": "Path attributes whose quoted values contain comma-separated paths."
+        },
+        "pathmend.referenceDetails.defaultLocation": {
+          "type": "string",
+          "enum": [
+            "sidebar",
+            "editor"
+          ],
+          "enumDescriptions": [
+            "Open Reference Details in the PathMend sidebar.",
+            "Open Reference Details in an editor tab alongside your files."
+          ],
+          "default": "sidebar",
+          "scope": "window",
+          "description": "Default location for opening Reference Details. Explicit sidebar and editor commands override this preference."
         }
       }
-    }
+    },
+    "submenus": [
+      {
+        "id": "pathmend.menu",
+        "label": "PathMend Actions",
+        "icon": "$(ellipsis)"
+      }
+    ]
   },
   "scripts": {
+    "dev": "node scripts/dev/launch.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:core": "node scripts/test/run-diagnostics-tests.js",
+    "test:vscode": "node scripts/test/run-vscode-tests.js"
   },
   "devDependencies": {
     "@vscode/test-electron": "^2.5.2",

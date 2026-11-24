@@ -1,0 +1,15 @@
+.reference-status {
+  color: var(--pm-muted);
+  margin: 0 0 var(--pm-space-1);
+  overflow-wrap: anywhere;
+}
+.reference-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--pm-space-2);
+  padding-block-end: var(--pm-space-2);
+  color: var(--pm-muted);
+  font-size: .92em;
+}
+.reference-groups:empty { display: none; }

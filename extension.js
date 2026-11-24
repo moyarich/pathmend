@@ -17,6 +17,14 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const core = require("./core");
+const { createTreeProvider } = require("./views/tree-provider");
+const { createQuickActionsProvider } = require("./views/quick-actions-provider");
+const { fileGroups, findingDetails } = require("./views/model");
+const { ReferenceDetailsSidebarProvider } = require("./views/reference-details-sidebar-provider");
+const { ReferenceDetailsPanel } = require("./views/reference-details-panel");
+const { createReport } = require("./views/report");
+const { exportResults } = require("./views/export-results");
+const { showErrorDetail, confirmReplacement, promptRenameUpdates } = require("./views/native-dialogs");
 
 const SOURCE = "PathMend";
 const CONFIG_GLOB =
@@ -246,13 +254,6 @@ function updateStatus() {
 // Activity bar view
 // ---------------------------------------------------------------------------
 
-const SEV_THEME = {
-  error: ["error", "problemsErrorIcon.foreground"],
-  warning: ["warning", "problemsWarningIcon.foreground"],
-  information: ["info", "problemsInfoIcon.foreground"],
-  hint: ["lightbulb", undefined],
-};
-
 /** Path shown in the view: workspace-relative, prefixed with the folder name in a multi-root workspace. */
 function viewPath(file) {
   const rs = roots();
@@ -262,57 +263,24 @@ function viewPath(file) {
   return rs.length > 1 ? r.name + "/" + rel : rel;
 }
 
-function fileGroups() {
-  const groups = new Map();
-  for (const f of (state && state.findings) || []) {
-    if (!groups.has(f.file)) groups.set(f.file, []);
-    groups.get(f.file).push(f);
-  }
-  return [...groups.entries()]
-    .map(([file, list]) => ({ type: "file", file, rel: viewPath(file), findings: list.slice().sort((a, b) => a.line - b.line || a.col - b.col) }))
-    .sort((a, b) => a.rel.localeCompare(b.rel));
+let treeProvider = null;
+let referenceDetailsSidebarProvider = null;
+let referenceDetailsPanel = null;
+
+function getGroups() {
+  return fileGroups(state ? state.findings : [], viewPath);
 }
 
-const treeProvider = {
-  emitter: null,
-  get onDidChangeTreeData() {
-    return this.emitter.event;
-  },
-  getChildren(node) {
-    if (!node) return fileGroups();
-    if (node.type === "file") return node.findings.map((f) => ({ type: "finding", f }));
-    return [];
-  },
-  getTreeItem(node) {
-    const C = vscode.TreeItemCollapsibleState;
-    if (node.type === "file") {
-      const broken = node.findings.filter((f) => !f.info).length;
-      const info = node.findings.length - broken;
-      const item = new vscode.TreeItem(node.rel, C.Expanded);
-      item.id = "file:" + node.file;
-      item.resourceUri = vscode.Uri.file(node.file);
-      item.description = (broken ? broken + " broken" : "") + (broken && info ? ", " : "") + (info ? info + " not checked" : "");
-      item.tooltip = node.rel + "\n" + item.description;
-      item.contextValue = "configFile";
-      return item;
-    }
-    const f = node.f;
-    const item = new vscode.TreeItem(f.code + "  " + f.ref.display, C.None);
-    item.description = core.RULES[f.code].description + " (line " + (f.line + 1) + ")";
-    item.tooltip =
-      f.code + " (" + core.RULES[f.code].name + ") " + core.RULES[f.code].description + "\n" + viewPath(f.file) + ":" + (f.line + 1) + "\n\n" + f.message + (f.fix ? '\n\nQuick Fix: did you mean "' + f.fix + '"?' : "");
-    const [icon, color] = f.info ? SEV_THEME.information : SEV_THEME[getConfig().severity] || SEV_THEME.warning;
-    item.iconPath = new vscode.ThemeIcon(icon, color ? new vscode.ThemeColor(color) : undefined);
-    item.contextValue = f.fix ? "finding.fixable" : "finding";
-    item.command = { command: "pathmend.openReference", title: "Open reference", arguments: [{ file: f.file, line: f.line, col: f.col, code: f.code }] };
-    return item;
-  },
-};
+function formatFinding(f) {
+  return findingDetails(f, viewPath);
+}
 
 let treeView = null;
 
 function refreshTree() {
-  if (treeProvider.emitter) treeProvider.emitter.fire(undefined);
+  if (treeProvider) treeProvider.emitter.fire(undefined);
+  if (referenceDetailsSidebarProvider) referenceDetailsSidebarProvider.refresh();
+  if (referenceDetailsPanel) referenceDetailsPanel.refresh();
   if (!treeView) return;
   const n = brokenCount();
   treeView.badge = n ? { value: n, tooltip: n + " broken path reference" + (n === 1 ? "" : "s") } : undefined;
@@ -345,10 +313,45 @@ function confined(file) {
   });
 }
 
+/** Show the complete diagnostic without the single-line tree width constraint. */
+function getReport() {
+  const cfg = getConfig();
+  return createReport(getGroups(), cfg.severity, cfg.enabled, roots().length > 0);
+}
+
+async function exportCurrentResults() {
+  return exportResults(getReport());
+}
+
+async function openReferenceDetailsAt(location, ref = null) {
+  if (!referenceDetailsSidebarProvider || !referenceDetailsPanel) return false;
+  if (location === "editor") {
+    referenceDetailsPanel.select(ref);
+    referenceDetailsPanel.reveal();
+  } else {
+    await referenceDetailsSidebarProvider.reveal(ref);
+  }
+  return true;
+}
+
+function defaultReferenceDetailsLocation() {
+  return vscode.workspace.getConfiguration("pathmend").get("referenceDetails.defaultLocation", "sidebar");
+}
+
+async function openReferenceDetails() {
+  return openReferenceDetailsAt(defaultReferenceDetailsLocation());
+}
+
+async function showReferenceDetails(arg) {
+  const f = liveFinding(arg);
+  if (!f) return false;
+  return openReferenceDetailsAt(defaultReferenceDetailsLocation(), { file: f.file, line: f.line, col: f.col, code: f.code });
+}
+
 async function openReference(arg) {
   const f = liveFinding(arg);
   if (!f) {
-    vscode.window.showWarningMessage("PathMend: that reference is no longer reported. Run PathMend: Scan workspace and try again.");
+    vscode.window.showWarningMessage("PathMend: reference is outdated. Scan again.");
     return false;
   }
   if (!insideWorkspace(f.file) || !confined(f.file)) {
@@ -362,16 +365,16 @@ async function openReference(arg) {
     await vscode.window.showTextDocument(doc, { selection: r, preview: true });
     return true;
   } catch (e) {
-    vscode.window.showWarningMessage("PathMend: could not open " + viewPath(f.file) + ": " + (e && e.message ? e.message : e));
+    void showErrorDetail("Could not open source file.", viewPath(f.file) + "\n\n" + (e?.message || String(e)));
     return false;
   }
 }
 
 /** Replace the broken path with the "Did you mean" suggestion (same edit as the Quick Fix). */
-async function applyFix(arg) {
+async function applyFix(arg, replacement) {
   const f = liveFinding(arg);
   if (!f || !f.fix) {
-    vscode.window.showWarningMessage("PathMend: no fix available for that reference any more. Run PathMend: Scan workspace and try again.");
+    vscode.window.showWarningMessage("PathMend: no fix available. Scan again.");
     return false;
   }
   if (!insideWorkspace(f.file) || !confined(f.file)) {
@@ -385,9 +388,27 @@ async function applyFix(arg) {
     return false;
   }
   const r = new vscode.Range(f.line, f.col, f.line, f.endCol);
-  const text = core.encodeFor(f.ref, f.fix);
+  const chosen = replacement === undefined ? f.fix : replacement;
+  if (replacement !== undefined && chosen !== f.fix) {
+    const validation = core.validateReplacement(f.ref, chosen, core.createGuard(fs, roots().map(r => r.path)), state.index);
+    if (validation === "invalid") {
+      void showErrorDetail("Invalid replacement syntax.", "The replacement cannot be safely represented in this reference.\n\nReplacement:\n" + String(chosen));
+      return false;
+    }
+    if (validation !== "valid") {
+      const version = doc.version;
+      const confirmed = await confirmReplacement(f.ref.display, chosen);
+      if (confirmed !== "Apply Anyway") return false;
+      if (doc.version !== version || liveFinding(arg) !== f || !insideWorkspace(f.file) || !confined(f.file)) {
+        vscode.window.showWarningMessage("PathMend: reference changed. Rescanning.");
+        scheduleScan(0);
+        return false;
+      }
+    }
+  }
+  const text = core.encodeFor(f.ref, chosen);
   if (text === null || doc.getText(r) !== f.ref.raw) {
-    vscode.window.showWarningMessage("PathMend: " + viewPath(f.file) + " changed since the last scan. Rescanning.");
+    vscode.window.showWarningMessage("PathMend: source changed. Rescanning.");
     scheduleScan(0);
     return false;
   }
@@ -498,13 +519,9 @@ async function onDidRename(e) {
   // Ask right away: the plan was made from the scan before the move, so the prompt never waits
   // for the file index or a rescan.
   if (plan.length && cfg.renameUpdates !== "off") {
-    const n = plan.length;
-    const old = relPath(plan[0].from);
-    const msg = plan.some(p => p.sourceMoved)
-      ? n + " relative path reference" + (n === 1 ? "" : "s") + (n === 1 ? " needs" : " need") + " updating after the move - update " + (n === 1 ? "it" : "all") + "?"
-      : n + " path reference" + (n === 1 ? "" : "s") + " still point" + (n === 1 ? "s" : "") + " to " + old + " - update " + (n === 1 ? "it" : "all") + "?";
-    state.lastPrompt = msg;
-    state.lastPromptDone = Promise.resolve(vscode.window.showInformationMessage(msg, "Update all", "Preview", "Ignore")).then(
+    const { message, choice } = promptRenameUpdates(plan.length);
+    state.lastPrompt = message;
+    state.lastPromptDone = Promise.resolve(choice).then(
       (choice) => {
         if (choice === "Update all") return applyPlan(plan, false);
         if (choice === "Preview") return applyPlan(plan, true);
@@ -551,14 +568,14 @@ async function showBroken() {
     return;
   }
   const items = list.map((f) => ({
-    label: (f.info ? "$(info) " : "$(link) ") + f.code + "  " + f.ref.display,
-    description: viewPath(f.file) + ":" + (f.line + 1),
-    detail: f.message + (f.fix ? ' - did you mean "' + f.fix + '"?' : ""),
+    label: (f.info ? "$(info) " : "$(link) ") + f.code + " · " + path.basename(f.file) + ":" + (f.line + 1),
+    description: f.ref.display,
+    detail: viewPath(f.file) + " · " + f.message,
     f,
   }));
-  const pick = await vscode.window.showQuickPick(items, { placeHolder: "Broken path references", matchOnDescription: true, matchOnDetail: true });
+  const pick = await vscode.window.showQuickPick(items, { title: "PathMend: Broken References", placeHolder: "Search by path, file, or rule", matchOnDescription: true, matchOnDetail: true });
   if (!pick) return;
-  await openReference(pick.f);
+  await showReferenceDetails(pick.f);
 }
 
 async function scanCommand() {
@@ -603,7 +620,14 @@ function activate(context) {
     lastPrompt: null,
     lastPromptDone: null,
   };
-  treeProvider.emitter = new vscode.EventEmitter();
+  treeProvider = createTreeProvider({ getGroups, getSeverity: () => getConfig().severity, findingDetails: formatFinding });
+  const referenceDetailsActions = {
+    getGroups, getSeverity: () => getConfig().severity,
+    isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
+    open: openReference, fix: applyFix,
+  };
+  referenceDetailsSidebarProvider = new ReferenceDetailsSidebarProvider(context.extensionUri, referenceDetailsActions);
+  referenceDetailsPanel = new ReferenceDetailsPanel(context.extensionUri, referenceDetailsActions);
   treeView = vscode.window.createTreeView(VIEW_ID, { treeDataProvider: treeProvider, showCollapseAll: true });
   const excluded = (uri) => {
     const r = rootFor(path.resolve(uri.fsPath), roots());
@@ -647,9 +671,25 @@ function activate(context) {
     watcher,
     treeProvider.emitter,
     treeView,
+    treeView.onDidChangeSelection(event => {
+      const f = liveFinding(event.selection[0]);
+      const ref = f ? { file: f.file, line: f.line, col: f.col, code: f.code } : null;
+      referenceDetailsSidebarProvider.select(ref);
+      referenceDetailsPanel.select(ref);
+    }),
+    referenceDetailsSidebarProvider,
+    referenceDetailsPanel,
+    vscode.window.registerTreeDataProvider("pathmend.actions", createQuickActionsProvider()),
+    vscode.window.registerWebviewViewProvider("pathmend.referenceDetails", referenceDetailsSidebarProvider),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
     vscode.commands.registerCommand("pathmend.openReference", openReference),
+    vscode.commands.registerCommand("pathmend.showReferenceDetails", showReferenceDetails),
+    vscode.commands.registerCommand("pathmend.openReferenceDetails", openReferenceDetails),
+    vscode.commands.registerCommand("pathmend.openReferenceDetailsInEditor", () => openReferenceDetailsAt("editor")),
+    vscode.commands.registerCommand("pathmend.openReferenceDetailsInSidebar", () => openReferenceDetailsAt("sidebar")),
+    vscode.commands.registerCommand("pathmend.exportResults", exportCurrentResults),
+    vscode.commands.registerCommand("pathmend.openSettings", () => vscode.commands.executeCommand("workbench.action.openSettings", "pathmend")),
     vscode.commands.registerCommand("pathmend.applyFix", applyFix),
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, { provideCodeActions }, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
     vscode.workspace.onDidSaveTextDocument((d) => {
@@ -686,11 +726,20 @@ function activate(context) {
     })
   );
   const ready = scan().catch(() => []);
+  // Only the interactive launcher opts in; installed extensions and CI never steal focus.
+  if (context.extensionMode === vscode.ExtensionMode.Development && process.env.PATHMEND_DEV_OPEN_REFERENCE_DETAILS === "1") {
+    void ready.then(async () => {
+      if (!state) return;
+      await vscode.commands.executeCommand("workbench.view.extension.pathmend");
+      await openReferenceDetails();
+    }).catch(error => console.warn("PathMend development view:", error.message));
+  }
   return {
     ready,
     scan: () => scan(),
     rebuildIndex: () => refreshIndex(),
     poll: () => refreshIndex(),
+    getReport,
     getFindings: () => (state ? state.findings : []),
     getLastRenamePlan: () => (state ? state.lastPlan : []),
     getLastPrompt: () => (state ? { message: state.lastPrompt, done: state.lastPromptDone } : null),
@@ -699,6 +748,7 @@ function activate(context) {
     getTreeItem: (node) => treeProvider.getTreeItem(node),
     getBadge: () => (treeView && treeView.badge ? treeView.badge.value : 0),
     isViewVisible: () => !!(treeView && treeView.visible),
+    isReferenceDetailsVisible: () => !!(referenceDetailsSidebarProvider && referenceDetailsSidebarProvider.visible),
     getStatusText: () => (state && state.status ? state.status.text : ""),
   };
 }
@@ -710,6 +760,9 @@ function deactivate() {
   }
   state = null;
   treeView = null;
+  treeProvider = null;
+  referenceDetailsSidebarProvider = null;
+  referenceDetailsPanel = null;
 }
 
 module.exports = { activate, deactivate };

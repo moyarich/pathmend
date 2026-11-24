@@ -3,11 +3,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import core from "../../core.js";
-import scriptPaths from "../../package-scripts.js";
+import core from "../../../core.js";
+import scriptPaths from "../../../package-scripts.js";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
-const fixtureManifest = path.resolve(testDirectory, "../fixtures/package-json/package.json");
+const fixtureManifest = path.resolve(testDirectory, "../../fixtures/unit/package-json/package.json");
 let scratch;
 let manifest;
 

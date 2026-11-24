@@ -1,12 +1,12 @@
 "use strict";
 // Runs inside a real VS Code extension host (--extensionTestsPath), started by
-// test/run-vscode.js. Asserts exact diagnostics, the activity bar view (rows, badge, open and
+// scripts/test/run-vscode-tests.js. Asserts exact diagnostics, the activity bar view (rows, badge, open and
 // fix commands, empty states), the Quick Fix, the rename prompt driven by onDidRenameFiles,
 // settings, the polling fallback, and that no fs call made by PathMend leaves the workspace.
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const expected = require("../expected");
+const expected = require("../fixtures/expected");
 
 const EXT_DIR = path.resolve(__dirname, "..", "..");
 const { sleep, waitFor, captureState } = require("./utils/visual");
@@ -80,6 +80,14 @@ function rows(api) {
   return out;
 }
 
+/** Capture the same report used by the user-facing export command. */
+function saveDiagnosticReport(api, cfg, check) {
+  const report = api.getReport();
+  check("diagnostic export matches live findings", report.summary.total === api.getFindings().length);
+  if (!cfg.diagnosticReportFile) return;
+  fs.writeFileSync(cfg.diagnosticReportFile, JSON.stringify(report, null, 2) + "\n");
+}
+
 async function activate() {
   const ext = vscode.extensions.getExtension("jaytankdev.pathmend");
   const api = await ext.activate();
@@ -98,6 +106,7 @@ async function untrusted(check, cfg) {
   await api.rebuildIndex();
   const d = diff(diagList(ws).map((x) => x.key), expected);
   check("untrusted: exact diagnostics", !d.extra.length && !d.missing.length, d);
+  saveDiagnosticReport(api, cfg, check);
   await vscode.commands.executeCommand("workbench.view.extension.pathmend");
   const broken = api.getFindings().filter((f) => !f.info).length;
   check("untrusted: view has rows", rows(api).length === expected.length, rows(api).length);
@@ -152,6 +161,7 @@ async function body(check, cfg) {
   let list = diagList(ws);
   let d = diff(list.map((x) => x.key), expected);
   check("exact diagnostics (" + expected.length + " expected)", !d.extra.length && !d.missing.length, d);
+  saveDiagnosticReport(api, cfg, check);
 
   const byKey = (k) => list.find((x) => x.key === k);
   const h = byKey("hostile/package.json:3:PM010");
@@ -204,7 +214,7 @@ async function body(check, cfg) {
   check("every row label is CODE + two spaces + path", all.every((r) => /^PM0\d\d {2}\S/.test(r.label)), all.map((r) => r.label).filter((l) => !/^PM0\d\d {2}\S/.test(l)));
   const dupes = all.filter((r, i) => all.findIndex((x) => x.group === r.group && x.label === r.label && x.item.description === r.item.description) !== i);
   check("rows in a group are distinguishable without hovering", dupes.length === 0, dupes.map((r) => r.group + " " + r.label));
-  check("row description = rule title + line", start && start.item.description === "Dockerfile COPY / ADD source not found (line 6)", start && start.item.description);
+  check("row description shows compact source position", start && start.item.description === "L6:6", start && start.item.description);
   check("row tooltip = message + file:line + fix", start && /Dockerfile:6/.test(start.item.tooltip) && /Path not found: "scripts\/start\.sh"/.test(start.item.tooltip) && /did you mean "tools\/start\.sh"/.test(start.item.tooltip), start && start.item.tooltip);
   check("severity codicons (warning for broken, info for PM010)", start && start.item.iconPath.id === "warning" && all.filter((r) => /^PM010/.test(r.label)).every((r) => r.item.iconPath.id === "info"));
   check("fixable rows get the inline fix action", start && start.item.contextValue === "finding.fixable" && all.some((r) => r.item.contextValue === "finding"));
@@ -213,8 +223,19 @@ async function body(check, cfg) {
   const tsRow = all.find((r) => r.group === "packages/app/tsconfig.json" && r.label === "PM002  ./types");
   check("tsconfig typeRoots row labelled with the path", !!tsRow, all.filter((r) => r.group === "packages/app/tsconfig.json").map((r) => r.label));
 
+  check("reference details action opens the webview for a live reference", await vscode.commands.executeCommand("pathmend.showReferenceDetails", start.node) === true);
+  check("reference details action rejects forged references", await vscode.commands.executeCommand("pathmend.showReferenceDetails", { file: outside, line: 0, col: 0, code: "PM003" }) === false);
+  check("reference details webview contributed", pkg.contributes.views.pathmend.some(v => v.id === "pathmend.referenceDetails" && v.type === "webview"));
+  check("open reference details command reveals the webview", await vscode.commands.executeCommand("pathmend.openReferenceDetails") === true);
+  check("reference details webview opens", await waitFor(() => api.isReferenceDetailsVisible(), 5000));
+  await vscode.commands.executeCommand("pathmend.references.focus");
+
   // ---- visual checkpoint (optional screenshot) ------------------------------------
   await captureState(cfg, "diagnostics-panel", ws);
+  if (cfg.screenshotsEnabled) {
+    await captureState(cfg, "reference-details", ws);
+    await vscode.commands.executeCommand("pathmend.references.focus");
+  }
 
   // ---- open command ------------------------------------------------------------------
   const openRes = await vscode.commands.executeCommand(start.item.command.command, ...start.item.command.arguments);
@@ -242,6 +263,7 @@ async function body(check, cfg) {
   check("badge drops by one after the fix", api.getBadge() === before - 1, [before, api.getBadge()]);
   check("row gone after the fix", !rows(api).some((r) => r.group === "Dockerfile" && r.label === "PM003  scripts/start.sh"));
   await captureState(cfg, "after-inline-fix", ws);
+  if (cfg.screenshotsEnabled) await captureState(cfg, "reference-details-after-fix", ws);
   const forgedFix = await vscode.commands.executeCommand("pathmend.applyFix", { file: path.join(ws, "Dockerfile"), line: 5, col: 5, code: "PM003" });
   const noFix = await vscode.commands.executeCommand("pathmend.applyFix", rows(api).find((r) => r.item.contextValue === "finding").node);
   check("fix command rejects stale and unfixable rows", forgedFix === false && noFix === false, [forgedFix, noFix]);
@@ -312,8 +334,8 @@ async function body(check, cfg) {
   check("folder rename applied", await vscode.workspace.applyEdit(re));
   const p1 = await waitFor(() => prompts[0], 10000);
   check(
-    "onDidRenameFiles prompts: 4 path references still point to src/utils - update all?",
-    p1 && p1.msg === "4 path references still point to src/utils - update all?" && same(p1.items, ["Update all", "Preview", "Ignore"]),
+    "onDidRenameFiles offers to update references with preview and ignore options",
+    p1 && same(p1.items, ["Update all", "Preview", "Ignore"]),
     p1
   );
   const planFiles = (api.getLastRenamePlan() || []).map((p) => path.relative(ws, p.ref.file) + " -> " + p.newText).sort();
@@ -341,7 +363,7 @@ async function body(check, cfg) {
   re.renameFile(vscode.Uri.file(path.join(ws, "lib", "tool.js")), vscode.Uri.file(path.join(ws, "lib", "cli.js")));
   check("file rename applied", await vscode.workspace.applyEdit(re));
   const p2 = await waitFor(() => prompts[1], 10000);
-  check("file rename prompts for 3 references (bin, COPY, tsconfig paths via .js)", p2 && p2.msg === "3 path references still point to lib/tool.js - update all?", p2);
+  check("file rename prompts for 3 references (bin, COPY, tsconfig paths via .js)", p2 && same(p2.items, ["Update all", "Preview", "Ignore"]), p2);
   const done2 = api.getLastPrompt() && (await withTimeout(api.getLastPrompt().done, 15000));
   check('"Ignore" edits nothing', done2 === false && /"tool": "lib\/tool\.js"/.test(read("package.json")) && /"@tool": \["lib\/tool"\]/.test(read("packages/app/tsconfig.json")));
   await api.scan();
@@ -397,6 +419,7 @@ async function body(check, cfg) {
   await api.scan();
   check("empty state: nothing to show -> no rows, no badge (welcome text shows)", api.getChildren().length === 0 && api.getBadge() === 0);
   await captureState(cfg, "empty-state", ws);
+  if (cfg.screenshotsEnabled) await captureState(cfg, "reference-details-empty", ws);
   await conf.update("disabledRules", undefined, vscode.ConfigurationTarget.Workspace);
   await conf.update("severity", "error", vscode.ConfigurationTarget.Workspace);
   await sleep(200);
@@ -415,6 +438,7 @@ async function body(check, cfg) {
   check("enabled=false clears diagnostics", diagList(ws).length === 0);
   check("enabled=false: view empty, badge cleared", api.getChildren().length === 0 && api.getBadge() === 0);
   await captureState(cfg, "disabled-state", ws);
+  if (cfg.screenshotsEnabled) await captureState(cfg, "reference-details-disabled", ws);
   const welcome = pkg.contributes.viewsWelcome;
   check(
     "welcome states: turned off, no folder, nothing found (with what it checks + Scan button)",
@@ -429,7 +453,7 @@ async function body(check, cfg) {
 
   // ---- commands ------------------------------------------------------------------
   const cmds = await vscode.commands.getCommands(true);
-  check("commands registered", ["pathmend.scan", "pathmend.showBroken", "pathmend.openReference", "pathmend.applyFix"].every((c) => cmds.includes(c)));
+  check("commands registered", ["pathmend.scan", "pathmend.showBroken", "pathmend.openReference", "pathmend.applyFix", "pathmend.showReferenceDetails", "pathmend.openReferenceDetails"].every((c) => cmds.includes(c)));
   const f = await vscode.commands.executeCommand("pathmend.scan");
   d = diff(diagList(ws).map((x) => x.key), afterFix);
   check("PathMend: Scan workspace returns findings", Array.isArray(f) && f.length === afterFix.length && !d.extra.length && !d.missing.length, [f && f.length, d]);

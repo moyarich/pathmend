@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import scanner from "../../markdown.js";
-import core from "../../core.js";
+import scanner from "../../../markdown.js";
+import core from "../../../core.js";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

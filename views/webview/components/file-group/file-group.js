@@ -1,0 +1,38 @@
+import { element } from "../../utils/dom.js";
+import { icon } from "../../icons/registry.js";
+import "../reference-card/reference-card.js";
+
+/** Group references by source file using native disclosure semantics. */
+export class FileGroup extends HTMLElement {
+  update(file, revision, expanded, selectedId, getDraft) {
+    const group = element("details");
+    group.open = expanded;
+    const summary = element("summary", undefined, "file-summary");
+    const chevron = icon("chevron-right");
+    chevron.classList.add("disclosure-icon");
+    summary.append(chevron);
+    const label = element("span", undefined, "group-label");
+    label.append(icon("file-code"), element("span", file.path, "file-path"), element("span", String(file.findings.length), "file-count"));
+    summary.append(label);
+    group.append(summary);
+    let previous = expanded;
+    group.addEventListener("toggle", () => {
+      if (!group.isConnected || group.open === previous) return;
+      previous = group.open;
+      this.dispatchEvent(new CustomEvent("pm-group-toggle", {
+        bubbles: true,
+        detail: { path: file.path, expanded: group.open },
+      }));
+    });
+    const cards = element("div", undefined, "file-references");
+    for (const finding of file.findings) {
+      const card = document.createElement("pm-reference-card");
+      card.update(finding, revision, finding.id === selectedId, getDraft(file, finding));
+      cards.append(card);
+    }
+    group.append(cards);
+    this.replaceChildren(group);
+  }
+}
+
+customElements.define("pm-file-group", FileGroup);

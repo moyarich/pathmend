@@ -4,7 +4,7 @@
 // test/vscode/index.js inside it: once trusted (full suite), once in an untrusted workspace
 // (PathMend supports untrusted workspaces, so it must still work there). In the trusted run the
 // test requests meaningful workbench snapshots saved in screenshots/ (outside the temporary workspace).
-// Usage: node test/run-vscode.js [tmpBaseDir]
+// Usage: node scripts/test/run-vscode-tests.js [tmpBaseDir]
 
 const fs = require("fs");
 const os = require("os");
@@ -22,10 +22,10 @@ if (screenshotsEnabled) {
     console.warn("Playwright unavailable; continuing functional tests without screenshots:", error.message);
   }
 }
-const { downloadAndUnzipVSCode } = require("@vscode/test-electron");
-const { prepare } = require("./prepare");
+const { resolveVSCode } = require("../utils/resolve-vscode");
+const { prepare } = require("../../test/fixtures/prepare");
 
-const extDir = path.resolve(__dirname, "..");
+const extDir = path.resolve(__dirname, "../..");
 // Short paths matter on macOS because VS Code uses Unix-domain IPC sockets.
 const base = fs.realpathSync(fs.mkdtempSync(path.join(process.argv[2] || (process.platform === "darwin" ? "/tmp" : os.tmpdir()), "pm-vscode-")));
 const userDir = path.join(base, "user");
@@ -38,6 +38,8 @@ const cfgFile = path.join(base, "config.json");
 const shotDir = path.join(base, "shots");
 fs.mkdirSync(shotDir);
 const screenshotsDir = path.join(extDir, "screenshots");
+const diagnosticReportDir = path.resolve(process.env.PM_DIAGNOSTIC_REPORTS || path.join(extDir, "test-results", "diagnostics"));
+fs.mkdirSync(diagnosticReportDir, { recursive: true });
 if (screenshotsEnabled) fs.mkdirSync(screenshotsDir, { recursive: true });
 
 
@@ -47,6 +49,7 @@ function writeSettings(trustEnabled) {
     JSON.stringify({
       "security.workspace.trust.enabled": trustEnabled,
       "security.workspace.trust.startupPrompt": "never",
+      "npm.autoDetect": "off",
       "extensions.autoUpdate": false,
       "extensions.autoCheckUpdates": false,
       "telemetry.telemetryLevel": "off",
@@ -58,19 +61,9 @@ function writeSettings(trustEnabled) {
       "window.title": "pathmend-shot ${rootName}",
       "chat.commandCenter.enabled": false,
       "workbench.secondarySideBar.defaultVisibility": "hidden",
+      ...(screenshotsEnabled ? { "window.newWindowDimensions": "maximized" } : {}),
     }, null, 2)
   );
-}
-
-async function resolveVSCode() {
-  // Launch the actual Electron executable, not the code CLI shim, so Chromium
-  // exposes its DevTools endpoint to Playwright (as Nx Console E2E does).
-  const downloaded = process.env.VSCODE_EXECUTABLE_PATH
-    || await downloadAndUnzipVSCode(process.env.VSCODE_TEST_VERSION || undefined);
-  if (fs.existsSync(downloaded)) return downloaded;
-  const macCode = path.join(path.dirname(downloaded), "Code");
-  if (fs.existsSync(macCode)) return macCode;
-  throw new Error("VS Code executable not found: " + downloaded);
 }
 
 async function captureWorkbench(devtoolsUrl, screenshotName) {
@@ -87,6 +80,25 @@ async function captureWorkbench(devtoolsUrl, screenshotName) {
       if (!page) await new Promise((resolve) => setTimeout(resolve, 200));
     }
     if (!page) throw new Error("VS Code workbench page not found");
+    // The webview loads asynchronously in a nested frame. Do not capture a
+    // loading placeholder or an unregistered custom element.
+    if (screenshotName.startsWith("reference-details")) {
+      const ready = async () => {
+        for (const frame of page.frames()) {
+          try {
+            const rendered = await frame.locator("pm-reference-list .reference-status").textContent({ timeout: 200 });
+            if (rendered && !rendered.includes("Loading references")) return true;
+          } catch (_) { /* frame may be initializing or detached */ }
+        }
+        return false;
+      };
+      const until = Date.now() + 8000;
+      let rendered = false;
+      while (Date.now() < until && !(rendered = await ready())) {
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+      if (!rendered) throw new Error("Reference Details webview did not render before capture");
+    }
     const screenshotPath = path.join(screenshotsDir, screenshotName + ".png");
     await page.screenshot({ path: screenshotPath, timeout: 10000, animations: "disabled" });
   } finally {
@@ -97,7 +109,7 @@ async function captureWorkbench(devtoolsUrl, screenshotName) {
 
 async function launch(executable, mode, extraArgs) {
   const fx = prepare(path.join(base, mode, "fx"));
-  fs.writeFileSync(cfgFile, JSON.stringify({ mode, resultFile, shotDir, screenshotsEnabled, ws: fx.ws, outside: fx.outside }));
+  fs.writeFileSync(cfgFile, JSON.stringify({ mode, resultFile, shotDir, screenshotsEnabled, ws: fx.ws, outside: fx.outside, diagnosticReportFile: path.join(diagnosticReportDir, mode + ".json") }));
   const args = [
     "--new-window",
     // Hosted Linux CI lacks a configured Chromium sandbox; opt in only there.
@@ -109,10 +121,12 @@ async function launch(executable, mode, extraArgs) {
     // The built-in extension manifest editor is unrelated to PathMend and can
     // overflow its parser on hostile package.json fixtures in the test workspace.
     "--disable-extension", "vscode.extension-editing",
+    // Npm task detection cannot parse the deliberately hostile manifest fixtures.
+    "--disable-extension", "vscode.npm",
     ...extraArgs,
     "--skip-welcome", "--skip-release-notes",
     "--extensionDevelopmentPath=" + extDir,
-    "--extensionTestsPath=" + path.join(__dirname, "vscode", "index.js"),
+    "--extensionTestsPath=" + path.join(extDir, "test", "vscode", "index.js"),
     fx.ws,
   ];
   console.log(executable + " " + args.join(" "));
