@@ -100,9 +100,18 @@ function renderHtml(cspSource, style, script) {
 </head>
 <body>
 <header>
-  <label for="filter">Filter references</label>
-  <input id="filter" type="search" placeholder="File, path, rule or message">
-  <div class="toolbar"><button id="problems" type="button">Problems</button><button id="settings" type="button">Settings</button></div>
+  <div class="search-row">
+    <label class="sr-only" for="filter">Filter references</label>
+    <input id="filter" type="search" placeholder="Filter references…" autocomplete="off">
+    <button id="clear-filter" class="quiet" type="button" title="Clear filter" aria-label="Clear filter" hidden>×</button>
+  </div>
+  <div class="filter-row">
+    <label class="sr-only" for="severity">Reference type</label>
+    <select id="severity" aria-label="Reference type"><option value="all">All references</option><option value="broken">Broken only</option><option value="info">Not checked</option><option value="fixable">Fixable</option></select>
+    <button id="expand" class="quiet" type="button">Expand all</button>
+    <button id="collapse" class="quiet" type="button">Collapse all</button>
+  </div>
+  <div class="toolbar"><button id="problems" class="quiet" type="button">Problems</button><button id="settings" class="quiet" type="button">Settings</button></div>
 </header>
 <main><pm-reference-list><p class="reference-status" role="status">Loading references…</p></pm-reference-list></main>
 <script type="module" src="${script}"></script>

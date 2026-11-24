@@ -2,29 +2,26 @@ import { element, action } from "../dom.js";
 
 /** Present one diagnostic and emit actions without depending on the VS Code API. */
 export class ReferenceCard extends HTMLElement {
-  update(finding, revision, selected) {
-    const f = finding;
-    const card = element("article", undefined, f.severity);
+  update(f, revision, selected) {
+    const card = element("article", undefined, "reference-card " + f.severity);
     if (selected) card.classList.add("selected");
-    card.append(
-      element("div", f.code + " · " + f.severity + " · L" + f.line + ":" + f.column, "meta"),
-      element("div", f.path, "path"),
-      element("div", f.rule, "meta"),
-      element("p", f.message, "message")
-    );
-    if (f.fix) card.append(element("div", "Suggested path: " + f.fix, "suggestion"));
-    const actions = element("div", undefined, "actions");
+    const meta = element("div", undefined, "card-meta");
+    meta.append(element("span", f.code, "rule-code"), element("span", f.notChecked ? "Not checked" : f.severity, "severity-label"), element("span", "L" + f.line + ":" + f.column, "location"));
     const dispatch = type => this.dispatchEvent(new CustomEvent("pm-reference-action", {
-      bubbles: true,
-      detail: { type, id: f.id, revision },
+      bubbles: true, detail: { type, id: f.id, revision },
     }));
-    actions.append(action("Open reference", () => dispatch("open")));
+    const path = action(f.path, () => dispatch("open"));
+    path.className = "path";
+    path.title = "Open reference at line " + f.line + ", column " + f.column;
+    card.append(meta, path, element("div", f.rule, "rule-title"), element("p", f.message, "message"));
     if (f.fix) {
+      const suggestion = element("div", undefined, "suggestion");
+      suggestion.append(element("span", "Suggested path", "suggestion-label"), element("code", f.fix, "suggestion-path"));
       const fix = action("Apply fix", () => dispatch("fix"));
       fix.classList.add("primary");
-      actions.append(fix);
+      suggestion.append(fix);
+      card.append(suggestion);
     }
-    card.append(actions);
     this.replaceChildren(card);
   }
 }

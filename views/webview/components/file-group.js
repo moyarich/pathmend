@@ -6,7 +6,11 @@ export class FileGroup extends HTMLElement {
   update(file, revision, expanded, selectedId) {
     const group = element("details");
     group.open = expanded;
-    group.append(element("summary", file.path + " (" + file.findings.length + ")"));
+    const summary = element("summary");
+    const label = element("span", undefined, "group-label");
+    label.append(element("span", file.path, "file-path"), element("span", String(file.findings.length), "file-count"));
+    summary.append(label);
+    group.append(summary);
     let previous = expanded;
     group.addEventListener("toggle", () => {
       if (!group.isConnected || group.open === previous) return;

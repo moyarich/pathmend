@@ -33,7 +33,7 @@ function createSnapshot(groups, severity, enabled, hasWorkspace, revision) {
       return {
         id, code: f.code, rule: RULES[f.code].description, alias: RULES[f.code].name,
         path: f.ref.display, message: f.message, fix: f.fix || null,
-        line: f.line + 1, column: f.col + 1, severity: f.info ? "information" : severity,
+        line: f.line + 1, column: f.col + 1, severity: f.info ? "information" : severity, notChecked: !!f.info,
       };
     }),
   }));
