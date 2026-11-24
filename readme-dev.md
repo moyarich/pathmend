@@ -241,7 +241,7 @@ scripts/
 │   ├── core.js
 │   └── vscode.js
 ├── reporting/write-summary.js
-└── utils/vscode.js
+└── utils/resolve-vscode.js
 
 test/
 ├── fixtures/

@@ -6,7 +6,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 const { prepare } = require("../../test/fixtures/prepare");
-const { resolveVSCode } = require("../utils/vscode");
+const { resolveVSCode } = require("../utils/resolve-vscode");
 
 async function main() {
   const args = process.argv.slice(2);

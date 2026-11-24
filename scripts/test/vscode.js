@@ -22,7 +22,7 @@ if (screenshotsEnabled) {
     console.warn("Playwright unavailable; continuing functional tests without screenshots:", error.message);
   }
 }
-const { resolveVSCode } = require("../utils/vscode");
+const { resolveVSCode } = require("../utils/resolve-vscode");
 const { prepare } = require("../../test/fixtures/prepare");
 
 const extDir = path.resolve(__dirname, "../..");
