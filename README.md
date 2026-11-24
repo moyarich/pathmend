@@ -44,19 +44,35 @@ automatically, so `"main": "build/index.js"` is not reported before a build).
 
 ## Rules
 
-| Code      | Alias | Category | Meaning                                                    | Example                                                       |
-| --------- | --- | --- | ---------------------------------------------------------- | ------------------------------------------------------------- |
-| **PM001** | `package-path-not-found` | package | package.json path not found                                | `"bin": { "tool": "bin/tool.js" }` after moving it to `lib/`  |
-| **PM002** | `tsconfig-path-not-found` | typescript | tsconfig / jsconfig path not found                         | `"extends": "./tsconfig.bse.json"`                            |
-| **PM003** | `docker-source-not-found` | docker | Dockerfile COPY / ADD source not found                     | `COPY scripts/start.sh /usr/local/bin/`                       |
-| **PM004** | `compose-path-not-found` | docker | Compose build context / dockerfile not found               | `context: ./services/wrker`                                   |
-| **PM005** | `github-actions-path-not-found` | ci | GitHub Actions path not found                              | `uses: ./.github/actions/setpu`, `run: bash scripts/build.sh` |
-| **PM006** | `codeowners-path-not-found` | ownership | CODEOWNERS path not found                                  | `/docs/guid.md @docs-team`                                    |
-| **PM007** | `launch-path-not-found` | editor | launch.json path not found                                 | `"program": "${workspaceFolder}/src/server.js"`               |
-| **PM008** | `gitlab-include-not-found` | ci | GitLab CI local include not found                          | `- local: ci/templates/tset.yml`                              |
-| **PM009** | `glob-no-matches` | filesystem | Glob matches no files                                      | `"files": ["docs/*.pdf"]`, `COPY config/*.yaml /app/`         |
-| **PM010** | `outside-workspace` | security | Resolves outside the workspace - not checked (Information) | `"main": "/etc/passwd"`, `../../elsewhere`                    |
-| **PM011** | `outside-docker-context` | docker | COPY / ADD source outside the Docker build context         | `COPY ../../src /src` with context `services/api`             |
+| Code | Rule alias | Category | Description |
+| --- | --- | --- | --- |
+| **PM001** | `package-path-not-found` | package | package.json path not found |
+| **PM002** | `tsconfig-path-not-found` | typescript | tsconfig / jsconfig path not found |
+| **PM003** | `docker-source-not-found` | docker | Dockerfile COPY / ADD source not found |
+| **PM004** | `compose-path-not-found` | docker | Compose build context / dockerfile not found |
+| **PM005** | `github-actions-path-not-found` | ci | GitHub Actions path not found |
+| **PM006** | `codeowners-path-not-found` | ownership | CODEOWNERS path not found |
+| **PM007** | `launch-path-not-found` | editor | launch.json path not found |
+| **PM008** | `gitlab-include-not-found` | ci | GitLab CI local include not found |
+| **PM009** | `glob-no-matches` | filesystem | Glob matches no files |
+| **PM010** | `outside-workspace` | security | Resolves outside the workspace - not checked (Information) |
+| **PM011** | `outside-docker-context` | docker | COPY / ADD source outside the Docker build context |
+
+### Rule examples
+
+| Code | Example |
+| --- | --- |
+| **PM001** | `"bin": { "tool": "bin/tool.js" }` after moving it to `lib/` |
+| **PM002** | `"extends": "./tsconfig.bse.json"` |
+| **PM003** | `COPY scripts/start.sh /usr/local/bin/` |
+| **PM004** | `context: ./services/wrker` |
+| **PM005** | `uses: ./.github/actions/setpu`, `run: bash scripts/build.sh` |
+| **PM006** | `/docs/guid.md @docs-team` |
+| **PM007** | `"program": "${workspaceFolder}/src/server.js"` |
+| **PM008** | `- local: ci/templates/tset.yml` |
+| **PM009** | `"files": ["docs/*.pdf"]`, `COPY config/*.yaml /app/` |
+| **PM010** | `"main": "/etc/passwd"`, `../../elsewhere` |
+| **PM011** | `COPY ../../src /src` with context `services/api` |
 
 Rule IDs are stable; descriptive aliases can also be used in `pathmend.disabledRules` (for example, `["PM006", "outside-workspace"]`). Categories and tags describe rules; they are not disable selectors. Most rules use the configured severity; PM010 remains informational. A rule may support suggestions, but actual Quick Fix availability depends on the finding.
 
