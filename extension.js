@@ -456,8 +456,8 @@ async function applyPlan(plan, preview) {
   const touched = new Map();
   let count = 0;
   for (const p of plan) {
-    const file = p.ref.file;
-    if (!insideWorkspace(file)) continue; // edits only inside the workspace
+    const file = p.file || p.ref.file;
+    if (!insideWorkspace(file) || !confined(file)) continue; // edits only inside the workspace
     const uri = vscode.Uri.file(file);
     let doc;
     try {
@@ -500,7 +500,9 @@ async function onDidRename(e) {
   if (plan.length && cfg.renameUpdates !== "off") {
     const n = plan.length;
     const old = relPath(plan[0].from);
-    const msg = n + " path reference" + (n === 1 ? "" : "s") + " still point" + (n === 1 ? "s" : "") + " to " + old + " - update " + (n === 1 ? "it" : "all") + "?";
+    const msg = plan.some(p => p.sourceMoved)
+      ? n + " relative path reference" + (n === 1 ? "" : "s") + " need updating after the move - update " + (n === 1 ? "it" : "all") + "?"
+      : n + " path reference" + (n === 1 ? "" : "s") + " still point" + (n === 1 ? "s" : "") + " to " + old + " - update " + (n === 1 ? "it" : "all") + "?";
     state.lastPrompt = msg;
     state.lastPromptDone = Promise.resolve(vscode.window.showInformationMessage(msg, "Update all", "Preview", "Ignore")).then(
       (choice) => {
