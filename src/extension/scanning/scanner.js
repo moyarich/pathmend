@@ -75,6 +75,7 @@ function createScanner(runtime) {
         exclude: cfg.exclude,
         ignoreReferences: cfg.ignoreReferences,
         disabledRules: cfg.disabledRules,
+        yamlPathAttributes: cfg.yamlPathAttributes,
         mdxPathAttributes: cfg.mdxPathAttributes,
         directivePathAttributes: cfg.directivePathAttributes,
         multiPathAttributes: cfg.multiPathAttributes,
