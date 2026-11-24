@@ -84,6 +84,12 @@
         "command": "pathmend.showReferenceDetails",
         "title": "Show reference details",
         "category": "PathMend"
+      },
+      {
+        "command": "pathmend.openDetails",
+        "title": "Open Reference Details",
+        "category": "PathMend",
+        "icon": "$(open-preview)"
       }
     ],
     "viewsContainers": {
@@ -160,6 +166,16 @@
           "command": "pathmend.scan",
           "when": "view == pathmend.details",
           "group": "navigation@1"
+        },
+        {
+          "command": "pathmend.openDetails",
+          "when": "view == pathmend.references",
+          "group": "navigation@3"
+        },
+        {
+          "submenu": "pathmend.menu",
+          "when": "view == pathmend.references || view == pathmend.details",
+          "group": "1_pathmend"
         }
       ],
       "view/item/context": [
@@ -177,6 +193,20 @@
           "command": "pathmend.showReferenceDetails",
           "when": "view == pathmend.references && (viewItem == finding || viewItem == finding.fixable)",
           "group": "1_actions@2"
+        }
+      ],
+      "pathmend.menu": [
+        {
+          "command": "pathmend.openDetails",
+          "group": "1_views@1"
+        },
+        {
+          "command": "pathmend.showBroken",
+          "group": "1_views@2"
+        },
+        {
+          "command": "pathmend.scan",
+          "group": "2_actions@1"
         }
       ]
     },
@@ -355,7 +385,14 @@
           "description": "Path attributes whose quoted values contain comma-separated paths."
         }
       }
-    }
+    },
+    "submenus": [
+      {
+        "id": "pathmend.menu",
+        "label": "PathMend",
+        "icon": "$(ellipsis)"
+      }
+    ]
   },
   "scripts": {
     "test": "vitest run",

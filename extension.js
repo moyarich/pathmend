@@ -307,6 +307,12 @@ function confined(file) {
 }
 
 /** Show the complete diagnostic without the single-line tree width constraint. */
+async function openDetails() {
+  if (!detailsProvider) return false;
+  await detailsProvider.reveal(null);
+  return true;
+}
+
 async function showReferenceDetails(arg) {
   const f = liveFinding(arg);
   if (!f) return false;
@@ -631,6 +637,7 @@ function activate(context) {
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
     vscode.commands.registerCommand("pathmend.openReference", openReference),
     vscode.commands.registerCommand("pathmend.showReferenceDetails", showReferenceDetails),
+    vscode.commands.registerCommand("pathmend.openDetails", openDetails),
     vscode.commands.registerCommand("pathmend.applyFix", applyFix),
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, { provideCodeActions }, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
     vscode.workspace.onDidSaveTextDocument((d) => {

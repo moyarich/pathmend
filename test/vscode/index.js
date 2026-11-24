@@ -216,7 +216,7 @@ async function body(check, cfg) {
   check("details action opens the webview for a live reference", await vscode.commands.executeCommand("pathmend.showReferenceDetails", start.node) === true);
   check("details action rejects forged references", await vscode.commands.executeCommand("pathmend.showReferenceDetails", { file: outside, line: 0, col: 0, code: "PM003" }) === false);
   check("details webview contributed", pkg.contributes.views.pathmend.some(v => v.id === "pathmend.details" && v.type === "webview"));
-  await vscode.commands.executeCommand("pathmend.details.focus");
+  check("open details command reveals the webview", await vscode.commands.executeCommand("pathmend.openDetails") === true);
   check("details webview opens", await waitFor(() => api.isDetailsVisible(), 5000));
   await vscode.commands.executeCommand("pathmend.references.focus");
 
@@ -443,7 +443,7 @@ async function body(check, cfg) {
 
   // ---- commands ------------------------------------------------------------------
   const cmds = await vscode.commands.getCommands(true);
-  check("commands registered", ["pathmend.scan", "pathmend.showBroken", "pathmend.openReference", "pathmend.applyFix", "pathmend.showReferenceDetails"].every((c) => cmds.includes(c)));
+  check("commands registered", ["pathmend.scan", "pathmend.showBroken", "pathmend.openReference", "pathmend.applyFix", "pathmend.showReferenceDetails", "pathmend.openDetails"].every((c) => cmds.includes(c)));
   const f = await vscode.commands.executeCommand("pathmend.scan");
   d = diff(diagList(ws).map((x) => x.key), afterFix);
   check("PathMend: Scan workspace returns findings", Array.isArray(f) && f.length === afterFix.length && !d.extra.length && !d.missing.length, [f && f.length, d]);

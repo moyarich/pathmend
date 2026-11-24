@@ -165,6 +165,7 @@ PathMend has two views in the same activity bar container: **Broken References**
   VS Code's native tree rows are single-line; long paths may still be shortened visually. Rows with a suggestion have an inline **Apply suggested path** action (the
   same edit as the "Did you mean ...?" Quick Fix). The badge shows the number of broken
   references; the title bar has **Show broken references** and **Scan workspace**.
+- **PathMend: Open Reference Details** - open the multiline webview from the Command Palette, the Broken References toolbar, or the **PathMend** submenu in either view’s `…` menu.
 - **PathMend: Scan workspace** - rebuild the file index and check every config file.
 - **PathMend: Show broken references** - pick a broken reference and jump to it.
 

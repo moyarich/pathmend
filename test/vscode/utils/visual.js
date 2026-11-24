@@ -78,13 +78,13 @@ async function showState(name, ws) {
       await screenshotEditor(ws, "Dockerfile", 5);
       await screenshotView();
       await vscode.commands.executeCommand("workbench.action.closePanel");
-      await vscode.commands.executeCommand("pathmend.details.focus");
+      await vscode.commands.executeCommand("pathmend.openDetails");
       break;
     case "reference-details-empty":
     case "reference-details-disabled":
       await vscode.commands.executeCommand("workbench.action.closeAllEditors");
       await screenshotView();
-      await vscode.commands.executeCommand("pathmend.details.focus");
+      await vscode.commands.executeCommand("pathmend.openDetails");
       break;
     case "after-inline-fix":
       await screenshotEditor(ws, "Dockerfile", 5);
