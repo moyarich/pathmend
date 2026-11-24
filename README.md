@@ -2,13 +2,13 @@
 
 **Find and fix broken file paths before they break your build, package or CI.**
 
-PathMend checks local references in configuration files and Markdown/MDX documents, suggests repairs, and helps update references when files or folders move.
+PathMend checks local file references in source code, configuration files, workspace manifests and Markdown/MDX documents. Find broken paths, review suggested repairs, update references after moves, and scan projects from VS Code or the command line.
 
-Everything runs locally in VS Code — no network requests, telemetry or external commands.
+Scanning runs locally, in VS Code or through the standalone Node.js CLI. No network requests, telemetry or project script execution.
 
 Based on the original [PathMend by Jay Tank](https://github.com/jay-tank/pathmend), with expanded file support, repair workflows and diagnostic views.
 
-[Getting started](#getting-started) · [Supported files](#supported-files) · [Repair references](#repair-references) · [Commands](#commands) · [Rules](#diagnostic-rules) · [Settings](#settings) · [Limitations](#limitations)
+[Getting started](#getting-started) · [CLI](#command-line-scanning) · [Supported files](#supported-files) · [Repair references](#repair-references) · [Export reports](#export-reports) · [Commands](#commands) · [Rules](#diagnostic-rules) · [Settings](#settings) · [Limitations](#limitations)
 
 ## Getting started
 
@@ -40,15 +40,11 @@ A locally installed npm package exposes the `pathmend` command via its `bin` ent
 
 ## Supported files
 
-Workspace configuration checks include `.code-workspace` folder paths and unambiguous task/launch references, `pnpm-workspace.yaml` package patterns, npm/Yarn workspace package manifests, and local `file:`, `link:` and relative `workspace:` dependency paths. Named and version-only `workspace:` dependencies are checked against declared workspace membership; duplicate names are reported. Version range compatibility is not checked. Ambiguous npm script workspace names are skipped. Workspace files must be inside an opened workspace folder; paths outside opened roots are not read.
-
-Development configuration support includes VS Code tasks (literal commands and working directories), devcontainer Dockerfile/context/Compose references, gitmodules checkout paths (diagnostics only), Poetry/uv inline local dependencies in pyproject.toml and opt-in YAML path attributes. Set `pathmend.yaml.pathAttributes` to a list such as `["asset", "source"]` to check explicit `./` and `../` paths in YAML, including recognized configuration files (existing format rules take precedence). Git submodules that are not initialized may report missing checkout paths.
-
-Source scanning also covers CSS/SCSS `url()` and quoted `@import` paths (explicit extensions for SCSS imports), quoted HTML `src`, `href` and simple `srcset` entries, and static relative JS/TS imports and exports, including simple multiline declarations. Dynamic expressions, site-root routes, aliases and remote URLs are excluded. These conservative scanners are not compilers or bundler resolvers.
+PathMend supports the following local references. Dynamic expressions, remote URLs and ambiguous syntax are skipped rather than guessed.
 
 | File type | References checked |
 | --- | --- |
-| `package.json` | `main`, `module`, `types`, `typings`, `browser`, `bin`, `exports`, `files`, `workspaces`, local script entry points |
+| `package.json` | `main`, `module`, `types`, `typings`, `browser`, `bin`, `exports`, `files`, `workspaces`, local script entry points, `file:`, `link:` and `workspace:` dependencies |
 | `tsconfig*.json`, `jsconfig*.json` | Relative `extends`, `files`, `include`, `references`, `baseUrl`, `typeRoots`, `paths` |
 | Dockerfile / Containerfile | `COPY` and `ADD` sources, including JSON form and line continuations |
 | Docker Compose | Build contexts and Dockerfile paths |
@@ -56,8 +52,22 @@ Source scanning also covers CSS/SCSS `url()` and quoted `@import` paths (explici
 | GitLab CI | Local includes, including globs |
 | CODEOWNERS | Literal paths and bare names |
 | `.vscode/launch.json` | Workspace-relative `program` and `cwd` |
+| `.code-workspace` | Folder paths and unambiguous task/launch references |
+| `pnpm-workspace.yaml` | Workspace package patterns and exclusions |
+| `.vscode/tasks.json` | Explicit local commands and working directories |
+| Dev container configuration | Dockerfile, context and Compose file paths |
+| `.gitmodules` | Submodule checkout paths (diagnostics only) |
+| `pyproject.toml` | Poetry/uv inline local dependency paths |
+| YAML | Opt-in local path attributes |
+| CSS / SCSS | `url()` and quoted `@import` (explicit SCSS extensions) |
+| HTML | `src`, `href`, simple `srcset`, including unquoted paths |
+| JavaScript / TypeScript | Static relative imports and exports, including simple multiline declarations |
 | Markdown | Local links, images, reference definitions and configured directive attributes |
 | MDX | Markdown references, static relative imports/exports and configured JSX path attributes |
+
+**Workspace packages:** npm, Yarn and pnpm membership patterns and exclusions are checked; missing named `workspace:` dependencies and duplicate package names are reported. Version range compatibility is not checked. Ambiguous npm script workspace names are skipped. Workspace configuration files must be within opened roots.
+
+**YAML:** set `pathmend.yaml.pathAttributes` to `["asset", "source"]`, for example, to check explicit relative paths in these properties. Existing format-specific rules take precedence. Uninitialized submodules may produce missing-checkout diagnostics.
 
 **How paths are resolved:** package paths are relative to the package directory; TypeScript paths use the effective `baseUrl`; Docker sources use the known build context; Markdown links are relative to their document. Globs must match at least one indexed file. Dynamic expressions, external URLs and unsupported syntax are generally skipped rather than guessed.
 
@@ -77,10 +87,11 @@ The native tree groups diagnostics by source file.
 Use this view in the sidebar or an editor tab to:
 
 - Read fully wrapped messages, source locations and rule descriptions.
-- Search and filter by broken, not checked or fixable status.
+- Search by path, message or rule; filter by status, file type, rule or current file, and sort results.
 - Expand or collapse file groups.
 - Edit suggested paths and reset them to their original suggestion.
-- Export all current diagnostics as JSON, regardless of active filters.
+- Select suggested repairs individually, by file or across visible results.
+- Export all current diagnostics in your chosen format, regardless of active filters.
 
 Set the preferred location with `pathmend.referenceDetails.defaultLocation`. The explicit **Open Reference Details in Editor** and **Open Reference Details in Sidebar** commands override that preference.
 
@@ -90,17 +101,20 @@ Choose **Preview** beside a replacement to compare the current source with the p
 
 ### Bulk repairs
 
-Select individual suggested repairs using their checkboxes, select all visible suggestions in a file using its group checkbox, or use **Select visible fixes**. The selection count includes any selections hidden by filters; clear them with **Clear selection**. A new diagnostic snapshot clears the selection to prevent stale edits. Choose **Bulk repairs** to preview the selected original suggestions (edited replacement drafts remain individual repairs). Review each affected file in the native diff editor, then confirm **Apply all**. PathMend rejects stale or overlapping edits and applies the selection as one workspace edit. Changes remain unsaved so you can review or undo them before saving.
+1. Tick the checkbox on the right of a reference to select its suggested repair.
+2. Use a file group's right-hand checkbox to select its visible suggestions, or **Select visible fixes** to select across filtered results. A partially selected group shows an indeterminate checkbox.
+3. Check the selection count. References hidden by filters remain selected; use **Clear selection** to start over.
+4. Choose **Bulk repairs (N)** to review the native diff for each affected file, then confirm **Apply all**.
 
-Use the file type and rule filters, Current file checkbox, and sort menu to narrow Reference Details. Your filter preferences are retained.
+Only references with an editable suggested replacement can be selected. Bulk repairs use the original suggestions, not manually edited replacement drafts. A refreshed diagnostic snapshot clears the selection. PathMend revalidates every selected repair and rejects stale or overlapping edits. Changes are applied as one workspace edit and remain unsaved for review or undo.
 
-Valid file references can be opened using editor document links. Hover over a broken reference for diagnostic details. Enable `pathmend.editor.codeLens` for inline repair previews, or use **Scan File or Folder References** from Explorer (refreshes the workspace scan and shows results for the selection).
+### Editor navigation and preferences
 
-Reference Details editor tabs are restored when VS Code restores its editors after a restart. The view refreshes diagnostics and retains presentation preferences; restoring a tab does not change the configured default opening location.
+- Open valid local references using editor document links; hover over broken references for details.
+- Enable `pathmend.editor.codeLens` for inline repair previews.
+- Use **Scan File or Folder References** from Explorer to refresh the workspace scan and inspect a selection.
 
-Reference Details renders collapsed groups on demand. PathMend reuses unchanged Markdown/MDX extraction between scans while rechecking target existence and workspace context.
-
-Use **Export** in Reference Details to save the complete report as JSON, SARIF, Markdown, CSV or standalone HTML. SARIF can be used with code-scanning tools; CSV escapes formula-like cell values.
+Reference Details retains filter, sort and disclosure preferences, and restores editor tabs when VS Code restores them. Diagnostics are refreshed on restoration. Collapsed groups render on demand; unchanged Markdown/MDX extraction is reused while target existence and context are rechecked.
 
 ### Choose a replacement path
 
@@ -111,8 +125,8 @@ Use **Browse…** to select a file or folder using the native VS Code picker. Ty
 PathMend looks for the same filename elsewhere in the workspace first, then for similar names. Suggestions preserve the original path conventions where possible.
 
 1. Review or edit the generated suggested path.
-2. Select **Apply fix** (or use **Reset** to restore the suggestion).
-3. Review the live validation message. It distinguishes verified paths, missing targets, wrong file/folder types, outside-workspace or build-context paths, and invalid syntax.
+2. Review the live validation message. It distinguishes verified paths, missing targets, wrong file/folder types, outside-workspace or build-context paths, and invalid syntax.
+3. Select **Apply fix** (or use **Reset** to restore the suggestion).
 4. If the edited target cannot be verified, choose whether to apply it anyway or cancel. Invalid syntax cannot be applied.
 
 Unsafe syntax, stale source edits and edits outside the workspace are blocked. For safely editable literal references without a suggestion, enter a replacement path manually. Glob patterns, unanchored CODEOWNERS names and unsupported edit syntax may still require editing the source directly. The Fixable filter counts generated suggestions.
@@ -129,6 +143,20 @@ When a file or folder moves in VS Code, PathMend can offer updates based on the 
 
 Markdown and MDX also support rebasing resolved local references when the referring document moves. Moves outside VS Code are detected as broken references rather than automatically rewritten.
 
+## Export reports
+
+Choose **Export** in Reference Details (or the export command in the Command Palette), select a format, and choose a destination using the native save dialog. Exports contain the complete diagnostic set, not just filtered or selected references.
+
+| Format | Best for |
+| --- | --- |
+| JSON | Automation and structured diagnostic data |
+| SARIF | CI and code scanning |
+| Markdown | Pull requests and review notes |
+| CSV | Spreadsheets (formula-like values are escaped) |
+| HTML | Standalone, offline report |
+
+The CLI supports the same formats with `--format json`, `sarif`, `md`, `csv` or `html`. Review reports before sharing because they can contain workspace paths.
+
 ## Commands
 
 Search for **PathMend** in the Command Palette.
@@ -140,7 +168,9 @@ Search for **PathMend** in the Command Palette.
 | Open Reference Details in Sidebar | Reveal the sidebar |
 | Scan Workspace | Rebuild the file index and scan |
 | Show Broken References | Search findings and reveal the selected reference |
-| Export Results as JSON | Save the complete diagnostic report |
+| Export Results as JSON | Choose JSON, SARIF, Markdown, CSV or HTML and save the complete report |
+| Scan File or Folder References | Refresh and inspect a selected file or folder |
+| Preview Path Repair | Review a suggested change in the diff editor |
 | Open PathMend Settings | Configure the extension |
 
 Quick Actions provides shortcuts to Reference Details, scanning and settings. The status bar and view badges display broken-reference counts.
@@ -168,6 +198,19 @@ Use a rule code or its descriptive alias in `pathmend.disabledRules`.
 | **PM013** | `mdx-module-not-found` | mdx | MDX import or export path not found |
 | **PM014** | `mdx-attribute-path-not-found` | mdx | MDX JSX attribute path not found |
 | **PM015** | `directive-path-not-found` | markdown | Markdown directive path not found |
+| **PM016** | `stylesheet-path-not-found` | css | Stylesheet asset or import path not found |
+| **PM017** | `html-path-not-found` | html | HTML local resource path not found |
+| **PM018** | `script-module-not-found` | javascript | Static relative script import or export path not found |
+| **PM019** | `task-path-not-found` | editor | VS Code task local path not found |
+| **PM020** | `devcontainer-path-not-found` | editor | Dev container local configuration path not found |
+| **PM021** | `gitmodule-path-not-found` | git | Git submodule checkout path not found |
+| **PM022** | `python-dependency-path-not-found` | python | Python local dependency path not found |
+| **PM023** | `yaml-attribute-path-not-found` | yaml | Configured YAML local path attribute not found |
+| **PM024** | `workspace-folder-path-not-found` | editor | VS Code workspace folder or configuration path not found |
+| **PM025** | `pnpm-workspace-path-not-found` | package | pnpm workspace package path not found |
+| **PM026** | `local-package-path-not-found` | package | Local package dependency path not found |
+| **PM027** | `workspace-package-not-found` | package | Named workspace dependency not found |
+| **PM028** | `duplicate-workspace-package` | package | Duplicate workspace package name |
 
 ## Settings
 
@@ -191,6 +234,7 @@ For example, to open Reference Details in an editor and disable CODEOWNERS diagn
 | `pathmend.reportOutsideWorkspace` | `true` | Report paths outside the workspace. |
 | `pathmend.renameUpdates` | `"prompt"` | Enable or disable rename update prompts. |
 | `pathmend.referenceDetails.defaultLocation` | `"sidebar"` | Choose sidebar or editor. |
+| `pathmend.editor.codeLens` | `false` | Show inline repair preview actions. |
 
 ### Scan scope and limits
 
@@ -202,13 +246,14 @@ For example, to open Reference Details in an editor and disable CODEOWNERS diagn
 | `pathmend.maxIndexedFiles` | `20000` | Limit files indexed for glob matching and suggestions. |
 | `pathmend.maxConfigFileSizeKB` | `512` | Skip larger source files. |
 
-### Markdown and MDX
+### Markdown, MDX and YAML
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
 | `pathmend.mdx.pathAttributes` | `["src", "href"]` | JSX attributes to check. |
 | `pathmend.markdown.directivePathAttributes` | `["component", "code", "files"]` | Directive attributes to check. |
 | `pathmend.markdown.multiPathAttributes` | `["files"]` | Attributes containing multiple comma-separated paths. |
+| `pathmend.yaml.pathAttributes` | `[]` | YAML property names containing explicit relative local paths. |
 
 ## Privacy and safety
 
@@ -228,6 +273,8 @@ Review exported reports before sharing them; diagnostics can contain workspace p
 | Docker | Command-line build contexts are not read; `.dockerignore` is not applied. |
 | Scripts | Only recognizable local paths in supported command positions are checked. Generated files may be reported missing. |
 | Markdown / MDX | Fragments and framework-specific routes are not validated. Complex syntax and escaped or percent-encoded paths are not fully supported. |
+| Workspace packages | Named package existence and duplicate names are checked, not semantic version compatibility. Workspace files outside opened roots are not scanned. |
+| Source files | Static references only; SCSS extensionless partials, complex JS/TS syntax, and framework routes may be skipped. |
 | Large workspaces | Index limits can affect glob matching and suggestions. |
 | Moved source files | Outgoing reference updates in moved configuration files are limited. Markdown and MDX support document rebasing. |
 
