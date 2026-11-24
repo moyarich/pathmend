@@ -31,6 +31,8 @@ export class ReferenceCard extends HTMLElement {
       label.append(input);
       const fix = action("Apply fix", () => dispatch("fix", { replacement: input.value }), "check");
       fix.classList.add("primary");
+      const preview = action("Preview", () => dispatch("preview", { replacement: input.value }));
+      preview.classList.add("quiet");
       const reset = action("Reset", () => {
         input.value = f.fix ?? "";
         clearTimeout(timer); request++; choices.hidden = true;
@@ -51,6 +53,7 @@ export class ReferenceCard extends HTMLElement {
         feedback.textContent = messages[status] || messages.unverified;
         feedback.className = "replacement-validation " + status;
         fix.disabled = !input.value.trim() || status === "invalid" || status === "unavailable" || status === "pending";
+        preview.disabled = fix.disabled;
       };
       const scheduleValidation = () => {
         clearTimeout(validationTimer);
@@ -91,7 +94,7 @@ export class ReferenceCard extends HTMLElement {
         }
       });
       const buttons = element("div", undefined, "suggestion-actions");
-      buttons.append(fix, reset, browse);
+      buttons.append(fix, preview, reset, browse);
       suggestion.append(label, feedback, choices, buttons);
       update();
       card.append(suggestion);

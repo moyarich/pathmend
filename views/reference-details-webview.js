@@ -67,7 +67,7 @@ class ReferenceDetailsWebview {
     if (message.type === "export") return vscode.commands.executeCommand("pathmend.exportResults");
     if (message.type === "settings") return vscode.commands.executeCommand("pathmend.openSettings");
     if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");
-    if (!["open", "fix", "pick-replacement", "complete-replacement", "validate-replacement"].includes(message.type)) return;
+    if (!["open", "fix", "preview", "pick-replacement", "complete-replacement", "validate-replacement"].includes(message.type)) return;
     if (message.revision !== this.revision || typeof message.id !== "string") return;
     const ref = this.references.get(message.id);
     if (!ref) return;
@@ -79,9 +79,9 @@ class ReferenceDetailsWebview {
       if (this.view === view && this.revision === revision) await view.webview.postMessage({ type: "replacement-result", action: message.type, id: message.id, revision, request: message.request, result });
       return;
     }
-    if (message.type === "fix") {
-      if (typeof message.replacement !== "string") return;
-      await this.actions.fix(ref, message.replacement);
+    if (message.type === "fix" || message.type === "preview") {
+      if (typeof message.replacement !== "string" || message.replacement.length > 4096) return;
+      await this.actions[message.type](ref, message.replacement);
     } else {
       await this.actions.open(ref);
     }
