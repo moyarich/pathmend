@@ -49,7 +49,7 @@ class ReferenceDetailsWebview {
     const selected = [...snapshot.references].find(([, ref]) =>
       this.selection && ref.file === this.selection.file && ref.line === this.selection.line &&
       ref.col === this.selection.col && ref.code === this.selection.code);
-    this.view.webview.postMessage({ type: "snapshot", ...snapshot.data, selectedId: selected?.[0] || null }).then(undefined, () => {});
+    this.view.webview.postMessage({ type: "snapshot", ...snapshot.data, selectedId: selected?.[0] || null, currentFile: this.actions.currentFile?.() || null }).then(undefined, () => {});
   }
 
   select(ref) {
@@ -118,6 +118,12 @@ function renderHtml(cspSource, style, script, sidebar) {
     <label class="sr-only" for="severity">Reference type</label>
     <select id="severity" aria-label="Reference type"><option value="all">All references</option><option value="broken">Broken only</option><option value="info">Not checked</option><option value="fixable">Fixable</option></select>
     <button id="toggle-groups" class="quiet icon-button" type="button" title="Collapse all" aria-label="Collapse all" disabled></button>
+  </div>
+  <div class="filter-row">
+    <select id="file-type" aria-label="File type"><option value="">All file types</option></select>
+    <select id="rule" aria-label="Diagnostic rule"><option value="">All rules</option></select>
+    <select id="sort" aria-label="Sort references"><option value="path">File path</option><option value="severity">Severity</option><option value="count">Reference count</option></select>
+    <label><input id="current-only" type="checkbox"> Current file</label>
   </div>
   <div class="toolbar" role="group" aria-label="Reference actions">
     ${sidebar ? '<button id="editor" class="quiet" type="button" title="Open Reference Details in an editor tab alongside your files">Open Reference Details in Editor</button>' : '<button id="sidebar" class="quiet" type="button" title="Show Reference Details in the PathMend sidebar">Open Reference Details in Sidebar</button>'}
