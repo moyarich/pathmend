@@ -554,11 +554,15 @@
     "test:watch": "vitest",
     "test:vscode": "node scripts/test/run-vscode-tests.js",
     "test:diagnostics": "node scripts/test/run-diagnostics-tests.js",
-    "sync:manifest": "node scripts/sync-manifest.js"
+    "sync:manifest": "node scripts/sync-manifest.js",
+    "scan": "node src/cli/index.js"
   },
   "devDependencies": {
     "@vscode/test-electron": "^2.5.2",
     "playwright-core": "^1.56.1",
     "vitest": "^3.2.4"
+  },
+  "bin": {
+    "pathmend": "src/cli/index.js"
   }
 }
