@@ -8,6 +8,7 @@ const format = {
   patterns: ["**/package.json"],
   order: 2,
   rules: {
+    PM026: {name:"local-package-path-not-found",description:"Local package dependency path not found",category:"package",tags:["npm","yarn","pnpm","workspace"],severity:"warning",fixable:true},
     PM001: Object.freeze({
     name: "package-path-not-found",
     description: "package.json path not found",
