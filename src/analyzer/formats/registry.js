@@ -1,6 +1,9 @@
 "use strict";
 const formats = Object.freeze([
   require("./markdown").format,
+  require("./css").format,
+  require("./html").format,
+  require("./javascript").format,
   require("./package-json").format,
   require("./tsconfig").format,
   require("./dockerfile").format,
