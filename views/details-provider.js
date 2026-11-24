@@ -76,7 +76,7 @@ class ReferenceDetailsProvider {
     if (message.type === "ready") { this.ready = true; return this.refresh(); }
     if (!this.view?.visible || !this.ready) return;
     if (message.type === "editor" && this.sidebar) return vscode.commands.executeCommand("pathmend.openDetailsInEditor");
-    if (message.type === "sidebar" && !this.sidebar) return vscode.commands.executeCommand("pathmend.openDetails");
+    if (message.type === "sidebar" && !this.sidebar) return vscode.commands.executeCommand("pathmend.openDetailsInSidebar");
     if (message.type === "export") return vscode.commands.executeCommand("pathmend.exportResults");
     if (message.type === "settings") return vscode.commands.executeCommand("pathmend.openSettings");
     if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");

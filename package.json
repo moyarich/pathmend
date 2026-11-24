@@ -87,9 +87,9 @@
       },
       {
         "command": "pathmend.openDetails",
-        "title": "Open Reference Details in Sidebar",
+        "title": "Open Reference Details",
         "category": "PathMend",
-        "icon": "$(layout-sidebar-left)"
+        "icon": "$(open-preview)"
       },
       {
         "command": "pathmend.exportResults",
@@ -108,6 +108,12 @@
         "title": "Open PathMend Settings",
         "category": "PathMend",
         "icon": "$(gear)"
+      },
+      {
+        "command": "pathmend.openDetailsInSidebar",
+        "title": "Open Reference Details in Sidebar",
+        "category": "PathMend",
+        "icon": "$(layout-sidebar-left)"
       }
     ],
     "viewsContainers": {
@@ -146,7 +152,7 @@
     "viewsWelcome": [
       {
         "view": "pathmend.actions",
-        "contents": "Find and repair broken file references in your workspace.\n[Scan Workspace](command:pathmend.scan)\n[Open Details in Editor](command:pathmend.openDetailsInEditor)\n[Open Details in Sidebar](command:pathmend.openDetails)\n[Export Results as JSON](command:pathmend.exportResults)\n[Settings](command:pathmend.openSettings)"
+        "contents": "Find and repair broken file references in your workspace.\n[Open Reference Details](command:pathmend.openDetails)\n[Scan Workspace](command:pathmend.scan)\n[Open Details in Editor](command:pathmend.openDetailsInEditor)\n[Open Details in Sidebar](command:pathmend.openDetailsInSidebar)\n[Export Results as JSON](command:pathmend.exportResults)\n[Settings](command:pathmend.openSettings)"
       },
       {
         "view": "pathmend.references",
@@ -249,7 +255,7 @@
         },
         {
           "command": "pathmend.openDetailsInEditor",
-          "group": "1_views@3"
+          "group": "1_views@4"
         },
         {
           "command": "pathmend.scan",
@@ -262,6 +268,10 @@
         {
           "command": "pathmend.openSettings",
           "group": "3_settings@1"
+        },
+        {
+          "command": "pathmend.openDetailsInSidebar",
+          "group": "1_views@3"
         }
       ]
     },
@@ -438,6 +448,20 @@
             "files"
           ],
           "description": "Path attributes whose quoted values contain comma-separated paths."
+        },
+        "pathmend.details.defaultLocation": {
+          "type": "string",
+          "enum": [
+            "sidebar",
+            "editor"
+          ],
+          "enumDescriptions": [
+            "Open Reference Details in the PathMend sidebar.",
+            "Open Reference Details in an editor tab alongside your files."
+          ],
+          "default": "sidebar",
+          "scope": "window",
+          "description": "Default location for opening Reference Details. Explicit sidebar and editor commands override this preference."
         }
       }
     },

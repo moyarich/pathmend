@@ -321,17 +321,29 @@ async function exportCurrentResults() {
   return exportResults(getReport());
 }
 
-async function openDetails() {
-  if (!detailsProvider) return false;
-  await detailsProvider.reveal(null);
+async function openDetailsAt(location, ref = null) {
+  if (!detailsProvider || !detailsPanel) return false;
+  if (location === "editor") {
+    detailsPanel.select(ref);
+    detailsPanel.reveal();
+  } else {
+    await detailsProvider.reveal(ref);
+  }
   return true;
+}
+
+function defaultDetailsLocation() {
+  return vscode.workspace.getConfiguration("pathmend").get("details.defaultLocation", "sidebar");
+}
+
+async function openDetails() {
+  return openDetailsAt(defaultDetailsLocation());
 }
 
 async function showReferenceDetails(arg) {
   const f = liveFinding(arg);
   if (!f) return false;
-  await detailsProvider.reveal({ file: f.file, line: f.line, col: f.col, code: f.code });
-  return true;
+  return openDetailsAt(defaultDetailsLocation(), { file: f.file, line: f.line, col: f.col, code: f.code });
 }
 
 async function openReference(arg) {
@@ -661,7 +673,8 @@ function activate(context) {
     vscode.commands.registerCommand("pathmend.openReference", openReference),
     vscode.commands.registerCommand("pathmend.showReferenceDetails", showReferenceDetails),
     vscode.commands.registerCommand("pathmend.openDetails", openDetails),
-    vscode.commands.registerCommand("pathmend.openDetailsInEditor", () => detailsPanel.reveal()),
+    vscode.commands.registerCommand("pathmend.openDetailsInEditor", () => openDetailsAt("editor")),
+    vscode.commands.registerCommand("pathmend.openDetailsInSidebar", () => openDetailsAt("sidebar")),
     vscode.commands.registerCommand("pathmend.exportResults", exportCurrentResults),
     vscode.commands.registerCommand("pathmend.openSettings", () => vscode.commands.executeCommand("workbench.action.openSettings", "pathmend")),
     vscode.commands.registerCommand("pathmend.applyFix", applyFix),

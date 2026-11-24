@@ -25,7 +25,7 @@ Launches an isolated VS Code Extension Development Host with the current PathMen
 
 The sample workspace includes `docs/markdown-example.md` and `docs/mdx-example.mdx`, with valid and broken Markdown links, images, reference definitions, MDX imports, JSX attributes and code-preview directives. Open either file to exercise diagnostics and suggested fixes (PM012–PM015).
 
-The PathMend Activity Bar container and Reference Details webview open automatically after the initial scan. You can reopen them from the Activity Bar or use **PathMend: Open Reference Details in Sidebar** from the Command Palette. Automatic opening is restricted to the interactive development launcher and does not affect installed extensions or automated integration tests. After source edits, run **Developer: Reload Window** in the development host to load the changes.
+The PathMend Activity Bar container and Reference Details webview open automatically after the initial scan. You can reopen them from the Activity Bar or use **PathMend: Open Reference Details** from the Command Palette. Automatic opening is restricted to the interactive development launcher and does not affect installed extensions or automated integration tests. After source edits, run **Developer: Reload Window** in the development host to load the changes.
 
 To use an existing folder instead of the fixture:
 
@@ -169,6 +169,8 @@ PM_SCREENSHOTS=0 node scripts/test/run-vscode-tests.js
 Disabling screenshots does not disable functional testing. The editor and sidebar still navigate through the same test states.
 
 ### Reference Details webview
+
+Set `pathmend.details.defaultLocation` to `sidebar` (default) or `editor` in VS Code Settings. Open Reference Details, Show Reference Details on a tree item, and the interactive development startup respect this preference. Explicit Open in Editor and Open in Sidebar actions override it without changing the setting.
 
 The native Quick Actions view provides labeled buttons for scanning, opening details in either location, exporting JSON and opening settings, even when no broken references exist. Both webview locations offer a button to open the other location.
 
