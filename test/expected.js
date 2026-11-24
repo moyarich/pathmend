@@ -48,6 +48,15 @@ module.exports = [
   ".gitlab-ci.yml:3:PM008", // ci/templates/tset.yml -> ci/templates/test.yml
   ".gitlab-ci.yml:4:PM008", // /ci/missing.yml
   ".gitlab-ci.yml:10:PM009", // ci/none/*.yml
+  // Markdown and MDX documentation
+  "docs/markdown-example.md:4:PM012", // broken link to guide.md
+  "docs/markdown-example.md:6:PM012", // broken image
+  "docs/markdown-example.md:8:PM012", // broken reference definition
+  "docs/mdx-example.mdx:2:PM013", // missing component import
+  "docs/mdx-example.mdx:7:PM012", // broken Markdown link
+  "docs/mdx-example.mdx:10:PM014", // broken JSX src
+  "docs/mdx-example.mdx:13:PM015", // missing directive component
+  "docs/mdx-example.mdx:14:PM015", // missing directive source
   // Hostile fixture: nothing outside the workspace is checked
   "hostile/package.json:3:PM010", // /etc/passwd
   "hostile/package.json:4:PM010", // ../../../etc/passwd

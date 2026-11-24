@@ -23,6 +23,8 @@ npm run dev
 
 Launches an isolated VS Code Extension Development Host with the current PathMend source and a disposable copy of the sample test workspace. It uses the existing `@vscode/test-electron` download/cache and respects `VSCODE_EXECUTABLE_PATH` and `VSCODE_TEST_VERSION`. No integration assertions, screenshots, or automated fixes are run. Close the development window to remove the temporary profile and fixture.
 
+The sample workspace includes `docs/markdown-example.md` and `docs/mdx-example.mdx`, with valid and broken Markdown links, images, reference definitions, MDX imports, JSX attributes and code-preview directives. Open either file to exercise diagnostics and suggested fixes (PM012–PM015).
+
 Open PathMend in the Activity Bar, or use **PathMend: Open Reference Details** from the Command Palette. After source edits, run **Developer: Reload Window** in the development host to load the changes.
 
 To use an existing folder instead of the fixture:
