@@ -68,6 +68,10 @@ Use this view in the sidebar or an editor tab to:
 
 Set the preferred location with `pathmend.referenceDetails.defaultLocation`. The explicit **Open Reference Details in Editor** and **Open Reference Details in Sidebar** commands override that preference.
 
+### Preview a repair
+
+Choose **Preview** beside a replacement to compare the current source with the proposed change in VS Code’s diff editor. Choose **Apply** or **Cancel** after reviewing the diff. Previewing does not write files; existing unsaved edits are preserved.
+
 ### Choose a replacement path
 
 Use **Browse…** to select a file or folder using the native VS Code picker. Typing in the replacement field offers matching indexed workspace paths. Only eligible paths within the workspace and reference context are offered; excluded paths are omitted. Suggestions are limited to indexed paths and may not include every file.
