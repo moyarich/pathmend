@@ -410,11 +410,11 @@
     ]
   },
   "scripts": {
-    "dev": "node test/dev/launch.js",
+    "dev": "node scripts/dev/launch.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:core": "node test/core/run.js",
-    "test:vscode": "node test/vscode/run.js"
+    "test:core": "node scripts/test/core.js",
+    "test:vscode": "node scripts/test/vscode.js"
   },
   "devDependencies": {
     "@vscode/test-electron": "^2.5.2",

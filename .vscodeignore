@@ -8,3 +8,5 @@ test/**
 node_modules/**
 **/*.map
 screenshots/**
+scripts/**
+test-results/**

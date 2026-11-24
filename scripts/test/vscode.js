@@ -4,7 +4,7 @@
 // test/vscode/index.js inside it: once trusted (full suite), once in an untrusted workspace
 // (PathMend supports untrusted workspaces, so it must still work there). In the trusted run the
 // test requests meaningful workbench snapshots saved in screenshots/ (outside the temporary workspace).
-// Usage: node test/vscode/run.js [tmpBaseDir]
+// Usage: node scripts/test/vscode.js [tmpBaseDir]
 
 const fs = require("fs");
 const os = require("os");
@@ -23,7 +23,7 @@ if (screenshotsEnabled) {
   }
 }
 const { resolveVSCode } = require("../utils/vscode");
-const { prepare } = require("../fixtures/prepare");
+const { prepare } = require("../../test/fixtures/prepare");
 
 const extDir = path.resolve(__dirname, "../..");
 // Short paths matter on macOS because VS Code uses Unix-domain IPC sockets.
@@ -123,7 +123,7 @@ async function launch(executable, mode, extraArgs) {
     ...extraArgs,
     "--skip-welcome", "--skip-release-notes",
     "--extensionDevelopmentPath=" + extDir,
-    "--extensionTestsPath=" + path.join(__dirname, "index.js"),
+    "--extensionTestsPath=" + path.join(extDir, "test", "vscode", "index.js"),
     fx.ws,
   ];
   console.log(executable + " " + args.join(" "));
