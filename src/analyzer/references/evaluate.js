@@ -81,6 +81,13 @@ function checkOne(ref, abs, env) {
 }
 
 function evaluateRef(ref, env) {
+  if (ref.workspacePackage) {
+    const matches = env.workspacePackages?.resolve(ref.base,ref.workspacePackage);
+    if (!matches) return {state:"skip"};
+    if (matches.length>1) return {state:"workspace-package-duplicate"};
+    if (!matches.length) return {state:env.index.truncated ? "skip" : "workspace-package-missing"};
+    return {state:"skip"}; // symbolic package names are not filesystem repair/rename targets
+  }
   const v = ref.value;
   if (!v || hasControl(v) || isUrl(v) || (ref.fmt !== "wsvar" && v.includes("${"))) return { state: "skip" };
   const bases = ref.bases || [{ dir: ref.base, confine: false }];
