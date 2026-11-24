@@ -1,5 +1,5 @@
 name: CI - VS Code
-run-name: ${{ inputs.screenshots && 'CI - VS Code (screenshots)' || 'CI - VS Code' }} · ${{ github.head_ref || github.ref_name }} · #${{ github.run_number }}
+run-name: ${{ (inputs.screenshots || github.event_name == 'pull_request') && 'CI - VS Code (screenshots)' || 'CI - VS Code' }} · ${{ github.head_ref || github.ref_name }} · #${{ github.run_number }}
 
 on:
   push:
@@ -45,11 +45,11 @@ concurrency:
 
 jobs:
   vscode:
-    name: VS Code integration tests${{ inputs.screenshots && ' (screenshots)' || '' }}
+    name: VS Code integration tests${{ (inputs.screenshots || github.event_name == 'pull_request') && ' (screenshots)' || '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      PM_SCREENSHOTS: ${{ inputs.screenshots && '1' || '0' }}
+      PM_SCREENSHOTS: ${{ (inputs.screenshots || github.event_name == 'pull_request') && '1' || '0' }}
       PM_TEST_NO_SANDBOX: '1'
     steps:
       - uses: actions/checkout@v7
@@ -73,7 +73,7 @@ jobs:
           TEST_OUTCOME: ${{ steps.tests.outcome }}
         run: node test/write-summary.js vscode "$RUNNER_TEMP/vscode-results.json"
       - name: Upload screenshots
-        if: ${{ always() && inputs.screenshots }}
+        if: ${{ always() && (inputs.screenshots || github.event_name == 'pull_request') }}
         uses: actions/upload-artifact@v7
         with:
           name: pathmend-vscode-screenshots

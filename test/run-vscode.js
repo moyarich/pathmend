@@ -88,6 +88,25 @@ async function captureWorkbench(devtoolsUrl, screenshotName) {
       if (!page) await new Promise((resolve) => setTimeout(resolve, 200));
     }
     if (!page) throw new Error("VS Code workbench page not found");
+    // The webview loads asynchronously in a nested frame. Do not capture a
+    // loading placeholder or an unregistered custom element.
+    if (screenshotName.startsWith("reference-details")) {
+      const ready = async () => {
+        for (const frame of page.frames()) {
+          try {
+            const rendered = await frame.locator("pm-reference-list .reference-status").textContent({ timeout: 200 });
+            if (rendered && !rendered.includes("Loading references")) return true;
+          } catch (_) { /* frame may be initializing or detached */ }
+        }
+        return false;
+      };
+      const until = Date.now() + 8000;
+      let rendered = false;
+      while (Date.now() < until && !(rendered = await ready())) {
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+      if (!rendered) throw new Error("Reference Details webview did not render before capture");
+    }
     const screenshotPath = path.join(screenshotsDir, screenshotName + ".png");
     await page.screenshot({ path: screenshotPath, timeout: 10000, animations: "disabled" });
   } finally {

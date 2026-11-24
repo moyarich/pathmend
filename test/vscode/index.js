@@ -270,6 +270,7 @@ async function body(check, cfg) {
   check("badge drops by one after the fix", api.getBadge() === before - 1, [before, api.getBadge()]);
   check("row gone after the fix", !rows(api).some((r) => r.group === "Dockerfile" && r.label === "PM003  scripts/start.sh"));
   await captureState(cfg, "after-inline-fix", ws);
+  if (cfg.screenshotsEnabled) await captureState(cfg, "reference-details-after-fix", ws);
   const forgedFix = await vscode.commands.executeCommand("pathmend.applyFix", { file: path.join(ws, "Dockerfile"), line: 5, col: 5, code: "PM003" });
   const noFix = await vscode.commands.executeCommand("pathmend.applyFix", rows(api).find((r) => r.item.contextValue === "finding").node);
   check("fix command rejects stale and unfixable rows", forgedFix === false && noFix === false, [forgedFix, noFix]);
@@ -425,6 +426,7 @@ async function body(check, cfg) {
   await api.scan();
   check("empty state: nothing to show -> no rows, no badge (welcome text shows)", api.getChildren().length === 0 && api.getBadge() === 0);
   await captureState(cfg, "empty-state", ws);
+  if (cfg.screenshotsEnabled) await captureState(cfg, "reference-details-empty", ws);
   await conf.update("disabledRules", undefined, vscode.ConfigurationTarget.Workspace);
   await conf.update("severity", "error", vscode.ConfigurationTarget.Workspace);
   await sleep(200);
@@ -443,6 +445,7 @@ async function body(check, cfg) {
   check("enabled=false clears diagnostics", diagList(ws).length === 0);
   check("enabled=false: view empty, badge cleared", api.getChildren().length === 0 && api.getBadge() === 0);
   await captureState(cfg, "disabled-state", ws);
+  if (cfg.screenshotsEnabled) await captureState(cfg, "reference-details-disabled", ws);
   const welcome = pkg.contributes.viewsWelcome;
   check(
     "welcome states: turned off, no folder, nothing found (with what it checks + Scan button)",

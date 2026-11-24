@@ -21,7 +21,7 @@ All three CI workflows publish GitHub Actions job summaries and native error ann
 
 Concurrency is scoped by workflow and event. New automatic runs cancel obsolete runs of the same workflow and ref; manual dispatches use a unique run ID so they do not cancel each other or automatic CI, including screenshot captures.
 
-GitHub Actions runs Vitest and the core diagnostics fixture on Node.js 24, plus the trusted and untrusted VS Code integration suites on Ubuntu with a virtual display and screenshots disabled by default. Each suite has an independent workflow: [Vitest](.github/workflows/ci-test-vitest.yml), [core diagnostics](.github/workflows/ci-test-core.yml), and [VS Code integration](.github/workflows/ci-test-vscode.yml).
+GitHub Actions runs Vitest and the core diagnostics fixture on Node.js 24, plus the trusted and untrusted VS Code integration suites on Ubuntu with a virtual display and screenshots enabled on pull requests and disabled on automatic main pushes. Each suite has an independent workflow: [Vitest](.github/workflows/ci-test-vitest.yml), [core diagnostics](.github/workflows/ci-test-core.yml), and [VS Code integration](.github/workflows/ci-test-vscode.yml).
 
 PathMend uses Vitest for automated tests and separate scripts for core diagnostics and VS Code integration testing.
 
@@ -130,7 +130,7 @@ If VS Code is installed elsewhere, update the application path.
 
 The VS Code integration runner can capture screenshots of important editor states for visual debugging.
 
-Screenshots are **enabled by default locally**. In GitHub Actions, screenshots are disabled for automatic runs.
+Screenshots are **enabled by default locally**. In GitHub Actions, screenshots are enabled on pull requests and disabled on automatic main pushes.
 
 To capture screenshots in CI, open **Actions → CI - VS Code → Run workflow**, select a branch, and enable **Capture VS Code screenshots**. When the run finishes, download the `pathmend-vscode-screenshots` artifact from the run summary. Captured PNGs are uploaded even if functional tests fail and are retained for 14 days. If no PNGs were captured, the upload step emits a warning.
 
@@ -150,13 +150,17 @@ The native tree and webview share the model in `views/model.js`. `views/details-
 
 ### Captured screenshots
 
-`reference-details.png` captures the additional multiline Reference Details webview. The native tree remains available.
+The Reference Details webview is captured after its custom elements render, including populated, fixed, empty and disabled states. The native tree remains available.
 
 Screenshots are saved to `screenshots/` at the repository root.
 
 | File                      | Captured state                                       |
 | ------------------------- | ---------------------------------------------------- |
 | `diagnostics-panel.png`   | Initial broken-path diagnostics and Problems panel   |
+| `reference-details.png` | Initial multiline diagnostic messages |
+| `reference-details-after-fix.png` | Webview after applying an inline fix |
+| `reference-details-empty.png` | Webview with no findings |
+| `reference-details-disabled.png` | Webview with diagnostics disabled |
 | `after-inline-fix.png`    | Diagnostics after applying an inline fix             |
 | `after-folder-rename.png` | Updated references after renaming a folder           |
 | `ignored-rename.png`      | Unresolved references after ignoring a rename update |
