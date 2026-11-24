@@ -93,8 +93,7 @@ The dependency-free scanner checks static local references, including link fragm
 site routes, bare module imports, dynamic expressions, frontmatter, fenced code and
 inline code. It is not a full CommonMark or MDX parser: complex syntax, escaped or
 percent-encoded paths and framework-specific resolution are not supported. Only safe
-single-line path replacements are offered; moving the referring document itself is
-not handled by the existing rename planner.
+single-line path replacements are offered; moving the referring Markdown or MDX document rebases its static local paths. Folder moves and simultaneous document/target moves are supported for references resolved before the move.
 
 Configure JSX and directive attributes in VS Code settings:
 
@@ -201,7 +200,7 @@ the window regains focus and once a minute, even where the editor's file watcher
   `python`, `node` and similar). Files created earlier in the same step are reported as missing.
 - Glob matching and "did you mean" use an index of up to `pathmend.maxIndexedFiles` files;
   in a larger workspace unmatched globs are not reported.
-- A rename update is skipped for references inside a config file that was itself moved.
+- A rename update is skipped for references inside a config file that was itself moved; Markdown and MDX documents support rebasing their outgoing references.
 - Out of scope by design: `env_file` and `${VAR}` in Compose files, and script line endings,
   shebangs and executable bits.
 
