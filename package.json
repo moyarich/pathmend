@@ -78,6 +78,11 @@
         "title": "Apply suggested path",
         "category": "PathMend",
         "icon": "$(lightbulb-autofix)"
+      },
+      {
+        "command": "pathmend.showReferenceDetails",
+        "title": "Show reference details",
+        "category": "PathMend"
       }
     ],
     "viewsContainers": {
@@ -125,6 +130,10 @@
         {
           "command": "pathmend.applyFix",
           "when": "false"
+        },
+        {
+          "command": "pathmend.showReferenceDetails",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -149,6 +158,11 @@
           "command": "pathmend.applyFix",
           "when": "view == pathmend.references && viewItem == finding.fixable",
           "group": "1_actions@1"
+        },
+        {
+          "command": "pathmend.showReferenceDetails",
+          "when": "view == pathmend.references && (viewItem == finding || viewItem == finding.fixable)",
+          "group": "1_actions@2"
         }
       ]
     },

@@ -204,7 +204,7 @@ async function body(check, cfg) {
   check("every row label is CODE + two spaces + path", all.every((r) => /^PM0\d\d {2}\S/.test(r.label)), all.map((r) => r.label).filter((l) => !/^PM0\d\d {2}\S/.test(l)));
   const dupes = all.filter((r, i) => all.findIndex((x) => x.group === r.group && x.label === r.label && x.item.description === r.item.description) !== i);
   check("rows in a group are distinguishable without hovering", dupes.length === 0, dupes.map((r) => r.group + " " + r.label));
-  check("row description = rule title + line", start && start.item.description === "Dockerfile COPY / ADD source not found (line 6)", start && start.item.description);
+  check("row description shows compact source position", start && start.item.description === "L6:6", start && start.item.description);
   check("row tooltip = message + file:line + fix", start && /Dockerfile:6/.test(start.item.tooltip) && /Path not found: "scripts\/start\.sh"/.test(start.item.tooltip) && /did you mean "tools\/start\.sh"/.test(start.item.tooltip), start && start.item.tooltip);
   check("severity codicons (warning for broken, info for PM010)", start && start.item.iconPath.id === "warning" && all.filter((r) => /^PM010/.test(r.label)).every((r) => r.item.iconPath.id === "info"));
   check("fixable rows get the inline fix action", start && start.item.contextValue === "finding.fixable" && all.some((r) => r.item.contextValue === "finding"));
@@ -212,6 +212,25 @@ async function body(check, cfg) {
   check("badge = broken references", api.getBadge() === broken() && broken() > 0, [api.getBadge(), broken()]);
   const tsRow = all.find((r) => r.group === "packages/app/tsconfig.json" && r.label === "PM002  ./types");
   check("tsconfig typeRoots row labelled with the path", !!tsRow, all.filter((r) => r.group === "packages/app/tsconfig.json").map((r) => r.label));
+
+  // Exercise the details action without blocking on a modal during CI.
+  const originalDetailsPrompt = vscode.window.showInformationMessage;
+  let detailsPrompt;
+  try {
+    vscode.window.showInformationMessage = (message, options, ...items) => {
+      if (options && options.modal && message === "PathMend: PM003") {
+        detailsPrompt = { options, items };
+        return Promise.resolve(undefined);
+      }
+      return originalDetailsPrompt.call(vscode.window, message, options, ...items);
+    };
+    const shown = await vscode.commands.executeCommand("pathmend.showReferenceDetails", start.node);
+    check("details action exposes the complete diagnostic", shown === true && detailsPrompt &&
+      detailsPrompt.options.detail === start.item.tooltip && detailsPrompt.items.includes("Open reference"), detailsPrompt);
+    check("details action rejects forged references", await vscode.commands.executeCommand("pathmend.showReferenceDetails", { file: outside, line: 0, col: 0, code: "PM003" }) === false);
+  } finally {
+    vscode.window.showInformationMessage = originalDetailsPrompt;
+  }
 
   // ---- visual checkpoint (optional screenshot) ------------------------------------
   await captureState(cfg, "diagnostics-panel", ws);
@@ -429,7 +448,7 @@ async function body(check, cfg) {
 
   // ---- commands ------------------------------------------------------------------
   const cmds = await vscode.commands.getCommands(true);
-  check("commands registered", ["pathmend.scan", "pathmend.showBroken", "pathmend.openReference", "pathmend.applyFix"].every((c) => cmds.includes(c)));
+  check("commands registered", ["pathmend.scan", "pathmend.showBroken", "pathmend.openReference", "pathmend.applyFix", "pathmend.showReferenceDetails"].every((c) => cmds.includes(c)));
   const f = await vscode.commands.executeCommand("pathmend.scan");
   d = diff(diagList(ws).map((x) => x.key), afterFix);
   check("PathMend: Scan workspace returns findings", Array.isArray(f) && f.length === afterFix.length && !d.extra.length && !d.missing.length, [f && f.length, d]);

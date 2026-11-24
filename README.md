@@ -157,8 +157,10 @@ Only supported config and documentation files inside the workspace are edited. R
 
 - **Activity bar** - the PathMend view lists every broken reference, grouped by config file.
   Each row is labelled with the rule and the exact path string (for example
-  `PM003  scripts/start.sh`), shows the rule and line next to it, and opens the file on that
-  path when clicked. Rows with a suggestion have an inline **Apply suggested path** action (the
+  `PM003  scripts/start.sh`), shows a compact line and column next to it (for example `L6:6`), and opens the file on that
+  path when clicked. Hover to read the full diagnostic, rule description, location and suggested fix,
+  or right-click and choose **Show reference details** to read the full message in a dialog.
+  VS Code's native tree rows are single-line; long paths may still be shortened visually. Rows with a suggestion have an inline **Apply suggested path** action (the
   same edit as the "Did you mean ...?" Quick Fix). The badge shows the number of broken
   references; the title bar has **Show broken references** and **Scan workspace**.
 - **PathMend: Scan workspace** - rebuild the file index and check every config file.

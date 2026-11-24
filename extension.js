@@ -298,9 +298,8 @@ const treeProvider = {
     }
     const f = node.f;
     const item = new vscode.TreeItem(f.code + "  " + f.ref.display, C.None);
-    item.description = core.RULES[f.code].description + " (line " + (f.line + 1) + ")";
-    item.tooltip =
-      f.code + " (" + core.RULES[f.code].name + ") " + core.RULES[f.code].description + "\n" + viewPath(f.file) + ":" + (f.line + 1) + "\n\n" + f.message + (f.fix ? '\n\nQuick Fix: did you mean "' + f.fix + '"?' : "");
+    item.description = "L" + (f.line + 1) + ":" + (f.col + 1);
+    item.tooltip = findingDetails(f);
     const [icon, color] = f.info ? SEV_THEME.information : SEV_THEME[getConfig().severity] || SEV_THEME.warning;
     item.iconPath = new vscode.ThemeIcon(icon, color ? new vscode.ThemeColor(color) : undefined);
     item.contextValue = f.fix ? "finding.fixable" : "finding";
@@ -343,6 +342,27 @@ function confined(file) {
     const root = realpathOrNull(r.path);
     return !!root && core.within(real, root);
   });
+}
+
+/** Full diagnostic text, shared by the tooltip and the explicit details action. */
+function findingDetails(f) {
+  const rule = core.RULES[f.code];
+  return f.code + " (" + rule.name + ") " + rule.description + "\n" +
+    viewPath(f.file) + ":" + (f.line + 1) + ":" + (f.col + 1) + "\n\n" +
+    f.message + (f.fix ? '\n\nQuick Fix: did you mean "' + f.fix + '"?' : "");
+}
+
+/** Show the complete diagnostic without the single-line tree width constraint. */
+async function showReferenceDetails(arg) {
+  const f = liveFinding(arg);
+  if (!f) return false;
+  const choice = await vscode.window.showInformationMessage(
+    "PathMend: " + f.code,
+    { modal: true, detail: findingDetails(f) },
+    "Open reference"
+  );
+  if (choice === "Open reference") return openReference(arg);
+  return true;
 }
 
 async function openReference(arg) {
@@ -650,6 +670,7 @@ function activate(context) {
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
     vscode.commands.registerCommand("pathmend.openReference", openReference),
+    vscode.commands.registerCommand("pathmend.showReferenceDetails", showReferenceDetails),
     vscode.commands.registerCommand("pathmend.applyFix", applyFix),
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, { provideCodeActions }, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
     vscode.workspace.onDidSaveTextDocument((d) => {

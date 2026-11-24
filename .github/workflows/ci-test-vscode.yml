@@ -64,7 +64,7 @@ jobs:
         id: tests
         env:
           PM_TEST_RESULTS: ${{ runner.temp }}/vscode-results.json
-        run: xvfb-run -a node test/run-vscode.js
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" node test/run-vscode.js
       - name: Publish test summary and annotations
         if: always()
         env:

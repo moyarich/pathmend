@@ -58,6 +58,7 @@ function writeSettings(trustEnabled) {
       "window.title": "pathmend-shot ${rootName}",
       "chat.commandCenter.enabled": false,
       "workbench.secondarySideBar.defaultVisibility": "hidden",
+      ...(screenshotsEnabled ? { "window.newWindowDimensions": "maximized" } : {}),
     }, null, 2)
   );
 }
