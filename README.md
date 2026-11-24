@@ -90,7 +90,7 @@ Choose **Preview** beside a replacement to compare the current source with the p
 
 ### Bulk repairs
 
-Choose **Bulk repairs** in Reference Details to select verified suggestions. Review each affected file in the native diff editor, then confirm **Apply all**. PathMend rejects stale or overlapping edits and applies the selection as one workspace edit. Changes remain unsaved so you can review or undo them before saving.
+Select individual suggested repairs using their checkboxes, select all visible suggestions in a file using its group checkbox, or use **Select visible fixes**. The selection count includes any selections hidden by filters; clear them with **Clear selection**. A new diagnostic snapshot clears the selection to prevent stale edits. Choose **Bulk repairs** to preview the selected original suggestions (edited replacement drafts remain individual repairs). Review each affected file in the native diff editor, then confirm **Apply all**. PathMend rejects stale or overlapping edits and applies the selection as one workspace edit. Changes remain unsaved so you can review or undo them before saving.
 
 Use the file type and rule filters, Current file checkbox, and sort menu to narrow Reference Details. Your filter preferences are retained.
 
