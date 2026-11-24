@@ -45,18 +45,20 @@ automatically, so `"main": "build/index.js"` is not reported before a build).
 ## Rules
 
 | Code      | Meaning                                                    | Example                                                       |
-| --------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
-| **PM001** | package.json path not found                                | `"bin": { "tool": "bin/tool.js" }` after moving it to `lib/`  |
-| **PM002** | tsconfig / jsconfig path not found                         | `"extends": "./tsconfig.bse.json"`                            |
-| **PM003** | Dockerfile COPY / ADD source not found                     | `COPY scripts/start.sh /usr/local/bin/`                       |
-| **PM004** | Compose build context / dockerfile not found               | `context: ./services/wrker`                                   |
-| **PM005** | GitHub Actions path not found                              | `uses: ./.github/actions/setpu`, `run: bash scripts/build.sh` |
-| **PM006** | CODEOWNERS path not found                                  | `/docs/guid.md @docs-team`                                    |
-| **PM007** | launch.json path not found                                 | `"program": "${workspaceFolder}/src/server.js"`               |
-| **PM008** | GitLab CI local include not found                          | `- local: ci/templates/tset.yml`                              |
-| **PM009** | Glob matches no files                                      | `"files": ["docs/*.pdf"]`, `COPY config/*.yaml /app/`         |
-| **PM010** | Resolves outside the workspace - not checked (Information) | `"main": "/etc/passwd"`, `../../elsewhere`                    |
-| **PM011** | COPY / ADD source outside the Docker build context         | `COPY ../../src /src` with context `services/api`             |
+| --------- | --- | --- | ---------------------------------------------------------- | ------------------------------------------------------------- |
+| **PM001** | `package-path-not-found` | package | package.json path not found                                | `"bin": { "tool": "bin/tool.js" }` after moving it to `lib/`  |
+| **PM002** | `tsconfig-path-not-found` | typescript | tsconfig / jsconfig path not found                         | `"extends": "./tsconfig.bse.json"`                            |
+| **PM003** | `docker-source-not-found` | docker | Dockerfile COPY / ADD source not found                     | `COPY scripts/start.sh /usr/local/bin/`                       |
+| **PM004** | `compose-path-not-found` | docker | Compose build context / dockerfile not found               | `context: ./services/wrker`                                   |
+| **PM005** | `github-actions-path-not-found` | ci | GitHub Actions path not found                              | `uses: ./.github/actions/setpu`, `run: bash scripts/build.sh` |
+| **PM006** | `codeowners-path-not-found` | ownership | CODEOWNERS path not found                                  | `/docs/guid.md @docs-team`                                    |
+| **PM007** | `launch-path-not-found` | editor | launch.json path not found                                 | `"program": "${workspaceFolder}/src/server.js"`               |
+| **PM008** | `gitlab-include-not-found` | ci | GitLab CI local include not found                          | `- local: ci/templates/tset.yml`                              |
+| **PM009** | `glob-no-matches` | filesystem | Glob matches no files                                      | `"files": ["docs/*.pdf"]`, `COPY config/*.yaml /app/`         |
+| **PM010** | `outside-workspace` | security | Resolves outside the workspace - not checked (Information) | `"main": "/etc/passwd"`, `../../elsewhere`                    |
+| **PM011** | `outside-docker-context` | docker | COPY / ADD source outside the Docker build context         | `COPY ../../src /src` with context `services/api`             |
+
+Rule IDs are stable; descriptive aliases can also be used in `pathmend.disabledRules` (for example, `["PM006", "outside-workspace"]`). Categories and tags describe rules; they are not disable selectors. Most rules use the configured severity; PM010 remains informational. A rule may support suggestions, but actual Quick Fix availability depends on the finding.
 
 Each diagnostic sits on the exact path string, with source `PathMend`.
 
@@ -89,7 +91,7 @@ Only config files inside the workspace are edited. Renames done outside VS Code 
 | `pathmend.enabled`                | `true`                                                                      | Turn diagnostics on or off.                                                                       |
 | `pathmend.exclude`                | `**/node_modules/**`, `**/.git/**`, `**/dist/**`                            | Globs that are not scanned. Config files here are not read; references into them are not checked. |
 | `pathmend.ignoreReferences`       | `**/build/**`, `**/out/**`, `**/coverage/**`, `**/target/**`, `**/.next/**` | Build output folders; references into them are not checked.                                       |
-| `pathmend.disabledRules`          | `[]`                                                                        | Rule codes to turn off, e.g. `["PM006", "PM010"]`.                                                |
+| `pathmend.disabledRules`          | `[]`                                                                        | Rule IDs or aliases to turn off, e.g. `["PM006", "PM010"]`.                                                |
 | `pathmend.severity`               | `warning`                                                                   | `error`, `warning`, `information` or `hint` for broken references. PM010 is always Information.   |
 | `pathmend.reportOutsideWorkspace` | `true`                                                                      | Show PM010 for paths outside the workspace.                                                       |
 | `pathmend.renameUpdates`          | `prompt`                                                                    | `off` to never offer rename updates.                                                              |

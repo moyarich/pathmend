@@ -291,9 +291,9 @@ const treeProvider = {
     }
     const f = node.f;
     const item = new vscode.TreeItem(f.code + "  " + f.ref.display, C.None);
-    item.description = core.RULES[f.code] + " (line " + (f.line + 1) + ")";
+    item.description = core.RULES[f.code].description + " (line " + (f.line + 1) + ")";
     item.tooltip =
-      f.code + " " + core.RULES[f.code] + "\n" + viewPath(f.file) + ":" + (f.line + 1) + "\n\n" + f.message + (f.fix ? '\n\nQuick Fix: did you mean "' + f.fix + '"?' : "");
+      f.code + " (" + core.RULES[f.code].name + ") " + core.RULES[f.code].description + "\n" + viewPath(f.file) + ":" + (f.line + 1) + "\n\n" + f.message + (f.fix ? '\n\nQuick Fix: did you mean "' + f.fix + '"?' : "");
     const [icon, color] = f.info ? SEV_THEME.information : SEV_THEME[getConfig().severity] || SEV_THEME.warning;
     item.iconPath = new vscode.ThemeIcon(icon, color ? new vscode.ThemeColor(color) : undefined);
     item.contextValue = f.fix ? "finding.fixable" : "finding";

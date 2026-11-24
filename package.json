@@ -197,11 +197,46 @@
               "PM008",
               "PM009",
               "PM010",
-              "PM011"
+              "PM011",
+              "package-path-not-found",
+              "tsconfig-path-not-found",
+              "docker-source-not-found",
+              "compose-path-not-found",
+              "github-actions-path-not-found",
+              "codeowners-path-not-found",
+              "launch-path-not-found",
+              "gitlab-include-not-found",
+              "glob-no-matches",
+              "outside-workspace",
+              "outside-docker-context"
+            ],
+            "enumDescriptions": [
+              "package-path-not-found: package.json path not found",
+              "tsconfig-path-not-found: tsconfig / jsconfig path not found",
+              "docker-source-not-found: Dockerfile COPY / ADD source not found",
+              "compose-path-not-found: Compose build context / dockerfile not found",
+              "github-actions-path-not-found: GitHub Actions path not found",
+              "codeowners-path-not-found: CODEOWNERS path not found",
+              "launch-path-not-found: launch.json path not found",
+              "gitlab-include-not-found: GitLab CI local include not found",
+              "glob-no-matches: Glob matches no files",
+              "outside-workspace: Path outside the workspace - not checked",
+              "outside-docker-context: COPY / ADD source outside the Docker build context",
+              "PM001: package.json path not found",
+              "PM002: tsconfig / jsconfig path not found",
+              "PM003: Dockerfile COPY / ADD source not found",
+              "PM004: Compose build context / dockerfile not found",
+              "PM005: GitHub Actions path not found",
+              "PM006: CODEOWNERS path not found",
+              "PM007: launch.json path not found",
+              "PM008: GitLab CI local include not found",
+              "PM009: Glob matches no files",
+              "PM010: Path outside the workspace - not checked",
+              "PM011: COPY / ADD source outside the Docker build context"
             ]
           },
           "default": [],
-          "description": "Rule codes to turn off."
+          "description": "Rule IDs or descriptive aliases to turn off."
         },
         "pathmend.severity": {
           "type": "string",
