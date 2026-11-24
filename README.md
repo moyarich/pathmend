@@ -76,6 +76,8 @@ Choose **Preview** beside a replacement to compare the current source with the p
 
 Choose **Bulk repairs** in Reference Details to select verified suggestions. Review each affected file in the native diff editor, then confirm **Apply all**. PathMend rejects stale or overlapping edits and applies the selection as one workspace edit. Changes remain unsaved so you can review or undo them before saving.
 
+Use the file type and rule filters, Current file checkbox, and sort menu to narrow Reference Details. Your filter preferences are retained.
+
 ### Choose a replacement path
 
 Use **Browse…** to select a file or folder using the native VS Code picker. Typing in the replacement field offers matching indexed workspace paths. Only eligible paths within the workspace and reference context are offered; excluded paths are omitted. Suggestions are limited to indexed paths and may not include every file.

@@ -8,10 +8,12 @@ export function createViewState(storage) {
   let filter = typeof saved.filter === "string" ? saved.filter : "";
   let severity = TYPES.has(saved.severity) ? saved.severity : "all";
   let snapshot;
+  let options = { fileType: "", rule: "", currentOnly: false, sort: "path", ...saved.options };
+  const activeOptions = () => ({ ...options, currentFile: snapshot?.currentFile });
   const collapsed = new Set(Array.isArray(saved.collapsed) ? saved.collapsed : []);
-  const persist = () => storage.save({ filter, severity, collapsed: [...collapsed] });
+  const persist = () => storage.save({ filter, severity, collapsed: [...collapsed], ...(options.fileType || options.rule || options.currentOnly || options.sort !== "path" ? { options } : {}) });
 
-  const visibleFiles = () => snapshot?.enabled === false || snapshot?.hasWorkspace === false ? [] : filterReferences(snapshot?.files || [], filter, severity);
+  const visibleFiles = () => snapshot?.enabled === false || snapshot?.hasWorkspace === false ? [] : filterReferences(snapshot?.files || [], filter, severity, activeOptions());
   const disclosure = () => {
     const files = visibleFiles();
     return { canToggle: !filter.trim() && files.length > 0, allExpanded: files.length > 0 && files.every(file => !!filter.trim() || !collapsed.has(file.path)) };
@@ -27,6 +29,9 @@ export function createViewState(storage) {
   return {
     get filter() { return filter; },
     get severity() { return severity; },
+    get options() { return options; },
+    get visibleFiles() { return visibleFiles(); },
+    setOption(key, value) { if (Object.hasOwn(options, key)) { options = { ...options, [key]: value }; persist(); } },
     get snapshot() { return snapshot; },
     setSnapshot(value) { snapshot = value; },
     setFilter(value) { filter = value; persist(); },
