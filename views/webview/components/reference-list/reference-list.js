@@ -10,6 +10,8 @@ export class ReferenceList extends HTMLElement {
     return JSON.stringify([file.path, finding.code, finding.line, finding.column, finding.path, finding.fix]);
   }
 
+  updateBulkSelection() { for (const group of this.groupsByPath.values()) group.updateBulkSelection(); }
+
   update(state) {
     const snapshot = state.snapshot;
     if (!snapshot) return;
@@ -48,7 +50,7 @@ export class ReferenceList extends HTMLElement {
         total += file.findings.length;
         const group = this.groupsByPath.get(file.path) || document.createElement("pm-file-group");
         this.groupsByPath.set(file.path, group);
-        group.update(file, snapshot.revision, state.isExpanded(file.path), snapshot.selectedId, getDraft);
+        group.update(file, snapshot.revision, state.isExpanded(file.path), snapshot.selectedId, getDraft, state.bulk);
         if (group !== position) groups.insertBefore(group, position);
         position = group.nextElementSibling;
       }
