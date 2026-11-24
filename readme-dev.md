@@ -17,6 +17,8 @@ npm test
 
 ## Running tests
 
+GitHub Actions runs Vitest and the core diagnostics fixture on Node.js 22 and 24, plus the trusted and untrusted VS Code integration suites on Ubuntu with a virtual display and screenshots disabled. See [Tests workflow](.github/workflows/tests.yml).
+
 PathMend uses Vitest for automated tests and separate scripts for core diagnostics and VS Code integration testing.
 
 | Command                                                     | Description                                    |
