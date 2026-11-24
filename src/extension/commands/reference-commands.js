@@ -92,7 +92,9 @@ function createCommands(runtime) {
     }
     const r = new vscode.Range(f.line, f.col, f.line, f.endCol);
     const chosen = replacement === undefined ? f.fix : replacement;
-    if (replacement !== undefined) {
+    const versionAtValidation = doc.version;
+    let acceptedUnverified = false;
+    {
       const validation = analyzer.validateReplacement(f.ref, chosen, analyzer.createGuard(fs, roots().map(r => r.path)), runtime.state.index);
       if (validation === "invalid") {
         void showErrorDetail("Invalid replacement syntax.", "The replacement cannot be safely represented in this reference.\n\nReplacement:\n" + String(chosen));
@@ -102,12 +104,19 @@ function createCommands(runtime) {
         const version = doc.version;
         const confirmed = await confirmReplacement(f.ref.display, chosen);
         if (confirmed !== "Apply Anyway") return false;
+        acceptedUnverified = true;
         if (doc.version !== version || liveFinding(arg) !== f || !insideWorkspace(f.file) || !confined(f.file)) {
           vscode.window.showWarningMessage("PathMend: reference changed. Rescanning.");
           scheduleScan(0);
           return false;
         }
       }
+    }
+    const finalValidation = analyzer.validateReplacement(f.ref, chosen, analyzer.createGuard(fs, roots().map(r => r.path)), runtime.state.index);
+    if (doc.version !== versionAtValidation || finalValidation === "invalid" || (finalValidation !== "valid" && !acceptedUnverified)) {
+      vscode.window.showWarningMessage("PathMend: replacement changed or could not be verified. Rescan and try again.");
+      scheduleScan(0);
+      return false;
     }
     const text = analyzer.encodeFor(f.ref, chosen);
     if (text === null || liveFinding(arg) !== f || !insideWorkspace(f.file) || !confined(f.file) || doc.getText(r) !== f.ref.raw) {
