@@ -3,6 +3,7 @@ const vscode = require("vscode");
 const path = require("node:path");
 const fs = require("node:fs");
 const analyzer = require("../../analyzer");
+const { canReplace } = require("../../analyzer/references/can-replace");
 const { createReport } = require("../../../views/report");
 const { exportResults } = require("../../../views/export-results");
 const { showErrorDetail, confirmReplacement } = require("../../../views/native-dialogs");
@@ -75,7 +76,7 @@ function createCommands(runtime) {
   /** Replace the broken path with the "Did you mean" suggestion (same edit as the Quick Fix). */
   async function applyFix(arg, replacement) {
     const f = liveFinding(arg);
-    if (!f || !f.fix) {
+    if (!f || !canReplace(f) || (replacement === undefined && !f.fix)) {
       vscode.window.showWarningMessage("PathMend: no fix available. Scan again.");
       return false;
     }
@@ -91,7 +92,7 @@ function createCommands(runtime) {
     }
     const r = new vscode.Range(f.line, f.col, f.line, f.endCol);
     const chosen = replacement === undefined ? f.fix : replacement;
-    if (replacement !== undefined && chosen !== f.fix) {
+    if (replacement !== undefined) {
       const validation = analyzer.validateReplacement(f.ref, chosen, analyzer.createGuard(fs, roots().map(r => r.path)), runtime.state.index);
       if (validation === "invalid") {
         void showErrorDetail("Invalid replacement syntax.", "The replacement cannot be safely represented in this reference.\n\nReplacement:\n" + String(chosen));
@@ -109,7 +110,7 @@ function createCommands(runtime) {
       }
     }
     const text = analyzer.encodeFor(f.ref, chosen);
-    if (text === null || doc.getText(r) !== f.ref.raw) {
+    if (text === null || liveFinding(arg) !== f || !insideWorkspace(f.file) || !confined(f.file) || doc.getText(r) !== f.ref.raw) {
       vscode.window.showWarningMessage("PathMend: source changed. Rescanning.");
       scheduleScan(0);
       return false;

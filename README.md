@@ -68,15 +68,20 @@ Use this view in the sidebar or an editor tab to:
 
 Set the preferred location with `pathmend.referenceDetails.defaultLocation`. The explicit **Open Reference Details in Editor** and **Open Reference Details in Sidebar** commands override that preference.
 
+### Choose a replacement path
+
+Use **Browse…** to select a file or folder using the native VS Code picker. Typing in the replacement field offers matching indexed workspace paths. Only eligible paths within the workspace and reference context are offered; excluded paths are omitted. Suggestions are limited to indexed paths and may not include every file.
+
 ### Apply a suggested path
 
 PathMend looks for the same filename elsewhere in the workspace first, then for similar names. Suggestions preserve the original path conventions where possible.
 
 1. Review or edit the generated suggested path.
 2. Select **Apply fix** (or use **Reset** to restore the suggestion).
-3. If the edited target cannot be verified, choose whether to apply it anyway or cancel.
+3. Review the live validation message. It distinguishes verified paths, missing targets, wrong file/folder types, outside-workspace or build-context paths, and invalid syntax.
+4. If the edited target cannot be verified, choose whether to apply it anyway or cancel. Invalid syntax cannot be applied.
 
-Unsafe syntax, stale source edits and edits outside the workspace are blocked. Editable replacements currently require a generated suggestion; otherwise, open the source file and edit the reference directly.
+Unsafe syntax, stale source edits and edits outside the workspace are blocked. For safely editable literal references without a suggestion, enter a replacement path manually. Glob patterns, unanchored CODEOWNERS names and unsupported edit syntax may still require editing the source directly. The Fixable filter counts generated suggestions.
 
 ### Rename or move files
 

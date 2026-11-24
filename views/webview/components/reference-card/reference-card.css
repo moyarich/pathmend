@@ -63,3 +63,8 @@ button.path:hover:not(:disabled) {
 .suggestion-path { font-family: var(--vscode-editor-font-family); inline-size: 100%; box-sizing: border-box; font-size: var(--vscode-editor-font-size); }
 .suggestion-actions { display: flex; flex-wrap: wrap; gap: var(--pm-space-1); }
 .suggestion button { justify-self: start; max-inline-size: 100%; }
+
+.replacement-validation { color: var(--pm-muted); font-size: .9em; }
+.replacement-validation.valid { color: var(--vscode-testing-iconPassed, var(--pm-foreground)); }
+.replacement-validation.invalid, .replacement-validation.unavailable { color: var(--vscode-errorForeground); }
+.replacement-validation.missing, .replacement-validation.wrong-type, .replacement-validation.missing-entry, .replacement-validation.outside-context, .replacement-validation.outside-workspace, .replacement-validation.unverified { color: var(--vscode-editorWarning-foreground); }

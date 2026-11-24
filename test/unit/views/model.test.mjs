@@ -18,3 +18,10 @@ describe("reference details model", () => {
     expect(references.get(row.id)).toEqual({ file: finding.file, line: 0, col: 3, code: "PM012" });
   });
 });
+
+it("exposes manual repair eligibility without inventing a suggestion", () => {
+  const base = { file: "/workspace/a.md", line: 0, col: 0, code: "PM012", message: "Missing", fix: null };
+  const findings = [{ ...base, ref: { display: "./missing.md", escape: "document-path" } }, { ...base, col: 5, ref: { display: "*.md", escape: "document-path", glob: true } }, { ...base, col: 10, ref: { display: "name", escape: "noedit" } }];
+  const rows = createSnapshot(fileGroups(findings, () => "a.md"), "warning", true, true, 1).data.files[0].findings;
+  expect(rows.map(row => [row.repairable, row.fix])).toEqual([[true, null], [false, null], [false, null]]);
+});
