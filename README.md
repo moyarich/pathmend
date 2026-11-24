@@ -28,6 +28,16 @@ COPY scripts/start.sh /usr/local/bin/
 
 PathMend can report PM003 and suggest the new path if it is a suitable match within the build context. Review the suggestion before applying it.
 
+## Command-line scanning
+
+Run PathMend without VS Code using Node.js 20 or newer from a checkout:
+
+```bash
+node src/cli/index.js --workspace . --format sarif > pathmend.sarif
+```
+
+A locally installed npm package exposes the `pathmend` command via its `bin` entry (`npm pack` can create a local tarball; registry publication is not required). Use `--config ./pathmend.config.json` to supply JSON settings such as `exclude`, `ignoreReferences`, `disabledRules`, `yamlPathAttributes`, `maxIndexedFiles` and `maxFileSizeKB`. The command writes reports to stdout and exits 0 when no broken references are found, 1 for broken references and 2 for usage or scan errors. Outside-workspace references are informational. Directory symlinks are not followed. In CI, preserve the exit status while uploading the report as an artifact or SARIF to code scanning.
+
 ## Supported files
 
 Workspace configuration checks include `.code-workspace` folder paths and unambiguous task/launch references, `pnpm-workspace.yaml` package patterns, npm/Yarn workspace package manifests, and local `file:`, `link:` and relative `workspace:` dependency paths. Named/version-only `workspace:` dependencies are not resolved yet. Workspace files must be inside an opened workspace folder; paths outside opened roots are not read.
