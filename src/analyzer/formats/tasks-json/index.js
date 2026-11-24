@@ -15,12 +15,11 @@ const format={
      if(ref)out.push(ref);
      // A command without an explicit path is an executable on PATH, not a file reference.
      const command=jget(task,"command");
-     if(!cwd || cwd.type!=="string"){
-       const r=configPath(c,command,ctx,base,"PM019","tasks.json command","file");
-       if(r)out.push(r);
-     } else if(command?.value?.startsWith("${workspace")){
-       const r=configPath(c,command,ctx,base,"PM019","tasks.json command","file");
-       if(r)out.push(r);
+     const qualified = command?.value?.startsWith("${workspace");
+     if (qualified || !cwd || ref) {
+       const commandBase = !qualified && ref ? path.resolve(ref.base,ref.value) : base;
+       const r=configPath(c,command,ctx,commandBase,"PM019","tasks.json command","file");
+       if(r) { if(!qualified && ref)r.requireBase=true; out.push(r); }
      }
    };
    visit(tree);
