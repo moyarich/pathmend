@@ -388,10 +388,26 @@ async function applyFix(arg, replacement) {
   }
   const r = new vscode.Range(f.line, f.col, f.line, f.endCol);
   const chosen = replacement === undefined ? f.fix : replacement;
-  if (replacement !== undefined && chosen !== f.fix &&
-      !core.validateReplacement(f.ref, chosen, core.createGuard(fs, roots().map(r => r.path)), state.index)) {
-    vscode.window.showWarningMessage("PathMend: enter a valid replacement path to an existing file or folder inside the workspace.");
-    return false;
+  if (replacement !== undefined && chosen !== f.fix) {
+    const validation = core.validateReplacement(f.ref, chosen, core.createGuard(fs, roots().map(r => r.path)), state.index);
+    if (validation === "invalid") {
+      vscode.window.showWarningMessage("PathMend: the replacement cannot be safely represented as this reference.");
+      return false;
+    }
+    if (validation !== "valid") {
+      const version = doc.version;
+      const confirmed = await vscode.window.showWarningMessage(
+        "PathMend could not verify the replacement path.",
+        { modal: true, detail: "Original: " + f.ref.display + "\nReplacement: " + chosen + "\n\nThe target may be missing, the wrong type, or outside the allowed path context. Applying this change may leave a broken reference." },
+        "Apply Anyway"
+      );
+      if (confirmed !== "Apply Anyway") return false;
+      if (doc.version !== version || liveFinding(arg) !== f || !insideWorkspace(f.file) || !confined(f.file)) {
+        vscode.window.showWarningMessage("PathMend: the reference changed while awaiting confirmation. Rescanning.");
+        scheduleScan(0);
+        return false;
+      }
+    }
   }
   const text = core.encodeFor(f.ref, chosen);
   if (text === null || doc.getText(r) !== f.ref.raw) {
