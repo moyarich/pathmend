@@ -7,6 +7,7 @@ function getConfig() {
     exclude: c.get("exclude", ["**/node_modules/**", "**/.git/**", "**/dist/**"]),
     ignoreReferences: c.get("ignoreReferences", []),
     disabledRules: c.get("disabledRules", []),
+    yamlPathAttributes: c.get("yaml.pathAttributes", []),
     mdxPathAttributes: c.get("mdx.pathAttributes", ["src", "href"]),
     directivePathAttributes: c.get("markdown.directivePathAttributes", ["component", "code", "files"]),
     multiPathAttributes: c.get("markdown.multiPathAttributes", ["files"]),
