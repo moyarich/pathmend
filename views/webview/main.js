@@ -48,6 +48,7 @@ toggleGroups.addEventListener("click", () => { state.toggleGroups(); render(); }
 document.getElementById("editor")?.addEventListener("click", () => bridge.send({ type: "editor" }));
 document.getElementById("sidebar")?.addEventListener("click", () => bridge.send({ type: "sidebar" }));
 document.getElementById("problems").addEventListener("click", () => bridge.send({ type: "problems" }));
+document.getElementById("bulk-repair").addEventListener("click", () => bridge.send({ type: "bulk-repair" }));
 document.getElementById("export").addEventListener("click", () => bridge.send({ type: "export" }));
 document.getElementById("settings").addEventListener("click", () => bridge.send({ type: "settings" }));
 list.addEventListener("pm-reference-action", event => bridge.send(event.detail));
