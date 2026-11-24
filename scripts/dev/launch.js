@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
-const { prepare } = require("../../test/fixtures/prepare");
+const { prepare } = require("../../tests/fixtures/prepare");
 const { resolveVSCode } = require("../utils/resolve-vscode");
 
 async function main() {
