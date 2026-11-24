@@ -1,5 +1,7 @@
-/** Local Lucide geometry (ISC license; see LICENSE). Only static trusted shapes. */
+/** Local Lucide geometry (ISC license; see LICENSE) and the PathMend activity icon. */
 export const icons = Object.freeze({
+  // PathMend brand mark from media/activity.svg.
+  "pathmend": [["path",{"d":"M7.42 18.78L9.71 17.17A2.9 2.9 0 0 0 6.38 12.42L4.09 14.03A2.9 2.9 0 0 0 7.42 18.78Z"}],["path",{"d":"M17.62 11.58L19.91 9.97A2.9 2.9 0 0 0 16.58 5.22L14.29 6.83A2.9 2.9 0 0 0 17.62 11.58Z"}],["path",{"d":"M10.6 10.6L13.4 13.4"}]],
   "chevron-right": [["path", { d: "m9 18 6-6-6-6" }]],
   "search": [["circle", { cx: 11, cy: 11, r: 8 }], ["path", { d: "m21 21-4.35-4.35" }]],
   "x": [["path", { d: "m18 6-12 12M6 6l12 12" }]],

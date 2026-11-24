@@ -8,7 +8,7 @@ export function icon(name) {
   const svg = document.createElementNS(SVG_NS, "svg");
   for (const [key, value] of Object.entries({
     viewBox: "0 0 24 24", fill: "none", stroke: "currentColor",
-    "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round",
+    "stroke-width": name === "pathmend" ? "1.6" : "2", "stroke-linecap": "round", "stroke-linejoin": "round",
     class: "pm-icon", "aria-hidden": "true", focusable: "false",
   })) svg.setAttribute(key, value);
   for (const [tag, attributes] of icons[name]) {
