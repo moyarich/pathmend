@@ -44,7 +44,7 @@ Workspace configuration checks include `.code-workspace` folder paths and unambi
 
 Development configuration support includes VS Code tasks (literal commands and working directories), devcontainer Dockerfile/context/Compose references, gitmodules checkout paths (diagnostics only), Poetry/uv inline local dependencies in pyproject.toml and opt-in YAML path attributes. Set `pathmend.yaml.pathAttributes` to a list such as `["asset", "source"]` to check explicit `./` and `../` paths in otherwise unclassified YAML. Git submodules that are not initialized may report missing checkout paths.
 
-Source scanning also covers CSS/SCSS `url()` and quoted `@import` paths (explicit extensions for SCSS imports), quoted HTML `src`, `href` and simple `srcset` entries, and single-line static relative JS/TS imports and exports. Dynamic expressions, site-root routes, aliases and remote URLs are excluded. These conservative scanners are not compilers or bundler resolvers.
+Source scanning also covers CSS/SCSS `url()` and quoted `@import` paths (explicit extensions for SCSS imports), quoted HTML `src`, `href` and simple `srcset` entries, and static relative JS/TS imports and exports, including simple multiline declarations. Dynamic expressions, site-root routes, aliases and remote URLs are excluded. These conservative scanners are not compilers or bundler resolvers.
 
 | File type | References checked |
 | --- | --- |
