@@ -33,4 +33,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb xauth
       - name: Run trusted and untrusted workspace tests
+        id: tests
+        env:
+          PM_TEST_RESULTS: ${{ runner.temp }}/vscode-results.json
         run: xvfb-run -a node test/run-vscode.js
+      - name: Publish test summary and annotations
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: node test/write-summary.js vscode "$RUNNER_TEMP/vscode-results.json"

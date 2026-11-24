@@ -29,4 +29,11 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
-      - run: npm test
+      - name: Run Vitest
+        id: tests
+        run: npm test -- --reporter=default --reporter=json --outputFile="$RUNNER_TEMP/vitest-results.json"
+      - name: Publish test summary and annotations
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: node test/write-summary.js vitest "$RUNNER_TEMP/vitest-results.json"

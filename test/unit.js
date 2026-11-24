@@ -54,6 +54,10 @@ const res = core.analyze({
 });
 for (const n of names) fs[n] = orig[n];
 
+const checks = [];
+function check(name, ok, detail) {
+  checks.push({ name, ok, detail });
+}
 let fail = 0;
 const got = res.findings.map((f) => core.toPosix(path.relative(ws, f.file)) + ":" + (f.line + 1) + ":" + f.code).sort();
 const exp = expected.slice().sort();
@@ -62,6 +66,7 @@ const extra = got.slice();
 for (const e of exp) { const i = extra.indexOf(e); if (i >= 0) extra.splice(i, 1); }
 const miss2 = exp.slice();
 for (const g of got) { const i = miss2.indexOf(g); if (i >= 0) miss2.splice(i, 1); }
+check("Expected diagnostics match", !extra.length && !miss2.length, { missing: miss2, unexpected: extra });
 if (extra.length || miss2.length) {
   fail++;
   console.log("DIAGNOSTICS MISMATCH\n  missing:", miss2, "\n  unexpected:", extra);
@@ -69,8 +74,17 @@ if (extra.length || miss2.length) {
 for (const f of res.findings) console.log(core.toPosix(path.relative(ws, f.file)) + ":" + (f.line + 1) + ":" + (f.col + 1) + " " + f.code + " " + f.message + (f.fix ? '  FIX -> "' + f.fix + '"' : ""));
 const bad = calls.filter((c) => !core.within(path.resolve(c.p), ws));
 console.log("fs calls from core:", calls.length, "outside workspace:", bad.length);
+check("Filesystem calls stay in workspace", calls.length > 0 && !bad.length, { calls: calls.length, outside: bad });
+check("Outside directory is not accessed", !calls.some((c) => c.p.startsWith(outside)));
+check("Only supported files are read", !calls.some((c) => c.fn === "readFileSync" && !core.classify(c.p)));
 if (!calls.length || bad.length) { fail++; console.log(bad); }
 if (calls.some((c) => c.p.startsWith(outside))) { fail++; console.log("touched outside dir"); }
 if (calls.some((c) => c.fn === "readFileSync" && !core.classify(c.p))) { fail++; console.log("read a non-config file"); }
+if (process.env.PM_TEST_RESULTS) {
+  fs.writeFileSync(process.env.PM_TEST_RESULTS, JSON.stringify({
+    results: checks, expectedDiagnostics: exp.length, actualDiagnostics: got.length,
+    filesystemCalls: calls.length, outsideCalls: bad.length,
+  }));
+}
 console.log(fail ? "UNIT FAIL" : "UNIT PASS");
 process.exit(fail ? 1 : 0);
