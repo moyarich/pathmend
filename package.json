@@ -350,6 +350,11 @@
               "PM016",
               "PM017",
               "PM018",
+              "PM019",
+              "PM020",
+              "PM021",
+              "PM022",
+              "PM023",
               "package-path-not-found",
               "tsconfig-path-not-found",
               "docker-source-not-found",
@@ -367,7 +372,12 @@
               "directive-path-not-found",
               "stylesheet-path-not-found",
               "html-path-not-found",
-              "script-module-not-found"
+              "script-module-not-found",
+              "task-path-not-found",
+              "devcontainer-path-not-found",
+              "gitmodule-path-not-found",
+              "python-dependency-path-not-found",
+              "yaml-attribute-path-not-found"
             ],
             "enumDescriptions": [
               "package-path-not-found: package.json path not found",
@@ -388,6 +398,11 @@
               "stylesheet-path-not-found: Stylesheet asset or import path not found",
               "html-path-not-found: HTML local resource path not found",
               "script-module-not-found: Static relative script import or export path not found",
+              "task-path-not-found: VS Code task local path not found",
+              "devcontainer-path-not-found: Dev container local configuration path not found",
+              "gitmodule-path-not-found: Git submodule checkout path not found",
+              "python-dependency-path-not-found: Python local dependency path not found",
+              "yaml-attribute-path-not-found: Configured YAML local path attribute not found",
               "PM001: package.json path not found",
               "PM002: tsconfig / jsconfig path not found",
               "PM003: Dockerfile COPY / ADD source not found",
@@ -405,7 +420,12 @@
               "PM015: Markdown directive path not found",
               "PM016: Stylesheet asset or import path not found",
               "PM017: HTML local resource path not found",
-              "PM018: Static relative script import or export path not found"
+              "PM018: Static relative script import or export path not found",
+              "PM019: VS Code task local path not found",
+              "PM020: Dev container local configuration path not found",
+              "PM021: Git submodule checkout path not found",
+              "PM022: Python local dependency path not found",
+              "PM023: Configured YAML local path attribute not found"
             ]
           },
           "default": [],
@@ -497,6 +517,14 @@
           "type": "boolean",
           "default": false,
           "description": "Show preview repair CodeLens actions above broken references."
+        },
+        "pathmend.yaml.pathAttributes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "YAML property names to check for explicit relative local paths, including scalar lists. Applies to otherwise unclassified YAML files."
         }
       }
     },
