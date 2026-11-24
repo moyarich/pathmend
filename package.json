@@ -151,10 +151,6 @@
     },
     "viewsWelcome": [
       {
-        "view": "pathmend.actions",
-        "contents": "Check your workspace for broken file references.\n[Open Reference Details](command:pathmend.openReferenceDetails)\n[Scan Workspace](command:pathmend.scan)\n[Settings](command:pathmend.openSettings)"
-      },
-      {
         "view": "pathmend.references",
         "contents": "PathMend is turned off.\n[Open PathMend Settings](command:workbench.action.openSettings?%5B%22pathmend.%22%5D)",
         "when": "!config.pathmend.enabled"

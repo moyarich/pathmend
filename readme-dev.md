@@ -172,7 +172,7 @@ Disabling screenshots does not disable functional testing. The editor and sideba
 
 Set `pathmend.referenceDetails.defaultLocation` to `sidebar` (default) or `editor` in VS Code Settings. Open Reference Details, Show Reference Details on a tree item, and the interactive development startup respect this preference. Explicit Open Reference Details in Editor and Open Reference Details in Sidebar actions override it without changing the setting.
 
-The native Quick Actions view provides a single Open Reference Details button (using the configured default location), Scan Workspace and Settings, even when no broken references exist. Explicit location overrides and JSON export remain available in the PathMend Actions menu and Command Palette. Both webview locations offer a button to open the other location and export results.
+The native Quick Actions view uses compact clickable tree rows for Open Reference Details (using the configured default location), Scan Workspace and Settings, even when no broken references exist. `views/quick-actions-provider.js` supplies the rows, icons and tooltips. Explicit location overrides and JSON export remain available in the PathMend Actions menu and Command Palette. Both webview locations offer a button to open the other location and export results.
 
 Use **Open Reference Details in Editor** in the Reference Details toolbar or **PathMend: Open Reference Details in Editor** in the Command Palette to open the same interface in an editor tab. The tab supports native editor-group splitting and dragging; the sidebar remains available. Both surfaces receive live diagnostics and share the renderer, but keep independent presentation preferences.
 

@@ -18,6 +18,7 @@ const fs = require("fs");
 const path = require("path");
 const core = require("./core");
 const { createTreeProvider } = require("./views/tree-provider");
+const { createQuickActionsProvider } = require("./views/quick-actions-provider");
 const { fileGroups, findingDetails } = require("./views/model");
 const { ReferenceDetailsSidebarProvider } = require("./views/reference-details-sidebar-provider");
 const { ReferenceDetailsPanel } = require("./views/reference-details-panel");
@@ -663,10 +664,7 @@ function activate(context) {
     }),
     referenceDetailsSidebarProvider,
     referenceDetailsPanel,
-    vscode.window.registerTreeDataProvider("pathmend.actions", {
-      getChildren: () => [],
-      getTreeItem: item => item,
-    }),
+    vscode.window.registerTreeDataProvider("pathmend.actions", createQuickActionsProvider()),
     vscode.window.registerWebviewViewProvider("pathmend.referenceDetails", referenceDetailsSidebarProvider),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
