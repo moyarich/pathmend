@@ -268,6 +268,22 @@ async function body(check, cfg) {
   const forgedFix = await vscode.commands.executeCommand("pathmend.applyFix", { file: path.join(ws, "Dockerfile"), line: 5, col: 5, code: "PM003" });
   const noFix = await vscode.commands.executeCommand("pathmend.applyFix", rows(api).find((r) => r.item.contextValue === "finding").node);
   check("fix command rejects stale and unfixable rows", forgedFix === false && noFix === false, [forgedFix, noFix]);
+  const manual = api.getFindings().find(f => !f.fix && f.code === "PM012" && f.ref.escape === "document-path");
+  check("manual repair candidate exists", !!manual);
+  if (manual) {
+    const source = await vscode.workspace.openTextDocument(vscode.Uri.file(manual.file));
+    const before = source.getText();
+    const target = path.join(path.dirname(manual.file), "pathmend-manual-target.md");
+    fs.writeFileSync(target, "# Manual repair target\n");
+    try {
+      const applied = await vscode.commands.executeCommand("pathmend.applyFix", manual, "./pathmend-manual-target.md");
+      check("manual replacement without suggestion applies", applied === true && source.getText().includes("./pathmend-manual-target.md"));
+    } finally {
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(source.uri, new vscode.Range(source.positionAt(0), source.positionAt(source.getText().length)), before);
+      await vscode.workspace.applyEdit(edit); await source.save(); fs.unlinkSync(target); await api.rebuildIndex();
+    }
+  }
   let afterFix = expected.filter((k) => k !== "Dockerfile:6:PM003");
 
   // ---- Quick Fix ---------------------------------------------------------------------

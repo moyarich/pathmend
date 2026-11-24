@@ -7,7 +7,7 @@ function createReport(groups, severity, enabled, hasWorkspace) {
   const { data } = createSnapshot(groups, severity, enabled, hasWorkspace, 0);
   const files = data.files.map(file => ({
     path: file.path,
-    findings: file.findings.map(({ id, ...finding }) => finding),
+    findings: file.findings.map(({ id, repairable, ...finding }) => finding),
   }));
   const findings = files.flatMap(file => file.findings);
   const broken = findings.filter(f => !f.notChecked).length;

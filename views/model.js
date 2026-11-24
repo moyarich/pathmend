@@ -1,6 +1,7 @@
 "use strict";
 
 const { RULES } = require("../src/analyzer/rules/registry");
+const { canReplace } = require("../src/analyzer/references/can-replace");
 
 function fileGroups(findings, viewPath) {
   const groups = new Map();
@@ -32,7 +33,7 @@ function createSnapshot(groups, severity, enabled, hasWorkspace, revision) {
       references.set(id, { file: f.file, line: f.line, col: f.col, code: f.code });
       return {
         id, code: f.code, rule: RULES[f.code].description, alias: RULES[f.code].name,
-        path: f.ref.display, message: f.message, fix: f.fix || null,
+        path: f.ref.display, message: f.message, fix: f.fix || null, repairable: canReplace(f),
         line: f.line + 1, column: f.col + 1, severity: f.info ? "information" : severity, notChecked: !!f.info,
       };
     }),

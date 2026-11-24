@@ -76,7 +76,7 @@ PathMend looks for the same filename elsewhere in the workspace first, then for 
 2. Select **Apply fix** (or use **Reset** to restore the suggestion).
 3. If the edited target cannot be verified, choose whether to apply it anyway or cancel.
 
-Unsafe syntax, stale source edits and edits outside the workspace are blocked. Editable replacements currently require a generated suggestion; otherwise, open the source file and edit the reference directly.
+Unsafe syntax, stale source edits and edits outside the workspace are blocked. For safely editable literal references without a suggestion, enter a replacement path manually. Glob patterns, unanchored CODEOWNERS names and unsupported edit syntax may still require editing the source directly. The Fixable filter counts generated suggestions.
 
 ### Rename or move files
 

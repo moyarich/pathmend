@@ -17,21 +17,22 @@ export class ReferenceCard extends HTMLElement {
     path.className = "path";
     path.title = "Open reference at line " + f.line + ", column " + f.column;
     card.append(meta, path, element("div", f.rule, "rule-title"), element("p", f.message, "message"));
-    if (f.fix) {
+    if (f.repairable || f.fix) {
       const suggestion = element("div", undefined, "suggestion");
-      const label = element("label", "Suggested path", "suggestion-label");
+      const label = element("label", f.fix ? "Suggested path" : "Replacement path", "suggestion-label");
       const input = element("input", undefined, "suggestion-path");
       input.type = "text";
-      input.value = draft.value ?? f.fix;
+      input.value = draft.value ?? f.fix ?? "";
       input.spellcheck = false;
       input.autocomplete = "off";
-      input.setAttribute("aria-label", "Suggested path for " + f.path);
+      input.setAttribute("aria-label", "Replacement path for " + f.path);
+      input.placeholder = f.fix ? "" : "Enter a local path";
       input.dataset.draftKey = draft.key;
       label.append(input);
       const fix = action("Apply fix", () => dispatch("fix", { replacement: input.value }), "check");
       fix.classList.add("primary");
       const reset = action("Reset", () => {
-        input.value = f.fix;
+        input.value = f.fix ?? "";
         update();
         input.focus();
       });
@@ -39,7 +40,7 @@ export class ReferenceCard extends HTMLElement {
       const update = () => {
         draft.save(input.value);
         fix.disabled = !input.value.trim();
-        reset.disabled = input.value === f.fix;
+        reset.disabled = input.value === (f.fix ?? "");
       };
       input.addEventListener("input", update);
       input.addEventListener("keydown", event => {

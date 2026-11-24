@@ -15,12 +15,12 @@ export class ReferenceList extends HTMLElement {
     if (!snapshot) return;
     const active = document.activeElement;
     const focused = this.contains(active) && active?.dataset.draftKey ? { key: active.dataset.draftKey, start: active.selectionStart, end: active.selectionEnd } : null;
-    const keys = new Set(snapshot.files.flatMap(file => file.findings.filter(f => f.fix).map(f => this.draftKey(file, f))));
+    const keys = new Set(snapshot.files.flatMap(file => file.findings.filter(f => f.repairable || f.fix).map(f => this.draftKey(file, f))));
     for (const key of this.drafts.keys()) if (!keys.has(key)) this.drafts.delete(key);
     const getDraft = (file, finding) => {
       const key = this.draftKey(file, finding);
       return { key, value: this.drafts.get(key), save: value => {
-        if (value === finding.fix) this.drafts.delete(key); else this.drafts.set(key, value);
+        if (value === (finding.fix ?? "")) this.drafts.delete(key); else this.drafts.set(key, value);
       } };
     };
     const status = this.querySelector(".reference-status") || element("p", "", "reference-status");
