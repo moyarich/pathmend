@@ -73,6 +73,9 @@ async function showState(name, ws) {
       await screenshotView();
       await vscode.commands.executeCommand("workbench.actions.view.problems");
       break;
+    case "reference-details":
+      await vscode.commands.executeCommand("pathmend.details.focus");
+      break;
     case "after-inline-fix":
       await screenshotEditor(ws, "Dockerfile", 5);
       await screenshotView();

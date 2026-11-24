@@ -17,6 +17,9 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const core = require("./core");
+const { createTreeProvider } = require("./views/tree-provider");
+const { fileGroups, findingDetails } = require("./views/model");
+const { ReferenceDetailsProvider } = require("./views/details-provider");
 
 const SOURCE = "PathMend";
 const CONFIG_GLOB =
@@ -246,13 +249,6 @@ function updateStatus() {
 // Activity bar view
 // ---------------------------------------------------------------------------
 
-const SEV_THEME = {
-  error: ["error", "problemsErrorIcon.foreground"],
-  warning: ["warning", "problemsWarningIcon.foreground"],
-  information: ["info", "problemsInfoIcon.foreground"],
-  hint: ["lightbulb", undefined],
-};
-
 /** Path shown in the view: workspace-relative, prefixed with the folder name in a multi-root workspace. */
 function viewPath(file) {
   const rs = roots();
@@ -262,56 +258,22 @@ function viewPath(file) {
   return rs.length > 1 ? r.name + "/" + rel : rel;
 }
 
-function fileGroups() {
-  const groups = new Map();
-  for (const f of (state && state.findings) || []) {
-    if (!groups.has(f.file)) groups.set(f.file, []);
-    groups.get(f.file).push(f);
-  }
-  return [...groups.entries()]
-    .map(([file, list]) => ({ type: "file", file, rel: viewPath(file), findings: list.slice().sort((a, b) => a.line - b.line || a.col - b.col) }))
-    .sort((a, b) => a.rel.localeCompare(b.rel));
+let treeProvider = null;
+let detailsProvider = null;
+
+function getGroups() {
+  return fileGroups(state ? state.findings : [], viewPath);
 }
 
-const treeProvider = {
-  emitter: null,
-  get onDidChangeTreeData() {
-    return this.emitter.event;
-  },
-  getChildren(node) {
-    if (!node) return fileGroups();
-    if (node.type === "file") return node.findings.map((f) => ({ type: "finding", f }));
-    return [];
-  },
-  getTreeItem(node) {
-    const C = vscode.TreeItemCollapsibleState;
-    if (node.type === "file") {
-      const broken = node.findings.filter((f) => !f.info).length;
-      const info = node.findings.length - broken;
-      const item = new vscode.TreeItem(node.rel, C.Expanded);
-      item.id = "file:" + node.file;
-      item.resourceUri = vscode.Uri.file(node.file);
-      item.description = (broken ? broken + " broken" : "") + (broken && info ? ", " : "") + (info ? info + " not checked" : "");
-      item.tooltip = node.rel + "\n" + item.description;
-      item.contextValue = "configFile";
-      return item;
-    }
-    const f = node.f;
-    const item = new vscode.TreeItem(f.code + "  " + f.ref.display, C.None);
-    item.description = "L" + (f.line + 1) + ":" + (f.col + 1);
-    item.tooltip = findingDetails(f);
-    const [icon, color] = f.info ? SEV_THEME.information : SEV_THEME[getConfig().severity] || SEV_THEME.warning;
-    item.iconPath = new vscode.ThemeIcon(icon, color ? new vscode.ThemeColor(color) : undefined);
-    item.contextValue = f.fix ? "finding.fixable" : "finding";
-    item.command = { command: "pathmend.openReference", title: "Open reference", arguments: [{ file: f.file, line: f.line, col: f.col, code: f.code }] };
-    return item;
-  },
-};
+function formatFinding(f) {
+  return findingDetails(f, viewPath);
+}
 
 let treeView = null;
 
 function refreshTree() {
-  if (treeProvider.emitter) treeProvider.emitter.fire(undefined);
+  if (treeProvider) treeProvider.emitter.fire(undefined);
+  if (detailsProvider) detailsProvider.refresh();
   if (!treeView) return;
   const n = brokenCount();
   treeView.badge = n ? { value: n, tooltip: n + " broken path reference" + (n === 1 ? "" : "s") } : undefined;
@@ -344,21 +306,13 @@ function confined(file) {
   });
 }
 
-/** Full diagnostic text, shared by the tooltip and the explicit details action. */
-function findingDetails(f) {
-  const rule = core.RULES[f.code];
-  return f.code + " (" + rule.name + ") " + rule.description + "\n" +
-    viewPath(f.file) + ":" + (f.line + 1) + ":" + (f.col + 1) + "\n\n" +
-    f.message + (f.fix ? '\n\nQuick Fix: did you mean "' + f.fix + '"?' : "");
-}
-
 /** Show the complete diagnostic without the single-line tree width constraint. */
 async function showReferenceDetails(arg) {
   const f = liveFinding(arg);
   if (!f) return false;
   const choice = await vscode.window.showInformationMessage(
     "PathMend: " + f.code,
-    { modal: true, detail: findingDetails(f) },
+    { modal: true, detail: formatFinding(f) },
     "Open reference"
   );
   if (choice === "Open reference") return openReference(arg);
@@ -623,7 +577,12 @@ function activate(context) {
     lastPrompt: null,
     lastPromptDone: null,
   };
-  treeProvider.emitter = new vscode.EventEmitter();
+  treeProvider = createTreeProvider({ getGroups, getSeverity: () => getConfig().severity, findingDetails: formatFinding });
+  detailsProvider = new ReferenceDetailsProvider(context.extensionUri, {
+    getGroups, getSeverity: () => getConfig().severity,
+    isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
+    open: openReference, fix: applyFix, scan: scanCommand,
+  });
   treeView = vscode.window.createTreeView(VIEW_ID, { treeDataProvider: treeProvider, showCollapseAll: true });
   const excluded = (uri) => {
     const r = rootFor(path.resolve(uri.fsPath), roots());
@@ -667,6 +626,8 @@ function activate(context) {
     watcher,
     treeProvider.emitter,
     treeView,
+    detailsProvider,
+    vscode.window.registerWebviewViewProvider("pathmend.details", detailsProvider),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
     vscode.commands.registerCommand("pathmend.openReference", openReference),
@@ -720,6 +681,7 @@ function activate(context) {
     getTreeItem: (node) => treeProvider.getTreeItem(node),
     getBadge: () => (treeView && treeView.badge ? treeView.badge.value : 0),
     isViewVisible: () => !!(treeView && treeView.visible),
+    isDetailsVisible: () => !!(detailsProvider && detailsProvider.visible),
     getStatusText: () => (state && state.status ? state.status.text : ""),
   };
 }
@@ -731,6 +693,8 @@ function deactivate() {
   }
   state = null;
   treeView = null;
+  treeProvider = null;
+  detailsProvider = null;
 }
 
 module.exports = { activate, deactivate };

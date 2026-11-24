@@ -146,6 +146,8 @@ Disabling screenshots does not disable functional testing. The editor and sideba
 
 ### Captured screenshots
 
+`reference-details.png` captures the additional multiline Reference Details webview. The native tree remains available.
+
 Screenshots are saved to `screenshots/` at the repository root.
 
 | File                      | Captured state                                       |

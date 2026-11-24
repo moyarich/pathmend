@@ -232,8 +232,17 @@ async function body(check, cfg) {
     vscode.window.showInformationMessage = originalDetailsPrompt;
   }
 
+  check("details webview contributed", pkg.contributes.views.pathmend.some(v => v.id === "pathmend.details" && v.type === "webview"));
+  await vscode.commands.executeCommand("pathmend.details.focus");
+  check("details webview opens", await waitFor(() => api.isDetailsVisible(), 5000));
+  await vscode.commands.executeCommand("pathmend.references.focus");
+
   // ---- visual checkpoint (optional screenshot) ------------------------------------
   await captureState(cfg, "diagnostics-panel", ws);
+  if (cfg.screenshotsEnabled) {
+    await captureState(cfg, "reference-details", ws);
+    await vscode.commands.executeCommand("pathmend.references.focus");
+  }
 
   // ---- open command ------------------------------------------------------------------
   const openRes = await vscode.commands.executeCommand(start.item.command.command, ...start.item.command.arguments);

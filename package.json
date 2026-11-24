@@ -39,7 +39,8 @@
     "workspaceContains:**/*.md",
     "workspaceContains:**/*.mdx",
     "onStartupFinished",
-    "onView:pathmend.references"
+    "onView:pathmend.references",
+    "onView:pathmend.details"
   ],
   "main": "./extension.js",
   "icon": "icon.png",
@@ -101,6 +102,14 @@
           "name": "Broken References",
           "icon": "media/activity.svg",
           "contextualTitle": "PathMend"
+        },
+        {
+          "type": "webview",
+          "id": "pathmend.details",
+          "name": "Reference Details",
+          "icon": "media/activity.svg",
+          "contextualTitle": "PathMend",
+          "visibility": "collapsed"
         }
       ]
     },

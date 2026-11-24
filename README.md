@@ -155,6 +155,8 @@ Only supported config and documentation files inside the workspace are edited. R
 
 ## Activity bar and commands
 
+PathMend has two views in the same activity bar container: **Broken References** (native tree navigation) and **Reference Details** (expand the collapsed webview for fully wrapped messages, suggested paths, filtering, and Open reference / Apply fix actions). Both use the same live diagnostics and guarded commands. The webview uses VS Code theme colors and local assets only.
+
 - **Activity bar** - the PathMend view lists every broken reference, grouped by config file.
   Each row is labelled with the rule and the exact path string (for example
   `PM003  scripts/start.sh`), shows a compact line and column next to it (for example `L6:6`), and opens the file on that
