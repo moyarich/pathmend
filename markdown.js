@@ -6,6 +6,30 @@ const DEFAULT_ATTRIBUTES = ["src", "href"];
 const DEFAULT_DIRECTIVE_ATTRIBUTES = ["component", "code", "files"];
 const DEFAULT_MULTI_ATTRIBUTES = ["files"];
 
+/**
+ * @typedef {"markdown" | "module" | "jsx" | "directive"} DocumentReferenceType
+ * @typedef {Object} DocumentReference
+ * @property {number} start Inclusive UTF-16 offset into the original source.
+ * @property {number} end Exclusive UTF-16 offset; excludes quotes, fragments and query strings.
+ * @property {string} value Local path as authored, without query or fragment.
+ * @property {DocumentReferenceType} type Syntax that contains the reference.
+ * @property {string} [attribute] JSX or directive attribute name, when applicable.
+ * @property {string} [quote] Original single or double quote, when applicable.
+ */
+
+/**
+ * Extract supported static local paths without compiling Markdown or executing MDX.
+ * Complex or ambiguous syntax is intentionally skipped. Returned ranges contain only
+ * the path itself, allowing callers to preserve surrounding syntax when editing.
+ *
+ * @param {string} text Original Markdown or MDX document.
+ * @param {Object} [options] Scanner configuration.
+ * @param {boolean} [options.mdx=false] Recognize static ESM and JSX syntax.
+ * @param {string[]} [options.pathAttributes] JSX attributes to scan (defaults to src and href).
+ * @param {string[]} [options.directivePathAttributes] Directive attributes to scan.
+ * @param {string[]} [options.multiPathAttributes] Attributes containing comma-separated paths.
+ * @returns {DocumentReference[]} References in source order.
+ */
 function extractMarkdownPaths(text, options = {}) {
   const mdx = !!options.mdx;
   const attributes = new Set(options.pathAttributes || DEFAULT_ATTRIBUTES);
@@ -19,6 +43,7 @@ function extractMarkdownPaths(text, options = {}) {
     while (i > 0 && text[--i] === "\\") count++;
     return count % 2 !== 0;
   };
+  /** Record a supported path without changing its original source offsets. */
   function emit(start, end, type, attr, quote) {
     let value = text.slice(start, end);
     if (!value || /[\r\n\\\u0000-\u001f{}<>]/.test(value)) return;
@@ -44,6 +69,7 @@ function extractMarkdownPaths(text, options = {}) {
     return null;
   }
   function ws(i) { while (i < n && /\s/.test(text[i])) i++; return i; }
+  /** Skip a balanced expression, treating quoted strings and comments as opaque. */
   function balanced(i, open, close) {
     let depth = 0;
     for (let j = i; j < n; j++) {
@@ -115,7 +141,9 @@ function extractMarkdownPaths(text, options = {}) {
     refs.length = staged;
     return -1;
   }
+  /** Read a single-line Markdown destination and optional title. */
   function destination(i, limit, inline) {
+    if (text[limit - 1] === "\r") limit--;
     while (i < limit && /[ \t]/.test(text[i])) i++;
     let start = i, end;
     if (text[i] === "<") {
@@ -141,7 +169,7 @@ function extractMarkdownPaths(text, options = {}) {
       i = title.next;
       while (i < limit && /[ \t]/.test(text[i])) i++;
     }
-    if (inline ? text[i] !== ")" : i !== limit && text[i] !== "\r") return;
+    if (inline ? text[i] !== ")" : i !== limit) return;
     emit(start, end, "markdown");
     return inline ? i + 1 : limit;
   }
