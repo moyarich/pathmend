@@ -128,7 +128,7 @@ function renderHtml(cspSource, style, script, sidebar) {
     <select id="file-type" aria-label="File type"><option value="">All file types</option></select>
     <select id="rule" aria-label="Diagnostic rule"><option value="">All rules</option></select>
     <select id="sort" aria-label="Sort references"><option value="path">File path</option><option value="severity">Severity</option><option value="count">Reference count</option></select>
-    <label><input id="current-only" type="checkbox"> Current file</label>
+    <label class="checkbox-label">Current file <input id="current-only" type="checkbox"></label>
   </div>
   <div class="toolbar" role="group" aria-label="Reference actions">
     ${sidebar ? '<button id="editor" class="quiet" type="button" title="Open Reference Details in an editor tab alongside your files">Open Reference Details in Editor</button>' : '<button id="sidebar" class="quiet" type="button" title="Show Reference Details in the PathMend sidebar">Open Reference Details in Sidebar</button>'}
@@ -138,9 +138,12 @@ function renderHtml(cspSource, style, script, sidebar) {
     <button id="settings" class="quiet" type="button" title="Configure PathMend settings">Settings</button>
   </div>
   <div class="bulk-selection-row" role="group" aria-label="Bulk repair selection">
-    <label><input id="select-visible" type="checkbox" disabled> Select visible fixes</label>
-    <button id="clear-selection" class="quiet" type="button" disabled>Clear selection</button>
-    <span id="selection-status" role="status" aria-live="polite">0 selected</span>
+    <div class="selection-actions">
+      <span id="selection-status" role="status" aria-live="polite">0 selected</span>
+      <button id="clear-selection" class="quiet" type="button" disabled>Clear selection</button>
+    </div>
+    <label class="checkbox-label" for="select-visible">Select visible fixes</label>
+    <input id="select-visible" type="checkbox" disabled>
   </div>
 </header>
 <main class="view-content"><pm-reference-list><p class="reference-status" role="status">Loading references…</p></pm-reference-list></main>

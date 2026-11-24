@@ -4,6 +4,7 @@
   gap: var(--pm-space-1);
   min-inline-size: 0;
   padding: 6px var(--pm-space-2);
+  padding-inline-end: var(--pm-bulk-edge);
   border-inline-start: 2px solid var(--_pm-severity);
   overflow-wrap: anywhere;
 }
@@ -14,6 +15,12 @@
   color: var(--vscode-list-inactiveSelectionForeground, var(--pm-foreground));
   outline: 1px solid var(--vscode-contrastActiveBorder, var(--pm-focus));
   outline-offset: -1px;
+}
+.card-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--pm-checkbox-size);
+  align-items: start;
+  gap: var(--pm-space-1);
 }
 .card-meta {
   display: flex;
