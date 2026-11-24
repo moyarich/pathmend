@@ -410,6 +410,7 @@
     ]
   },
   "scripts": {
+    "dev": "node test/dev-vscode.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

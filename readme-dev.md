@@ -15,6 +15,24 @@ npm install
 npm test
 ```
 
+## Interactive development
+
+```bash
+npm run dev
+```
+
+Launches an isolated VS Code Extension Development Host with the current PathMend source and a disposable copy of the sample test workspace. It uses the existing `@vscode/test-electron` download/cache and respects `VSCODE_EXECUTABLE_PATH` and `VSCODE_TEST_VERSION`. No integration assertions, screenshots, or automated fixes are run. Close the development window to remove the temporary profile and fixture.
+
+Open PathMend in the Activity Bar, or use **PathMend: Open Reference Details** from the Command Palette. After source edits, run **Developer: Reload Window** in the development host to load the changes.
+
+To use an existing folder instead of the fixture:
+
+```bash
+npm run dev -- --workspace /path/to/workspace
+```
+
+The supplied folder is opened directly (not copied); edits and fixes affect that folder. The launcher never deletes it. Workspace Trust remains available in the isolated profile.
+
 ## Running tests
 
 All three CI workflows upload their JSON test reports as separate artifacts (retained for 14 days), including on test failure when a report exists. All three CI workflows publish GitHub Actions job summaries and native error annotations for failures. Vitest reports test counts and source locations when available; core reports diagnostic and filesystem checks; VS Code reports trusted and untrusted results separately. Reports are published even after a failed test step. Test exit codes still determine CI success.

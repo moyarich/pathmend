@@ -22,7 +22,7 @@ if (screenshotsEnabled) {
     console.warn("Playwright unavailable; continuing functional tests without screenshots:", error.message);
   }
 }
-const { downloadAndUnzipVSCode } = require("@vscode/test-electron");
+const { resolveVSCode } = require("./utils/vscode");
 const { prepare } = require("./prepare");
 
 const extDir = path.resolve(__dirname, "..");
@@ -63,17 +63,6 @@ function writeSettings(trustEnabled) {
       ...(screenshotsEnabled ? { "window.newWindowDimensions": "maximized" } : {}),
     }, null, 2)
   );
-}
-
-async function resolveVSCode() {
-  // Launch the actual Electron executable, not the code CLI shim, so Chromium
-  // exposes its DevTools endpoint to Playwright (as Nx Console E2E does).
-  const downloaded = process.env.VSCODE_EXECUTABLE_PATH
-    || await downloadAndUnzipVSCode(process.env.VSCODE_TEST_VERSION || undefined);
-  if (fs.existsSync(downloaded)) return downloaded;
-  const macCode = path.join(path.dirname(downloaded), "Code");
-  if (fs.existsSync(macCode)) return macCode;
-  throw new Error("VS Code executable not found: " + downloaded);
 }
 
 async function captureWorkbench(devtoolsUrl, screenshotName) {
