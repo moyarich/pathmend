@@ -64,6 +64,7 @@ class ReferenceDetailsWebview {
     if (!this.view?.visible || !this.ready) return;
     if (message.type === "editor" && this.location === "sidebar") return vscode.commands.executeCommand("pathmend.openReferenceDetailsInEditor");
     if (message.type === "sidebar" && this.location === "editor") return vscode.commands.executeCommand("pathmend.openReferenceDetailsInSidebar");
+    if (message.type === "bulk-repair") return this.actions.bulkRepair();
     if (message.type === "export") return vscode.commands.executeCommand("pathmend.exportResults");
     if (message.type === "settings") return vscode.commands.executeCommand("pathmend.openSettings");
     if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");
@@ -121,6 +122,7 @@ function renderHtml(cspSource, style, script, sidebar) {
   <div class="toolbar" role="group" aria-label="Reference actions">
     ${sidebar ? '<button id="editor" class="quiet" type="button" title="Open Reference Details in an editor tab alongside your files">Open Reference Details in Editor</button>' : '<button id="sidebar" class="quiet" type="button" title="Show Reference Details in the PathMend sidebar">Open Reference Details in Sidebar</button>'}
     <button id="problems" class="quiet" type="button" title="Open the VS Code Problems panel">Problems</button>
+    <button id="bulk-repair" class="quiet" type="button" title="Select and preview verified repairs">Bulk repairs</button>
     <button id="export" class="quiet" type="button" title="Save the complete diagnostic report as a JSON file">Export JSON</button>
     <button id="settings" class="quiet" type="button" title="Configure PathMend settings">Settings</button>
   </div>

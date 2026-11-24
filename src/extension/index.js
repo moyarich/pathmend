@@ -15,6 +15,7 @@ const { getConfig } = require("./configuration");
 const { roots, rootFor, insideWorkspace, relPath, buildIndex, collectConfigs, openDocText, confined, isConfigDoc } = require("./workspace");
 const { createScanner } = require("./scanning/scanner");
 const { createCommands } = require("./commands/reference-commands");
+const { createBulkRepairs } = require("./commands/bulk-repairs");
 const { createRepairPreview } = require("./commands/repair-preview");
 const { createReplacementActions } = require("./commands/replacement-actions");
 const { createCodeActionProvider } = require("./providers/code-action-provider");
@@ -110,11 +111,13 @@ function activate(context) {
   };
   treeProvider = createTreeProvider({ getGroups, getSeverity: () => getConfig().severity, findingDetails: formatFinding });
   const replacements = createReplacementActions(runtime, liveFinding);
+  const preview = createRepairPreview(runtime, liveFinding);
+  const { bulkRepair } = createBulkRepairs(runtime, preview);
   const referenceDetailsActions = {
     getGroups, getSeverity: () => getConfig().severity,
     isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
     open: openReference, fix: applyFix, ...replacements,
-    preview: (arg, replacement) => createRepairPreview(runtime, liveFinding).previewFix(arg, replacement, applyFix),
+    preview: (arg, replacement) => preview.previewFix(arg, replacement, applyFix), bulkRepair,
   };
   runtime.referenceDetailsSidebarProvider = new ReferenceDetailsSidebarProvider(context.extensionUri, referenceDetailsActions);
   runtime.referenceDetailsPanel = new ReferenceDetailsPanel(context.extensionUri, referenceDetailsActions);

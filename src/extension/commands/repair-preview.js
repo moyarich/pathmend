@@ -27,7 +27,7 @@ function createRepairPreview(runtime, liveFinding) {
     return eligible(p.f) && liveFinding(p.arg) === p.f && p.doc.version === p.version &&
       p.doc.getText(p.range) === p.f.ref.raw;
   }
-  async function showDiff(doc, before, after, title) {
+  async function showDiff(doc, before, after, title, accept = "Apply") {
     const scheme = "pathmend-preview-" + (++sequence);
     const original = vscode.Uri.from({ scheme, path: "/original/" + path.basename(doc.fileName) });
     const proposed = vscode.Uri.from({ scheme, path: "/proposed/" + path.basename(doc.fileName) });
@@ -36,7 +36,7 @@ function createRepairPreview(runtime, liveFinding) {
     });
     try {
       await vscode.commands.executeCommand("vscode.diff", original, proposed, title, { preview: true });
-      return await vscode.window.showInformationMessage("Review the repair diff, then choose Apply or Cancel.", "Apply", "Cancel") === "Apply";
+      return await vscode.window.showInformationMessage("Review the repair diff, then choose " + accept + " or Cancel.", accept, "Cancel") === accept;
     } finally { provider.dispose(); }
   }
   async function previewFix(arg, replacement, applyFix) {
