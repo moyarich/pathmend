@@ -3,7 +3,7 @@ pm-file-group {
 }
 .file-summary {
   display: grid;
-  grid-template-columns: var(--pm-icon-size) minmax(0, 1fr);
+  grid-template-columns: var(--pm-icon-size) minmax(0, 1fr) auto;
   gap: var(--pm-space-1);
   align-items: start;
   padding: 6px 2px;
