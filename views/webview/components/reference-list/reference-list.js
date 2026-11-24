@@ -1,5 +1,4 @@
 import { element } from "../../utils/dom.js";
-import { filterReferences } from "../../state/filter.js";
 import "../file-group/file-group.js";
 
 /** Render the current snapshot, preserving native keyboard and theme behavior. */
@@ -30,7 +29,7 @@ export class ReferenceList extends HTMLElement {
     if (!snapshot.enabled || !snapshot.hasWorkspace) {
       status.textContent = snapshot.enabled ? "Open a folder to check references." : "PathMend is turned off.";
     } else {
-      const files = filterReferences(snapshot.files, state.filter, state.severity);
+      const files = state.visibleFiles;
       const findings = snapshot.files.flatMap(file => file.findings);
       const broken = findings.filter(f => !f.notChecked).length;
       const summary = element("div", undefined, "reference-summary");
@@ -46,7 +45,7 @@ export class ReferenceList extends HTMLElement {
       }
       results.append(groups);
       status.textContent = total ? total + " of " + findings.length + " references · " + files.length + " files" :
-        state.filter.trim() || state.severity !== "all" ? "No matching references." : "No broken paths found.";
+        state.filter.trim() || state.severity !== "all" || state.options.fileType || state.options.rule || state.options.currentOnly ? "No matching references." : "No broken paths found.";
     }
     this.replaceChildren(status, results);
     if (focused) {
