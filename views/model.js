@@ -1,6 +1,6 @@
 "use strict";
 
-const { RULES } = require("../rules");
+const { RULES } = require("../src/analyzer/rules/registry");
 
 function fileGroups(findings, viewPath) {
   const groups = new Map();

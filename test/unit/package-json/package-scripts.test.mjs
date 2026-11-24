@@ -3,8 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import core from "../../../core.js";
-import scriptPaths from "../../../package-scripts.js";
+import analyzer from "../../../src/analyzer/index.js";
+import scriptPaths from "../../../src/analyzer/formats/package-json/scripts.js";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const fixtureManifest = path.resolve(testDirectory, "../../fixtures/unit/package-json/package.json");
@@ -12,12 +12,12 @@ let scratch;
 let manifest;
 
 function analyze() {
-  const guard = core.createGuard(fs, [scratch]);
-  const result = core.analyze({
+  const guard = analyzer.createGuard(fs, [scratch]);
+  const result = analyzer.analyze({
     configs: [{ file: manifest, text: fs.readFileSync(manifest, "utf8") }],
     roots: [{ path: scratch, name: "scratch" }],
     guard,
-    index: new core.FileIndex(),
+    index: new analyzer.FileIndex(),
     settings: {},
   });
   return { ...result, guard };
@@ -30,7 +30,7 @@ function applyPlan(plan) {
     b.ref.line - a.ref.line || b.ref.col - a.ref.col)) {
     const { ref, newText } = entry;
     expect(lines[ref.line].slice(ref.col, ref.endCol)).toBe(ref.raw);
-    const encoded = core.encodeFor(ref, newText);
+    const encoded = analyzer.encodeFor(ref, newText);
     expect(encoded).not.toBeNull();
     lines[ref.line] = lines[ref.line].slice(0, ref.col)
       + encoded + lines[ref.line].slice(ref.endCol);
@@ -111,7 +111,7 @@ describe("package.json script paths", () => {
     const { refs, guard } = analyze();
     const from = path.join(scratch, "scripts", "build.ts");
     const to = path.join(scratch, "tools", "build.ts");
-    const plan = core.planRenames(refs, [{ from, to }], guard.inside);
+    const plan = analyzer.planRenames(refs, [{ from, to }], guard.inside);
     expect(plan).toHaveLength(1);
     expect(plan[0].newText).toBe("tools/build.ts");
 
@@ -127,7 +127,7 @@ describe("package.json script paths", () => {
     const { refs, guard } = analyze();
     const from = path.join(scratch, "scripts");
     const to = path.join(scratch, "tools", "scripts");
-    const plan = core.planRenames(refs, [{ from, to }], guard.inside);
+    const plan = analyzer.planRenames(refs, [{ from, to }], guard.inside);
     expect(plan.map((p) => p.newText)).toEqual([
       "tools/scripts/build.ts",
       "./tools/scripts/run.js",
@@ -153,10 +153,10 @@ describe("package.json script paths", () => {
     original.main = "/prepare-github-cli.ts";
     fs.writeFileSync(manifest, JSON.stringify(original, null, 2) + "\n");
 
-    const guard = core.createGuard(fs, [scratch]);
-    const index = new core.FileIndex();
+    const guard = analyzer.createGuard(fs, [scratch]);
+    const index = new analyzer.FileIndex();
     index.add(scratch, "scripts/prepare-github-cli.ts");
-    const result = core.analyze({
+    const result = analyzer.analyze({
       configs: [{ file: manifest, text: fs.readFileSync(manifest, "utf8") }],
       roots: [{ path: scratch, name: "scratch" }],
       guard,
@@ -177,7 +177,7 @@ describe("package.json script paths", () => {
       const { ref, fix } = finding;
       expect(lines[ref.line].slice(ref.col, ref.endCol)).toBe(ref.raw);
       lines[ref.line] = lines[ref.line].slice(0, ref.col)
-        + core.encodeFor(ref, fix) + lines[ref.line].slice(ref.endCol);
+        + analyzer.encodeFor(ref, fix) + lines[ref.line].slice(ref.endCol);
     }
     fs.writeFileSync(manifest, lines.join("\n"));
     const updated = JSON.parse(fs.readFileSync(manifest, "utf8"));
@@ -207,15 +207,15 @@ describe("package.json script paths", () => {
     fs.writeFileSync(manifest, JSON.stringify(packageData, null, 2) + "\n");
 
     const inspect = () => {
-      const guard = core.createGuard(fs, [scratch]);
+      const guard = analyzer.createGuard(fs, [scratch]);
       const configs = [manifest, workspaceManifest].map(file => ({
         file, text: fs.readFileSync(file, "utf8"),
       }));
-      const result = core.analyze({
+      const result = analyzer.analyze({
         configs,
         roots: [{ path: scratch, name: "scratch" }],
         guard,
-        index: new core.FileIndex(),
+        index: new analyzer.FileIndex(),
         settings: {},
       });
       return { ...result, guard };
@@ -239,7 +239,7 @@ describe("package.json script paths", () => {
       f.ref.label === "package.json scripts.test:consumer:browser")).toEqual([]);
 
     const renamedConfig = path.join(configDir, "renamed.config.js");
-    const plan = core.planRenames(valid.refs, [
+    const plan = analyzer.planRenames(valid.refs, [
       { from: correctConfig, to: renamedConfig },
     ], valid.guard.inside);
     expect(plan).toHaveLength(1);
@@ -316,10 +316,10 @@ describe("package.json script paths", () => {
     const source = JSON.parse(fs.readFileSync(manifest, "utf8"));
     source.scripts.prepare = "node /prepare-github-cli.ts";
     fs.writeFileSync(manifest, JSON.stringify(source, null, 2) + "\n");
-    const guard = core.createGuard(fs, [scratch]);
-    const index = new core.FileIndex();
+    const guard = analyzer.createGuard(fs, [scratch]);
+    const index = new analyzer.FileIndex();
     index.add(scratch, "scripts/prepare-github-cli.ts");
-    const run = (settings) => core.analyze({
+    const run = (settings) => analyzer.analyze({
       configs: [{ file: manifest, text: fs.readFileSync(manifest, "utf8") }],
       roots: [{ path: scratch, name: "scratch" }],
       guard,

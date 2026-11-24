@@ -6,7 +6,7 @@
  *
  * Runs entirely locally. No network, no telemetry, no child processes. Only config files
  * found with vscode.workspace.findFiles are read; referenced paths are only checked for
- * existence, and only when they are inside a workspace folder (see core.createGuard).
+ * existence, and only when they are inside a workspace folder (see analyzer.createGuard).
  *
  * The PathMend activity bar view lists the broken references grouped by config file; each
  * row is labelled with the exact path string (e.g. "PM003  scripts/start.sh"), opens the file
@@ -16,7 +16,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const core = require("./core");
+const analyzer = require("./src/analyzer");
 const { createTreeProvider } = require("./views/tree-provider");
 const { createQuickActionsProvider } = require("./views/quick-actions-provider");
 const { fileGroups, findingDetails } = require("./views/model");
@@ -27,10 +27,6 @@ const { exportResults } = require("./views/export-results");
 const { showErrorDetail, confirmReplacement, promptRenameUpdates } = require("./views/native-dialogs");
 
 const SOURCE = "PathMend";
-const CONFIG_GLOB =
-  "**/{package.json,tsconfig*.json,jsconfig*.json,Dockerfile,Dockerfile.*,*.Dockerfile,*.dockerfile,Containerfile,Containerfile.*,docker-compose*.yml,docker-compose*.yaml,compose*.yml,compose*.yaml,CODEOWNERS,launch.json,.gitlab-ci.yml,*.gitlab-ci.yml}";
-const MARKDOWN_GLOB = "**/*.{md,mdx,MD,MDX}";
-const GITHUB_GLOB = "**/.github/**/*.{yml,yaml}";
 const MAX_CONFIG_FILES = 2000;
 const VIEW_ID = "pathmend.references";
 // Fallback for file watchers that do not fire (for example when the OS watch limit is used up):
@@ -78,7 +74,7 @@ function excludeGlob(cfg) {
 
 function rootFor(p, rs) {
   let best = null;
-  for (const r of rs) if (core.within(p, r.path) && (!best || r.path.length > best.path.length)) best = r;
+  for (const r of rs) if (analyzer.within(p, r.path) && (!best || r.path.length > best.path.length)) best = r;
   return best;
 }
 
@@ -88,11 +84,11 @@ function insideWorkspace(p) {
 
 function relPath(p) {
   const r = rootFor(p, roots());
-  return r ? core.toPosix(path.relative(r.path, p)) || "." : p;
+  return r ? analyzer.toPosix(path.relative(r.path, p)) || "." : p;
 }
 
 async function buildIndex(cfg) {
-  const idx = new core.FileIndex();
+  const idx = new analyzer.FileIndex();
   const rs = roots();
   if (!rs.length) return idx;
   const uris = await vscode.workspace.findFiles("**/*", excludeGlob(cfg), cfg.maxIndexedFiles + 1);
@@ -101,7 +97,7 @@ async function buildIndex(cfg) {
     if (u.scheme !== "file") continue;
     const p = path.resolve(u.fsPath);
     const r = rootFor(p, rs);
-    if (r) idx.add(r.path, core.toPosix(path.relative(r.path, p)));
+    if (r) idx.add(r.path, analyzer.toPosix(path.relative(r.path, p)));
   }
   return idx;
 }
@@ -110,9 +106,9 @@ async function collectConfigs(cfg) {
   const out = new Set();
   if (!roots().length) return [];
   const ex = excludeGlob(cfg);
-  for (const g of [CONFIG_GLOB, GITHUB_GLOB, MARKDOWN_GLOB]) {
+  for (const g of analyzer.discoveryPatterns) {
     const found = await vscode.workspace.findFiles(g, ex, MAX_CONFIG_FILES);
-    for (const u of found) if (u.scheme === "file" && core.classify(u.fsPath)) out.add(path.resolve(u.fsPath));
+    for (const u of found) if (u.scheme === "file" && analyzer.classify(u.fsPath)) out.add(path.resolve(u.fsPath));
   }
   return [...out];
 }
@@ -161,7 +157,7 @@ async function doScan(st) {
   const files = await collectConfigs(cfg);
   if (seq !== state.seq) return SUPERSEDED;
   const rs = roots();
-  const guard = core.createGuard(fs, rs.map((r) => r.path));
+  const guard = analyzer.createGuard(fs, rs.map((r) => r.path));
   const maxBytes = cfg.maxFileSizeKB * 1024;
   const configs = [];
   for (const file of files) {
@@ -177,7 +173,7 @@ async function doScan(st) {
     if (text.length > maxBytes) continue;
     configs.push({ file, text });
   }
-  const result = core.analyze({
+  const result = analyzer.analyze({
     configs,
     roots: rs,
     guard,
@@ -259,7 +255,7 @@ function viewPath(file) {
   const rs = roots();
   const r = rootFor(file, rs);
   if (!r) return file;
-  const rel = core.toPosix(path.relative(r.path, file)) || ".";
+  const rel = analyzer.toPosix(path.relative(r.path, file)) || ".";
   return rs.length > 1 ? r.name + "/" + rel : rel;
 }
 
@@ -309,7 +305,7 @@ function confined(file) {
   if (!real) return false;
   return roots().some((r) => {
     const root = realpathOrNull(r.path);
-    return !!root && core.within(real, root);
+    return !!root && analyzer.within(real, root);
   });
 }
 
@@ -390,7 +386,7 @@ async function applyFix(arg, replacement) {
   const r = new vscode.Range(f.line, f.col, f.line, f.endCol);
   const chosen = replacement === undefined ? f.fix : replacement;
   if (replacement !== undefined && chosen !== f.fix) {
-    const validation = core.validateReplacement(f.ref, chosen, core.createGuard(fs, roots().map(r => r.path)), state.index);
+    const validation = analyzer.validateReplacement(f.ref, chosen, analyzer.createGuard(fs, roots().map(r => r.path)), state.index);
     if (validation === "invalid") {
       void showErrorDetail("Invalid replacement syntax.", "The replacement cannot be safely represented in this reference.\n\nReplacement:\n" + String(chosen));
       return false;
@@ -406,7 +402,7 @@ async function applyFix(arg, replacement) {
       }
     }
   }
-  const text = core.encodeFor(f.ref, chosen);
+  const text = analyzer.encodeFor(f.ref, chosen);
   if (text === null || doc.getText(r) !== f.ref.raw) {
     vscode.window.showWarningMessage("PathMend: source changed. Rescanning.");
     scheduleScan(0);
@@ -439,7 +435,7 @@ function provideCodeActions(doc, range, context) {
     const diag = diags.find((d) => d.range.start.line === f.line && d.range.start.character === f.col);
     if (!diag && !r.intersection(range)) continue;
     if (doc.getText(r) !== f.ref.raw) continue;
-    const text = core.encodeFor(f.ref, fx.newText);
+    const text = analyzer.encodeFor(f.ref, fx.newText);
     if (text === null) continue;
     seen.add(key);
     const act = new vscode.CodeAction('Did you mean "' + fx.newText + '"?', vscode.CodeActionKind.QuickFix);
@@ -468,7 +464,7 @@ function renameKey(renames) {
 
 function planFor(renames) {
   if (!state || !renames.length) return [];
-  return core.planRenames(state.refs, renames, insideWorkspace);
+  return analyzer.planRenames(state.refs, renames, insideWorkspace);
 }
 
 async function applyPlan(plan, preview) {
@@ -488,7 +484,7 @@ async function applyPlan(plan, preview) {
     }
     const r = new vscode.Range(p.ref.line, p.ref.col, p.ref.line, p.ref.endCol);
     if (doc.getText(r) !== p.ref.raw) continue;
-    const text = core.encodeFor(p.ref, p.newText);
+    const text = analyzer.encodeFor(p.ref, p.newText);
     if (text === null) continue;
     edit.replace(uri, r, text, {
       label: "Update moved path",
@@ -535,7 +531,7 @@ async function onDidRename(e) {
     const rs = roots();
     for (const rn of renames) {
       const r1 = rootFor(rn.from, rs);
-      if (r1) state.index.remove(r1.path, core.toPosix(path.relative(r1.path, rn.from)));
+      if (r1) state.index.remove(r1.path, analyzer.toPosix(path.relative(r1.path, rn.from)));
       const r2 = rootFor(rn.to, rs);
       if (!r2) continue;
       let isDir = false;
@@ -550,7 +546,7 @@ async function onDidRename(e) {
         break;
       }
       if (isDir) invalidateIndex(); // a moved folder: rebuild the index on the next scan
-      else state.index.add(r2.path, core.toPosix(path.relative(r2.path, rn.to)));
+      else state.index.add(r2.path, analyzer.toPosix(path.relative(r2.path, rn.to)));
     }
   }
   await scan();
@@ -591,7 +587,7 @@ async function scanCommand() {
 // ---------------------------------------------------------------------------
 
 function isConfigDoc(doc) {
-  return doc && doc.uri && doc.uri.scheme === "file" && !!core.classify(doc.uri.fsPath);
+  return doc && doc.uri && doc.uri.scheme === "file" && !!analyzer.classify(doc.uri.fsPath);
 }
 
 /** Rebuild the file index and rescan: catches files created, deleted or moved outside VS Code. */
@@ -632,7 +628,7 @@ function activate(context) {
   const excluded = (uri) => {
     const r = rootFor(path.resolve(uri.fsPath), roots());
     if (!r) return true;
-    return core.makeMatcher(getConfig().exclude)(core.toPosix(path.relative(r.path, path.resolve(uri.fsPath))));
+    return analyzer.makeMatcher(getConfig().exclude)(analyzer.toPosix(path.relative(r.path, path.resolve(uri.fsPath))));
   };
   const onCreate = async (uri) => {
     if (!state || !uri || uri.scheme !== "file" || excluded(uri)) return;
@@ -647,7 +643,7 @@ function activate(context) {
     else {
       const p = path.resolve(uri.fsPath);
       const r = rootFor(p, roots());
-      if (r) state.index.add(r.path, core.toPosix(path.relative(r.path, p)));
+      if (r) state.index.add(r.path, analyzer.toPosix(path.relative(r.path, p)));
     }
     scheduleScan(800);
   };
@@ -656,7 +652,7 @@ function activate(context) {
     const p = path.resolve(uri.fsPath);
     const r = rootFor(p, roots());
     if (!state.index) invalidateIndex();
-    else if (r) state.index.remove(r.path, core.toPosix(path.relative(r.path, p)));
+    else if (r) state.index.remove(r.path, analyzer.toPosix(path.relative(r.path, p)));
     scheduleScan(800);
   };
   const watcher = vscode.workspace.createFileSystemWatcher("**/*", false, true, false);
