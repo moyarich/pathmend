@@ -1,5 +1,5 @@
-import { createBridge } from "./bridge.js";
-import { createViewState } from "./state.js";
+import { createBridge } from "./api/bridge.js";
+import { createViewState } from "./state/view-state.js";
 import "./components/reference-list.js";
 import { icon } from "./icons/registry.js";
 

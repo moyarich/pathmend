@@ -1,4 +1,4 @@
-import { element } from "../dom.js";
+import { element } from "../utils/dom.js";
 import { icon } from "../icons/registry.js";
 import "./reference-card.js";
 

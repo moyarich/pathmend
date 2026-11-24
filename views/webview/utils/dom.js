@@ -1,4 +1,4 @@
-import { icon } from "./icons/registry.js";
+import { icon } from "../icons/registry.js";
 
 /** Workspace-controlled strings are assigned as text, never HTML. */
 export function element(tag, text, className) {

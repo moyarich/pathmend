@@ -1,5 +1,5 @@
-import { element } from "../dom.js";
-import { filterReferences } from "../filter.js";
+import { element } from "../utils/dom.js";
+import { filterReferences } from "../state/filter.js";
 import "./file-group.js";
 
 /** Render the current snapshot, preserving native keyboard and theme behavior. */
