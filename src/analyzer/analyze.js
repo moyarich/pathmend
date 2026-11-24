@@ -6,6 +6,7 @@ const { lineStarts, splitLines } = require("./utils/text-position");
 const { evaluateRef } = require("./references/evaluate");
 const { formatPath } = require("./references/format-path");
 const { encodeFor } = require("./references/encode");
+const { extractYamlPaths } = require("./formats/yaml-paths");
 const { getFormat } = require("./formats/registry");
 const { collectWorkspacePackages } = require("./formats/package-json/workspace-membership");
 const { RULES, resolveRuleId } = require("./rules/registry");
@@ -47,7 +48,12 @@ function analyze(opts) {
       c.starts = lineStarts(c.text);
       c.lines = splitLines(c.text);
       try {
-        return c.format.extract(c, ctx, settings).map(r => {
+        const extracted = c.format.extract(c, ctx, settings);
+        if (c.format.id !== "yaml-paths" && /\.ya?ml$/i.test(c.file) && settings.yamlPathAttributes?.length) {
+          const occupied = new Set(extracted.map(r=>[r.line,r.col,r.endCol].join(":")));
+          for(const r of extractYamlPaths(c,settings))if(!occupied.has([r.line,r.col,r.endCol].join(":")))extracted.push(r);
+        }
+        return extracted.map(r => {
           r.raw = (c.lines[r.line] || "").slice(r.col, r.endCol);
           return r;
         });

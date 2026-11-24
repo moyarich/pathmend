@@ -23,7 +23,7 @@ if (screenshotsEnabled) {
   }
 }
 const { resolveVSCode } = require("../utils/resolve-vscode");
-const { prepare } = require("../../test/fixtures/prepare");
+const { prepare } = require("../../tests/fixtures/prepare");
 
 const extDir = path.resolve(__dirname, "../..");
 // Short paths matter on macOS because VS Code uses Unix-domain IPC sockets.

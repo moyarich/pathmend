@@ -6,7 +6,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const expected = require("../fixtures/expected");
+const expected = require("../../tests/fixtures/expected");
 const { classify } = require("../../src/analyzer/formats/registry");
 
 const EXT_DIR = path.resolve(__dirname, "..", "..");

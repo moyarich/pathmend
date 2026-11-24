@@ -13,9 +13,14 @@ const format={
      const header=/^\s*\[([^\[\]]+)\]\s*(?:#.*)?$/.exec(text);
      if(header){section=header[1];continue;}
      if(!/^tool\.(?:poetry\.(?:dependencies|dev-dependencies|group\.[^.]+\.dependencies)|uv\.sources)$/.test(section))continue;
-     const m=/^\s*[\w.-]+\s*=\s*\{\s*path\s*=\s*(["'])([^"'\\\r\n]+)\1(?:\s*,[^}#\r\n]+)?\s*\}\s*(?:#.*)?$/.exec(text);
+     const table=/^\s*[\w.-]+\s*=\s*\{([^{}\r\n]*)\}\s*(?:#.*)?$/.exec(text);
+     if(!table)continue;
+     // Consume quoted values as units; only a real top-level path key qualifies.
+     const fields=/(?:^|,)\s*([\w-]+)\s*=\s*(?:"([^"\\\r\n]*)"|'([^'\\\r\n]*)'|([^,]+))\s*(?=,|$)/g;
+     const field=[...table[1].matchAll(fields)].find(f=>f[1]==="path"&&(f[2]!==undefined||f[3]!==undefined));
+     const m=field?[field[0],null,field[2]??field[3]]:null;
      if(!m||!m[2]||/^(?:\/|[a-z][a-z0-9+.-]*:|~)/i.test(m[2])||/[$\\{}*?\[\]]/.test(m[2]))continue;
-     const col=text.indexOf(m[2],text.indexOf("path",text.indexOf("{")));
+     const col=text.indexOf("{")+1+field.index+field[0].indexOf(m[2],field[0].indexOf("=")+1);
      out.push(mkRef({file:c.file,line,col,endCol:col+m[2].length,value:m[2],base:path.dirname(c.file),code:"PM022",label:"Python local dependency",kind:"any",escape:"document-path"}));
    }
    return out;

@@ -5,6 +5,7 @@
 generate_icon.py
 *.vsix
 test/**
+tests/**
 node_modules/**
 **/*.map
 screenshots/**

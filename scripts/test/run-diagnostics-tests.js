@@ -3,8 +3,8 @@
 // test/vscode/index.js. Usage: node scripts/test/run-diagnostics-tests.js <scratch-dir>
 const fs = require("fs");
 const path = require("path");
-const { prepare } = require("../../test/fixtures/prepare");
-const expected = require("../../test/fixtures/expected");
+const { prepare } = require("../../tests/fixtures/prepare");
+const expected = require("../../tests/fixtures/expected");
 const analyzer = require("../../src/analyzer/index.js");
 
 const dir = path.resolve(process.argv[2] || path.join(require("os").tmpdir(), "pathmend-unit"));

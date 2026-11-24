@@ -7,7 +7,7 @@ import analyzer from "../../../src/analyzer/index.js";
 import scriptPaths from "../../../src/analyzer/formats/package-json/scripts.js";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
-const fixtureManifest = path.resolve(testDirectory, "../../fixtures/unit/package-json/package.json");
+const fixtureManifest = path.resolve(testDirectory, "../../../tests/fixtures/unit/package-json/package.json");
 let scratch;
 let manifest;
 
