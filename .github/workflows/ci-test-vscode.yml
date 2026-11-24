@@ -3,7 +3,29 @@ name: CI - VS Code
 on:
   push:
     branches: [main]
+    paths:
+      - '*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'test/vscode/**'
+      - 'test/fixtures/**'
+      - 'test/run-vscode.js'
+      - 'test/prepare.js'
+      - 'test/expected.js'
+      - 'test/write-summary.js'
+      - '.github/workflows/ci-test-vscode.yml'
   pull_request:
+    paths:
+      - '*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'test/vscode/**'
+      - 'test/fixtures/**'
+      - 'test/run-vscode.js'
+      - 'test/prepare.js'
+      - 'test/expected.js'
+      - 'test/write-summary.js'
+      - '.github/workflows/ci-test-vscode.yml'
   workflow_dispatch:
     inputs:
       screenshots:
