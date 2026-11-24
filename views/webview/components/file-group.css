@@ -1,0 +1,33 @@
+pm-file-group {
+  border-top: 1px solid var(--pm-divider);
+}
+.file-summary {
+  display: grid;
+  grid-template-columns: var(--pm-icon-size) minmax(0, 1fr);
+  gap: var(--pm-space-1);
+  align-items: start;
+  padding: 6px 2px;
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+.file-summary::-webkit-details-marker { display: none; }
+.file-summary:hover { background: var(--vscode-list-hoverBackground); }
+.disclosure-icon { margin-top: 2px; }
+details[open] > .file-summary .disclosure-icon { transform: rotate(90deg); }
+.group-label {
+  display: grid;
+  grid-template-columns: var(--pm-icon-size) minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--pm-space-1);
+  min-inline-size: 0;
+}
+.group-label .pm-icon { margin-top: 2px; }
+.file-path { overflow-wrap: anywhere; min-inline-size: 0; }
+.file-count { font-weight: normal; color: var(--pm-muted); font-variant-numeric: tabular-nums; }
+.file-references { padding: 0 0 var(--pm-space-2) var(--pm-space-2); }
+pm-reference-card + pm-reference-card {
+  border-top: 1px solid var(--pm-divider);
+  margin-block-start: var(--pm-space-1);
+  padding-block-start: var(--pm-space-1);
+}

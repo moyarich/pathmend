@@ -10,7 +10,7 @@ export class ReferenceList extends HTMLElement {
     const status = this.querySelector(".reference-status") || element("p", "", "reference-status");
     status.setAttribute("role", "status");
     status.setAttribute("aria-live", "polite");
-    const results = element("div");
+    const results = element("div", undefined, "reference-results");
     if (!snapshot.enabled || !snapshot.hasWorkspace) {
       status.textContent = snapshot.enabled ? "Open a folder to check references." : "PathMend is turned off.";
     } else {
@@ -20,13 +20,15 @@ export class ReferenceList extends HTMLElement {
       const summary = element("div", undefined, "reference-summary");
       summary.append(element("span", broken + " broken"), element("span", (findings.length - broken) + " not checked"), element("span", findings.filter(f => f.fix).length + " fixable"));
       results.append(summary);
+      const groups = element("div", undefined, "reference-groups");
       let total = 0;
       for (const file of files) {
         total += file.findings.length;
         const group = document.createElement("pm-file-group");
         group.update(file, snapshot.revision, state.isExpanded(file.path), snapshot.selectedId);
-        results.append(group);
+        groups.append(group);
       }
+      results.append(groups);
       status.textContent = total ? total + " of " + findings.length + " references · " + files.length + " files" :
         state.filter.trim() || state.severity !== "all" ? "No matching references." : "No broken paths found.";
     }

@@ -1,0 +1,16 @@
+:root {
+  color-scheme: light dark;
+  --pm-space-1: 4px;
+  --pm-space-2: 8px;
+  --pm-space-3: 12px;
+  --pm-space-4: 16px;
+  --pm-inset: 10px;
+  --pm-control-height: 26px;
+  --pm-icon-size: 14px;
+  --pm-radius: 3px;
+  --pm-surface: var(--vscode-sideBar-background);
+  --pm-foreground: var(--vscode-sideBar-foreground, var(--vscode-foreground));
+  --pm-muted: var(--vscode-descriptionForeground);
+  --pm-divider: var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border, transparent));
+  --pm-focus: var(--vscode-focusBorder);
+}

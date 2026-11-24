@@ -1,5 +1,7 @@
 /** Local Lucide geometry (ISC license; see LICENSE). Only static trusted shapes. */
 export const icons = Object.freeze({
+  "chevron-right": [["path", { d: "m9 18 6-6-6-6" }]],
+  "search": [["circle", { cx: 11, cy: 11, r: 8 }], ["path", { d: "m21 21-4.35-4.35" }]],
   "x": [["path", { d: "m18 6-12 12M6 6l12 12" }]],
   "chevrons-up-down": [["path", { d: "m7 10 5-5 5 5M7 14l5 5 5-5" }]],
   "chevrons-down-up": [["path", { d: "m7 20 5-5 5 5M7 4l5 5 5-5" }]],

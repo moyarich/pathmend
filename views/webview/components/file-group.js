@@ -7,7 +7,10 @@ export class FileGroup extends HTMLElement {
   update(file, revision, expanded, selectedId) {
     const group = element("details");
     group.open = expanded;
-    const summary = element("summary");
+    const summary = element("summary", undefined, "file-summary");
+    const chevron = icon("chevron-right");
+    chevron.classList.add("disclosure-icon");
+    summary.append(chevron);
     const label = element("span", undefined, "group-label");
     label.append(icon("file-code"), element("span", file.path, "file-path"), element("span", String(file.findings.length), "file-count"));
     summary.append(label);
@@ -21,11 +24,13 @@ export class FileGroup extends HTMLElement {
         detail: { path: file.path, expanded: group.open },
       }));
     });
+    const cards = element("div", undefined, "file-references");
     for (const finding of file.findings) {
       const card = document.createElement("pm-reference-card");
       card.update(finding, revision, finding.id === selectedId);
-      group.append(card);
+      cards.append(card);
     }
+    group.append(cards);
     this.replaceChildren(group);
   }
 }

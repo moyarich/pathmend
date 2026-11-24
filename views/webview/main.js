@@ -16,6 +16,9 @@ for (const [id, name] of Object.entries({ "clear-filter": "x", expand: "chevrons
   const button = document.getElementById(id);
   button.prepend(icon(name));
 }
+const searchIcon = icon("search");
+searchIcon.classList.add("search-icon");
+filter.before(searchIcon);
 filter.value = state.filter;
 severity.value = state.severity;
 const render = () => {

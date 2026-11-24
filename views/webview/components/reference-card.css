@@ -1,0 +1,64 @@
+.reference-card {
+  --_pm-severity: var(--vscode-editorWarning-foreground);
+  display: grid;
+  gap: var(--pm-space-1);
+  min-inline-size: 0;
+  padding: 6px var(--pm-space-2);
+  border-inline-start: 2px solid var(--_pm-severity);
+  overflow-wrap: anywhere;
+}
+.reference-card.error { --_pm-severity: var(--vscode-editorError-foreground); }
+.reference-card.information, .reference-card.hint { --_pm-severity: var(--vscode-editorInfo-foreground); }
+.reference-card.selected {
+  background: var(--vscode-list-inactiveSelectionBackground);
+  color: var(--vscode-list-inactiveSelectionForeground, var(--pm-foreground));
+  outline: 1px solid var(--vscode-contrastActiveBorder, var(--pm-focus));
+  outline-offset: -1px;
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px var(--pm-space-1);
+  font-size: .92em;
+  color: var(--pm-muted);
+}
+.rule-code { font-family: var(--vscode-editor-font-family); }
+.severity-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--_pm-severity);
+  text-transform: capitalize;
+}
+.location { margin-inline-start: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+button.path {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 0;
+  text-align: start;
+  padding: 0;
+  color: var(--vscode-textLink-foreground);
+  background: transparent;
+  font-family: var(--vscode-editor-font-family);
+  font-weight: 600;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+button.path:hover:not(:disabled) {
+  background: transparent;
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
+}
+.rule-title { color: var(--pm-muted); font-size: .92em; }
+.message { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.suggestion {
+  display: grid;
+  gap: var(--pm-space-1);
+  background: var(--vscode-textCodeBlock-background);
+  padding: var(--pm-space-2);
+  border-radius: var(--pm-radius);
+}
+.suggestion-label { color: var(--pm-muted); font-size: .9em; }
+.suggestion-path { font-family: var(--vscode-editor-font-family); white-space: pre-wrap; overflow-wrap: anywhere; }
+.suggestion button { justify-self: start; max-inline-size: 100%; }
