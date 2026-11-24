@@ -49,7 +49,10 @@ async function runModernWorkflows(check,cfg){
     await api.rebuildIndex();
     const repair=api.getFindings().find(f=>f.fix&&f.file.startsWith(folder+path.sep))||api.getFindings().find(f=>f.fix);
     if(repair){
-      const lenses=await vscode.commands.executeCommand("vscode.executeCodeLensProvider",vscode.Uri.file(repair.file),10);
+      // Language feature commands require a loaded document/model in the workbench.
+      const repairDoc=await vscode.workspace.openTextDocument(vscode.Uri.file(repair.file));
+      await vscode.window.showTextDocument(repairDoc, {preview:true});
+      const lenses=await vscode.commands.executeCommand("vscode.executeCodeLensProvider",repairDoc.uri,10);
       check("navigation: opt-in repair CodeLens",lenses?.some(l=>l.command?.command==="pathmend.previewFix"));
     }else check("navigation: a repair candidate exists",false);
     const report=api.getReport();
@@ -65,7 +68,7 @@ async function runModernWorkflows(check,cfg){
     await captureState(cfg,"reference-details-editor",ws);
     await captureState(cfg,"reference-details-filtered",ws);
     await captureState(cfg,"reference-details-collapsed",ws);
-    await vscode.window.tabGroups.close(tabs());
+    if (tabs().length) await vscode.window.tabGroups.close(tabs());
     await vscode.commands.executeCommand("pathmend.openReferenceDetailsInSidebar");
     check("details: sidebar can be reopened",!!await waitFor(()=>api.isReferenceDetailsVisible(),5000));
   }finally{
