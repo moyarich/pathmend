@@ -3,7 +3,9 @@ import { icon } from "../../icons/registry.js";
 
 /** Present one diagnostic and emit actions without depending on the VS Code API. */
 export class ReferenceCard extends HTMLElement {
+  disconnectedCallback() { this.cancelPending?.(); }
   update(f, revision, selected, draft) {
+    this.cancelPending?.();
     const card = element("article", undefined, "reference-card " + f.severity);
     if (selected) card.classList.add("selected");
     const meta = element("div", undefined, "card-meta");
@@ -44,6 +46,7 @@ export class ReferenceCard extends HTMLElement {
       choices.hidden = true;
       choices.setAttribute("aria-label", "Matching workspace paths");
       let request = 0, timer, validationRequest = 0, validationTimer;
+      this.cancelPending = () => { clearTimeout(timer); clearTimeout(validationTimer); request++; validationRequest++; };
       let validation = "pending";
       const feedback = element("div", "", "replacement-validation");
       feedback.setAttribute("role", "status");
