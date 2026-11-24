@@ -59,6 +59,7 @@ button.path:hover:not(:disabled) {
   padding: var(--pm-space-2);
   border-radius: var(--pm-radius);
 }
-.suggestion-label { color: var(--pm-muted); font-size: .9em; }
-.suggestion-path { font-family: var(--vscode-editor-font-family); white-space: pre-wrap; overflow-wrap: anywhere; }
+.suggestion-label { display: grid; gap: var(--pm-space-1); color: var(--pm-muted); font-size: .9em; }
+.suggestion-path { font-family: var(--vscode-editor-font-family); inline-size: 100%; box-sizing: border-box; font-size: var(--vscode-editor-font-size); }
+.suggestion-actions { display: flex; flex-wrap: wrap; gap: var(--pm-space-1); }
 .suggestion button { justify-self: start; max-inline-size: 100%; }

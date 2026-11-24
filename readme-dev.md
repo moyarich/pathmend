@@ -282,3 +282,5 @@ test/fixtures/unit/package-json/package.json
 ```
 
 This keeps tests reproducible and prevents changes to tracked fixtures.
+
+Suggested paths in Reference Details are editable before applying a fix. Reset restores the generated suggestion; custom replacements must resolve to an existing target within the workspace using the original reference's resolution rules. Drafts survive live diagnostic refreshes while the corresponding finding remains unchanged.

@@ -71,7 +71,12 @@ class ReferenceDetailsWebview {
     if (message.revision !== this.revision || typeof message.id !== "string") return;
     const ref = this.references.get(message.id);
     if (!ref) return;
-    await this.actions[message.type](ref);
+    if (message.type === "fix") {
+      if (typeof message.replacement !== "string") return;
+      await this.actions.fix(ref, message.replacement);
+    } else {
+      await this.actions.open(ref);
+    }
   }
 
   dispose() {

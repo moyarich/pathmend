@@ -370,7 +370,7 @@ async function openReference(arg) {
 }
 
 /** Replace the broken path with the "Did you mean" suggestion (same edit as the Quick Fix). */
-async function applyFix(arg) {
+async function applyFix(arg, replacement) {
   const f = liveFinding(arg);
   if (!f || !f.fix) {
     vscode.window.showWarningMessage("PathMend: no fix available for that reference any more. Run PathMend: Scan workspace and try again.");
@@ -387,7 +387,13 @@ async function applyFix(arg) {
     return false;
   }
   const r = new vscode.Range(f.line, f.col, f.line, f.endCol);
-  const text = core.encodeFor(f.ref, f.fix);
+  const chosen = replacement === undefined ? f.fix : replacement;
+  if (replacement !== undefined && chosen !== f.fix &&
+      !core.validateReplacement(f.ref, chosen, core.createGuard(fs, roots().map(r => r.path)), state.index)) {
+    vscode.window.showWarningMessage("PathMend: enter a valid replacement path to an existing file or folder inside the workspace.");
+    return false;
+  }
+  const text = core.encodeFor(f.ref, chosen);
   if (text === null || doc.getText(r) !== f.ref.raw) {
     vscode.window.showWarningMessage("PathMend: " + viewPath(f.file) + " changed since the last scan. Rescanning.");
     scheduleScan(0);

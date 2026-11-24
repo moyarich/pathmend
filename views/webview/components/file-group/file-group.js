@@ -4,7 +4,7 @@ import "../reference-card/reference-card.js";
 
 /** Group references by source file using native disclosure semantics. */
 export class FileGroup extends HTMLElement {
-  update(file, revision, expanded, selectedId) {
+  update(file, revision, expanded, selectedId, getDraft) {
     const group = element("details");
     group.open = expanded;
     const summary = element("summary", undefined, "file-summary");
@@ -27,7 +27,7 @@ export class FileGroup extends HTMLElement {
     const cards = element("div", undefined, "file-references");
     for (const finding of file.findings) {
       const card = document.createElement("pm-reference-card");
-      card.update(finding, revision, finding.id === selectedId);
+      card.update(finding, revision, finding.id === selectedId, getDraft(file, finding));
       cards.append(card);
     }
     group.append(cards);
