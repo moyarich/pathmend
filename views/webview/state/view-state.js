@@ -13,7 +13,13 @@ export function createViewState(storage) {
   const collapsed = new Set(Array.isArray(saved.collapsed) ? saved.collapsed : []);
   const persist = () => storage.save({ filter, severity, collapsed: [...collapsed], ...(options.fileType || options.rule || options.currentOnly || options.sort !== "path" ? { options } : {}) });
 
-  const visibleFiles = () => snapshot?.enabled === false || snapshot?.hasWorkspace === false ? [] : filterReferences(snapshot?.files || [], filter, severity, activeOptions());
+  let memo;
+  const visibleFiles = () => {
+    if (memo && memo.snapshot === snapshot && memo.filter === filter && memo.severity === severity && memo.options === options) return memo.files;
+    const files = snapshot?.enabled === false || snapshot?.hasWorkspace === false ? [] : filterReferences(snapshot?.files || [], filter, severity, activeOptions());
+    memo = { snapshot, filter, severity, options, files };
+    return files;
+  };
   const disclosure = () => {
     const files = visibleFiles();
     return { canToggle: !filter.trim() && files.length > 0, allExpanded: files.length > 0 && files.every(file => !!filter.trim() || !collapsed.has(file.path)) };

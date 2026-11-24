@@ -37,20 +37,21 @@ function analyze(opts) {
   for (const c of configs) {
     try { c.format.prepare?.(c, ctx, settings); } catch (_) { /* malformed document */ }
   }
+  const transaction = opts.extractionCache?.begin(settings);
   const refs = [];
   for (const c of configs) {
-    c.starts = lineStarts(c.text);
-    c.lines = splitLines(c.text);
-    let list = [];
-    try {
-      list = c.format.extract(c, ctx, settings);
-    } catch (_) {
-      list = [];
-    }
-    for (const r of list) {
-      r.raw = (c.lines[r.line] || "").slice(r.col, r.endCol);
-      refs.push(r);
-    }
+    const extract = () => {
+      c.starts = lineStarts(c.text);
+      c.lines = splitLines(c.text);
+      try {
+        return c.format.extract(c, ctx, settings).map(r => {
+          r.raw = (c.lines[r.line] || "").slice(r.col, r.endCol);
+          return r;
+        });
+      } catch (_) { return []; }
+    };
+    const list = transaction ? transaction.extract(c, extract) : extract();
+    for (const r of list) refs.push(r);
   }
   const env = {
     guard: opts.guard,
@@ -113,7 +114,8 @@ function analyze(opts) {
     }
     findings.push({ file: ref.file, line: ref.line, col: ref.col, endCol: ref.endCol, code, message, info, fix, ref });
   }
-  return { refs, findings, links: ctx.links };
+  const extractionStats = transaction?.commit();
+  return { refs, findings, links: ctx.links, ...(extractionStats ? { extractionStats } : {}) };
 }
 
 module.exports = { analyze };

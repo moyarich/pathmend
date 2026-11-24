@@ -82,6 +82,8 @@ Valid file references can be opened using editor document links. Hover over a br
 
 Reference Details editor tabs are restored when VS Code restores its editors after a restart. The view refreshes diagnostics and retains presentation preferences; restoring a tab does not change the configured default opening location.
 
+Reference Details renders collapsed groups on demand. PathMend reuses unchanged Markdown/MDX extraction between scans while rechecking target existence and workspace context.
+
 ### Choose a replacement path
 
 Use **Browse…** to select a file or folder using the native VS Code picker. Typing in the replacement field offers matching indexed workspace paths. Only eligible paths within the workspace and reference context are offered; excluded paths are omitted. Suggestions are limited to indexed paths and may not include every file.
