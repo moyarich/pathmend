@@ -44,7 +44,7 @@ automatically, so `"main": "build/index.js"` is not reported before a build).
 
 ## Rules
 
-| Code      | Meaning                                                    | Example                                                       |
+| Code      | Alias | Category | Meaning                                                    | Example                                                       |
 | --------- | --- | --- | ---------------------------------------------------------- | ------------------------------------------------------------- |
 | **PM001** | `package-path-not-found` | package | package.json path not found                                | `"bin": { "tool": "bin/tool.js" }` after moving it to `lib/`  |
 | **PM002** | `tsconfig-path-not-found` | typescript | tsconfig / jsconfig path not found                         | `"extends": "./tsconfig.bse.json"`                            |
