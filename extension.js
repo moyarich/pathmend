@@ -19,8 +19,8 @@ const path = require("path");
 const core = require("./core");
 const { createTreeProvider } = require("./views/tree-provider");
 const { fileGroups, findingDetails } = require("./views/model");
-const { ReferenceDetailsProvider } = require("./views/details-provider");
-const { ReferenceDetailsPanel } = require("./views/details-panel");
+const { ReferenceDetailsProvider } = require("./views/reference-details-provider");
+const { ReferenceDetailsPanel } = require("./views/reference-details-panel");
 const { createReport } = require("./views/report");
 const { exportResults } = require("./views/export-results");
 
@@ -262,8 +262,8 @@ function viewPath(file) {
 }
 
 let treeProvider = null;
-let detailsProvider = null;
-let detailsPanel = null;
+let referenceDetailsProvider = null;
+let referenceDetailsPanel = null;
 
 function getGroups() {
   return fileGroups(state ? state.findings : [], viewPath);
@@ -277,8 +277,8 @@ let treeView = null;
 
 function refreshTree() {
   if (treeProvider) treeProvider.emitter.fire(undefined);
-  if (detailsProvider) detailsProvider.refresh();
-  if (detailsPanel) detailsPanel.refresh();
+  if (referenceDetailsProvider) referenceDetailsProvider.refresh();
+  if (referenceDetailsPanel) referenceDetailsPanel.refresh();
   if (!treeView) return;
   const n = brokenCount();
   treeView.badge = n ? { value: n, tooltip: n + " broken path reference" + (n === 1 ? "" : "s") } : undefined;
@@ -321,29 +321,29 @@ async function exportCurrentResults() {
   return exportResults(getReport());
 }
 
-async function openDetailsAt(location, ref = null) {
-  if (!detailsProvider || !detailsPanel) return false;
+async function openReferenceDetailsAt(location, ref = null) {
+  if (!referenceDetailsProvider || !referenceDetailsPanel) return false;
   if (location === "editor") {
-    detailsPanel.select(ref);
-    detailsPanel.reveal();
+    referenceDetailsPanel.select(ref);
+    referenceDetailsPanel.reveal();
   } else {
-    await detailsProvider.reveal(ref);
+    await referenceDetailsProvider.reveal(ref);
   }
   return true;
 }
 
-function defaultDetailsLocation() {
-  return vscode.workspace.getConfiguration("pathmend").get("details.defaultLocation", "sidebar");
+function defaultReferenceDetailsLocation() {
+  return vscode.workspace.getConfiguration("pathmend").get("referenceDetails.defaultLocation", "sidebar");
 }
 
-async function openDetails() {
-  return openDetailsAt(defaultDetailsLocation());
+async function openReferenceDetails() {
+  return openReferenceDetailsAt(defaultReferenceDetailsLocation());
 }
 
 async function showReferenceDetails(arg) {
   const f = liveFinding(arg);
   if (!f) return false;
-  return openDetailsAt(defaultDetailsLocation(), { file: f.file, line: f.line, col: f.col, code: f.code });
+  return openReferenceDetailsAt(defaultReferenceDetailsLocation(), { file: f.file, line: f.line, col: f.col, code: f.code });
 }
 
 async function openReference(arg) {
@@ -605,13 +605,13 @@ function activate(context) {
     lastPromptDone: null,
   };
   treeProvider = createTreeProvider({ getGroups, getSeverity: () => getConfig().severity, findingDetails: formatFinding });
-  const detailsActions = {
+  const referenceDetailsActions = {
     getGroups, getSeverity: () => getConfig().severity,
     isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
     open: openReference, fix: applyFix,
   };
-  detailsProvider = new ReferenceDetailsProvider(context.extensionUri, detailsActions);
-  detailsPanel = new ReferenceDetailsPanel(context.extensionUri, detailsActions);
+  referenceDetailsProvider = new ReferenceDetailsProvider(context.extensionUri, referenceDetailsActions);
+  referenceDetailsPanel = new ReferenceDetailsPanel(context.extensionUri, referenceDetailsActions);
   treeView = vscode.window.createTreeView(VIEW_ID, { treeDataProvider: treeProvider, showCollapseAll: true });
   const excluded = (uri) => {
     const r = rootFor(path.resolve(uri.fsPath), roots());
@@ -658,23 +658,23 @@ function activate(context) {
     treeView.onDidChangeSelection(event => {
       const f = liveFinding(event.selection[0]);
       const ref = f ? { file: f.file, line: f.line, col: f.col, code: f.code } : null;
-      detailsProvider.select(ref);
-      detailsPanel.select(ref);
+      referenceDetailsProvider.select(ref);
+      referenceDetailsPanel.select(ref);
     }),
-    detailsProvider,
-    detailsPanel,
+    referenceDetailsProvider,
+    referenceDetailsPanel,
     vscode.window.registerTreeDataProvider("pathmend.actions", {
       getChildren: () => [],
       getTreeItem: item => item,
     }),
-    vscode.window.registerWebviewViewProvider("pathmend.details", detailsProvider),
+    vscode.window.registerWebviewViewProvider("pathmend.referenceDetails", referenceDetailsProvider),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
     vscode.commands.registerCommand("pathmend.openReference", openReference),
     vscode.commands.registerCommand("pathmend.showReferenceDetails", showReferenceDetails),
-    vscode.commands.registerCommand("pathmend.openDetails", openDetails),
-    vscode.commands.registerCommand("pathmend.openDetailsInEditor", () => openDetailsAt("editor")),
-    vscode.commands.registerCommand("pathmend.openDetailsInSidebar", () => openDetailsAt("sidebar")),
+    vscode.commands.registerCommand("pathmend.openReferenceDetails", openReferenceDetails),
+    vscode.commands.registerCommand("pathmend.openReferenceDetailsInEditor", () => openReferenceDetailsAt("editor")),
+    vscode.commands.registerCommand("pathmend.openReferenceDetailsInSidebar", () => openReferenceDetailsAt("sidebar")),
     vscode.commands.registerCommand("pathmend.exportResults", exportCurrentResults),
     vscode.commands.registerCommand("pathmend.openSettings", () => vscode.commands.executeCommand("workbench.action.openSettings", "pathmend")),
     vscode.commands.registerCommand("pathmend.applyFix", applyFix),
@@ -714,11 +714,11 @@ function activate(context) {
   );
   const ready = scan().catch(() => []);
   // Only the interactive launcher opts in; installed extensions and CI never steal focus.
-  if (context.extensionMode === vscode.ExtensionMode.Development && process.env.PATHMEND_DEV_OPEN_DETAILS === "1") {
+  if (context.extensionMode === vscode.ExtensionMode.Development && process.env.PATHMEND_DEV_OPEN_REFERENCE_DETAILS === "1") {
     void ready.then(async () => {
       if (!state) return;
       await vscode.commands.executeCommand("workbench.view.extension.pathmend");
-      await openDetails();
+      await openReferenceDetails();
     }).catch(error => console.warn("PathMend development view:", error.message));
   }
   return {
@@ -735,7 +735,7 @@ function activate(context) {
     getTreeItem: (node) => treeProvider.getTreeItem(node),
     getBadge: () => (treeView && treeView.badge ? treeView.badge.value : 0),
     isViewVisible: () => !!(treeView && treeView.visible),
-    isDetailsVisible: () => !!(detailsProvider && detailsProvider.visible),
+    isReferenceDetailsVisible: () => !!(referenceDetailsProvider && referenceDetailsProvider.visible),
     getStatusText: () => (state && state.status ? state.status.text : ""),
   };
 }
@@ -748,8 +748,8 @@ function deactivate() {
   state = null;
   treeView = null;
   treeProvider = null;
-  detailsProvider = null;
-  detailsPanel = null;
+  referenceDetailsProvider = null;
+  referenceDetailsPanel = null;
 }
 
 module.exports = { activate, deactivate };

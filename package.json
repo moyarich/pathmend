@@ -40,7 +40,7 @@
     "workspaceContains:**/*.mdx",
     "onStartupFinished",
     "onView:pathmend.references",
-    "onView:pathmend.details"
+    "onView:pathmend.referenceDetails"
   ],
   "main": "./extension.js",
   "icon": "icon.png",
@@ -86,7 +86,7 @@
         "category": "PathMend"
       },
       {
-        "command": "pathmend.openDetails",
+        "command": "pathmend.openReferenceDetails",
         "title": "Open Reference Details",
         "category": "PathMend",
         "icon": "$(open-preview)"
@@ -98,7 +98,7 @@
         "icon": "$(save)"
       },
       {
-        "command": "pathmend.openDetailsInEditor",
+        "command": "pathmend.openReferenceDetailsInEditor",
         "title": "Open Reference Details in Editor",
         "category": "PathMend",
         "icon": "$(open-preview)"
@@ -110,7 +110,7 @@
         "icon": "$(gear)"
       },
       {
-        "command": "pathmend.openDetailsInSidebar",
+        "command": "pathmend.openReferenceDetailsInSidebar",
         "title": "Open Reference Details in Sidebar",
         "category": "PathMend",
         "icon": "$(layout-sidebar-left)"
@@ -141,7 +141,7 @@
         },
         {
           "type": "webview",
-          "id": "pathmend.details",
+          "id": "pathmend.referenceDetails",
           "name": "Reference Details",
           "icon": "media/activity.svg",
           "contextualTitle": "PathMend",
@@ -152,7 +152,7 @@
     "viewsWelcome": [
       {
         "view": "pathmend.actions",
-        "contents": "Check your workspace for broken file references.\n[Open Reference Details](command:pathmend.openDetails)\n[Scan Workspace](command:pathmend.scan)\n[Settings](command:pathmend.openSettings)"
+        "contents": "Check your workspace for broken file references.\n[Open Reference Details](command:pathmend.openReferenceDetails)\n[Scan Workspace](command:pathmend.scan)\n[Settings](command:pathmend.openSettings)"
       },
       {
         "view": "pathmend.references",
@@ -198,31 +198,31 @@
         },
         {
           "command": "pathmend.scan",
-          "when": "view == pathmend.details",
+          "when": "view == pathmend.referenceDetails",
           "group": "navigation@1"
         },
         {
-          "command": "pathmend.openDetails",
+          "command": "pathmend.openReferenceDetails",
           "when": "view == pathmend.references",
           "group": "navigation@3"
         },
         {
           "submenu": "pathmend.menu",
-          "when": "view == pathmend.references || view == pathmend.details",
+          "when": "view == pathmend.references || view == pathmend.referenceDetails",
           "group": "1_pathmend"
         },
         {
           "command": "pathmend.exportResults",
-          "when": "view == pathmend.details",
+          "when": "view == pathmend.referenceDetails",
           "group": "navigation@2"
         },
         {
-          "command": "pathmend.openDetailsInEditor",
-          "when": "view == pathmend.details",
+          "command": "pathmend.openReferenceDetailsInEditor",
+          "when": "view == pathmend.referenceDetails",
           "group": "navigation@3"
         },
         {
-          "command": "pathmend.openDetailsInEditor",
+          "command": "pathmend.openReferenceDetailsInEditor",
           "when": "view == pathmend.references",
           "group": "2_views@1"
         }
@@ -250,11 +250,11 @@
           "group": "1_views@1"
         },
         {
-          "command": "pathmend.openDetails",
+          "command": "pathmend.openReferenceDetails",
           "group": "1_views@2"
         },
         {
-          "command": "pathmend.openDetailsInEditor",
+          "command": "pathmend.openReferenceDetailsInEditor",
           "group": "1_views@4"
         },
         {
@@ -270,7 +270,7 @@
           "group": "3_settings@1"
         },
         {
-          "command": "pathmend.openDetailsInSidebar",
+          "command": "pathmend.openReferenceDetailsInSidebar",
           "group": "1_views@3"
         }
       ]
@@ -449,7 +449,7 @@
           ],
           "description": "Path attributes whose quoted values contain comma-separated paths."
         },
-        "pathmend.details.defaultLocation": {
+        "pathmend.referenceDetails.defaultLocation": {
           "type": "string",
           "enum": [
             "sidebar",

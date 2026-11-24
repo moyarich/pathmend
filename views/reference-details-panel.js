@@ -1,7 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
-const { ReferenceDetailsProvider } = require("./details-provider");
+const { ReferenceDetailsProvider } = require("./reference-details-provider");
 
 /** A singleton editor tab using the same renderer and diagnostic actions as the sidebar. */
 class ReferenceDetailsPanel {
@@ -15,7 +15,7 @@ class ReferenceDetailsPanel {
       return;
     }
     const panel = vscode.window.createWebviewPanel(
-      "pathmend.detailsEditor", "PathMend: Reference Details",
+      "pathmend.referenceDetailsEditor", "PathMend: Reference Details",
       vscode.ViewColumn.Active, { enableScripts: true }
     );
     this.panel = panel;

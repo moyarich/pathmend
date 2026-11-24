@@ -32,7 +32,7 @@ class ReferenceDetailsProvider {
     const style = webview.asWebviewUri(vscode.Uri.joinPath(assets, "styles.css"));
     this.disposables.push(
       webview.onDidReceiveMessage(message => {
-        this.handleMessage(message).catch(error => console.warn("PathMend details:", error.message));
+        this.handleMessage(message).catch(error => console.warn("PathMend Reference Details:", error.message));
       }),
       (sidebar ? view.onDidChangeVisibility.bind(view) : view.onDidChangeViewState.bind(view))(() => {
         if (view.visible) this.refresh();
@@ -66,7 +66,7 @@ class ReferenceDetailsProvider {
   async reveal(ref) {
     this.selection = ref;
     if (this.view) this.view.show(false);
-    else await vscode.commands.executeCommand("pathmend.details.focus");
+    else await vscode.commands.executeCommand("pathmend.referenceDetails.focus");
     this.refresh();
   }
 
@@ -75,8 +75,8 @@ class ReferenceDetailsProvider {
     if (!message || typeof message !== "object") return;
     if (message.type === "ready") { this.ready = true; return this.refresh(); }
     if (!this.view?.visible || !this.ready) return;
-    if (message.type === "editor" && this.sidebar) return vscode.commands.executeCommand("pathmend.openDetailsInEditor");
-    if (message.type === "sidebar" && !this.sidebar) return vscode.commands.executeCommand("pathmend.openDetailsInSidebar");
+    if (message.type === "editor" && this.sidebar) return vscode.commands.executeCommand("pathmend.openReferenceDetailsInEditor");
+    if (message.type === "sidebar" && !this.sidebar) return vscode.commands.executeCommand("pathmend.openReferenceDetailsInSidebar");
     if (message.type === "export") return vscode.commands.executeCommand("pathmend.exportResults");
     if (message.type === "settings") return vscode.commands.executeCommand("pathmend.openSettings");
     if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");
@@ -104,7 +104,7 @@ function renderHtml(cspSource, style, script, sidebar) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource}; script-src ${cspSource};">
 <link rel="stylesheet" href="${style}">
-<title>Reference details</title>
+<title>Reference Details</title>
 </head>
 <body>
 <header class="view-toolbar">
@@ -119,7 +119,7 @@ function renderHtml(cspSource, style, script, sidebar) {
     <button id="toggle-groups" class="quiet icon-button" type="button" title="Collapse all" aria-label="Collapse all" disabled></button>
   </div>
   <div class="toolbar" role="group" aria-label="Reference actions">
-    ${sidebar ? '<button id="editor" class="quiet" type="button" title="Open reference details in an editor tab alongside your files">Open in Editor</button>' : '<button id="sidebar" class="quiet" type="button" title="Show reference details in the PathMend sidebar">Open in Sidebar</button>'}
+    ${sidebar ? '<button id="editor" class="quiet" type="button" title="Open Reference Details in an editor tab alongside your files">Open Reference Details in Editor</button>' : '<button id="sidebar" class="quiet" type="button" title="Show Reference Details in the PathMend sidebar">Open Reference Details in Sidebar</button>'}
     <button id="problems" class="quiet" type="button" title="Open the VS Code Problems panel">Problems</button>
     <button id="export" class="quiet" type="button" title="Save the complete diagnostic report as a JSON file">Export JSON</button>
     <button id="settings" class="quiet" type="button" title="Configure PathMend settings">Settings</button>

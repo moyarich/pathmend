@@ -50,7 +50,7 @@ async function main() {
     ];
     console.log("PathMend development workspace: " + workspace);
     console.log("PathMend Reference Details opens automatically in the development host.");
-    const child = spawn(executable, launchArgs, { stdio: "inherit", env: { ...process.env, PATHMEND_DEV_OPEN_DETAILS: "1" } });
+    const child = spawn(executable, launchArgs, { stdio: "inherit", env: { ...process.env, PATHMEND_DEV_OPEN_REFERENCE_DETAILS: "1" } });
     const stop = () => child.kill();
     process.once("SIGINT", stop);
     process.once("SIGTERM", stop);

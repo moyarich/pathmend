@@ -155,17 +155,17 @@ Only supported config and documentation files inside the workspace are edited. R
 
 ## Activity bar and commands
 
-PathMend has two views in the same activity bar container: **Broken References** (native tree navigation) and **Reference Details** (expand the collapsed webview for fully wrapped messages, suggested paths, text and reference-type filtering, expand/collapse controls, clickable paths and Apply fix actions). Both use the same live diagnostics and guarded commands. The webview uses VS Code theme colors and local assets only.
+PathMend provides Quick Actions and two diagnostic views in the same activity bar container: **Broken References** (native tree navigation) and **Reference Details** (expand the collapsed webview for fully wrapped messages, suggested paths, text and reference-type filtering, expand/collapse controls, clickable paths and Apply fix actions). Both use the same live diagnostics and guarded commands. The webview uses VS Code theme colors and local assets only.
 
 - **Activity bar** - the PathMend view lists every broken reference, grouped by config file.
   Each row is labelled with the rule and the exact path string (for example
   `PM003  scripts/start.sh`), shows a compact line and column next to it (for example `L6:6`), and opens the file on that
   path when clicked. Hover to read the full diagnostic, rule description, location and suggested fix,
-  or right-click and choose **Show reference details** to reveal the corresponding message in Reference Details.
+  or right-click and choose **Show Reference Details** to reveal the corresponding message in Reference Details.
   VS Code's native tree rows are single-line; long paths may still be shortened visually. Rows with a suggestion have an inline **Apply suggested path** action (the
   same edit as the "Did you mean ...?" Quick Fix). The badge shows the number of broken
   references; the title bar has **Show broken references** and **Scan workspace**.
-- **PathMend: Open Reference Details** - open the multiline webview from the Command Palette, the Broken References toolbar, or the **PathMend** submenu in either view’s `…` menu.
+- **PathMend: Open Reference Details** - open the multiline webview from the Command Palette, the Broken References toolbar, or the **PathMend Actions** submenu in either view’s `…` menu.
 - **PathMend: Export Results** - save all current diagnostics as a JSON report using VS Code's native Save dialog. Export includes rule codes, messages, source positions and suggested fixes, regardless of webview filters. Review the report before sharing because diagnostic messages may contain workspace paths.
 - **PathMend: Scan workspace** - rebuild the file index and check every config file.
 - **PathMend: Show broken references** - pick a broken reference and jump to it.
@@ -217,3 +217,5 @@ For development setup, test commands, and fixture layout, see [readme-dev.md](re
 ## License
 
 MIT - included with the extension.
+
+Reference Details can open in the sidebar or an editor tab. Set `pathmend.referenceDetails.defaultLocation` to `sidebar` (default) or `editor`. The explicit location commands override this setting.
