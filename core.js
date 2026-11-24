@@ -12,19 +12,7 @@
 const path = require("path");
 const { extractScriptPaths } = require("./package-scripts");
 
-const RULES = {
-  PM001: "package.json path not found",
-  PM002: "tsconfig / jsconfig path not found",
-  PM003: "Dockerfile COPY / ADD source not found",
-  PM004: "Compose build context / dockerfile not found",
-  PM005: "GitHub Actions path not found",
-  PM006: "CODEOWNERS path not found",
-  PM007: "launch.json path not found",
-  PM008: "GitLab CI local include not found",
-  PM009: "Glob matches no files",
-  PM010: "Path outside the workspace - not checked",
-  PM011: "COPY / ADD source outside the Docker build context",
-};
+const { RULES, resolveRuleId } = require("./rules");
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -1584,12 +1572,12 @@ function relFor(p, roots) {
 
 /**
  * analyze({ configs:[{file,text}], roots:[{path,name}], guard, index, settings })
- * settings: { ignoreReferences:[globs], exclude:[globs], disabledRules:[codes], reportOutside:bool }
+ * settings: { ignoreReferences:[globs], exclude:[globs], disabledRules:[codes or aliases], reportOutside:bool }
  */
 function analyze(opts) {
   const roots = opts.roots || [];
   const settings = opts.settings || {};
-  const disabled = new Set(settings.disabledRules || []);
+  const disabled = new Set((settings.disabledRules || []).map(resolveRuleId).filter(Boolean));
   const ignoreMatch = makeMatcher([].concat(settings.ignoreReferences || [], settings.exclude || []));
   const ctx = {
     links: new Map(),
@@ -1665,10 +1653,8 @@ function analyze(opts) {
     const shown = '"' + ref.display + '"';
     let code = ref.code;
     let message;
-    let info = false;
     if (r.state === "outside") {
       code = "PM010";
-      info = true;
       message = shown + " resolves outside the workspace - not checked (" + ref.label + ")";
       if (settings.reportOutside === false) continue;
     } else if (r.state === "context") {
@@ -1687,6 +1673,7 @@ function analyze(opts) {
       message = "Path not found: " + shown + (r.anywhere ? " (no file or folder with that name)" : "") + " (" + ref.label + ")";
     }
     if (disabled.has(code)) continue;
+    const info = RULES[code].severity === "information";
     let fix = null;
     if (ref.escape !== "noedit" && !r.anywhere) {
       // An outside reference remains PM010. For absolute file paths, look
