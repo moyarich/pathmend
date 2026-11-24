@@ -90,6 +90,8 @@ Reference Details editor tabs are restored when VS Code restores its editors aft
 
 Reference Details renders collapsed groups on demand. PathMend reuses unchanged Markdown/MDX extraction between scans while rechecking target existence and workspace context.
 
+Use **Export** in Reference Details to save the complete report as JSON, SARIF, Markdown, CSV or standalone HTML. SARIF can be used with code-scanning tools; CSV escapes formula-like cell values.
+
 ### Choose a replacement path
 
 Use **Browse…** to select a file or folder using the native VS Code picker. Typing in the replacement field offers matching indexed workspace paths. Only eligible paths within the workspace and reference context are offered; excluded paths are omitted. Suggestions are limited to indexed paths and may not include every file.

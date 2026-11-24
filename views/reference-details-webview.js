@@ -129,7 +129,7 @@ function renderHtml(cspSource, style, script, sidebar) {
     ${sidebar ? '<button id="editor" class="quiet" type="button" title="Open Reference Details in an editor tab alongside your files">Open Reference Details in Editor</button>' : '<button id="sidebar" class="quiet" type="button" title="Show Reference Details in the PathMend sidebar">Open Reference Details in Sidebar</button>'}
     <button id="problems" class="quiet" type="button" title="Open the VS Code Problems panel">Problems</button>
     <button id="bulk-repair" class="quiet" type="button" title="Select and preview verified repairs">Bulk repairs</button>
-    <button id="export" class="quiet" type="button" title="Save the complete diagnostic report as a JSON file">Export JSON</button>
+    <button id="export" class="quiet" type="button" title="Save the complete diagnostic report in your chosen format">Export</button>
     <button id="settings" class="quiet" type="button" title="Configure PathMend settings">Settings</button>
   </div>
 </header>
