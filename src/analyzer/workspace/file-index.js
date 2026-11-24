@@ -101,5 +101,6 @@ class FileIndex {
     }
     return best;
   }
+}
 
 module.exports = { FileIndex };

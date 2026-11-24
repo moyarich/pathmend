@@ -2,7 +2,7 @@
 const path = require("node:path");
 const { within, isUrl, isGlob, hasControl } = require("../../utils/paths");
 const { mkRef } = require("../../references/create-reference");
-const { parseDockerfile } = require("../../parsers/dockerfile");
+const { parseDockerfile, dockerTokens, dockerJsonTokens } = require("../../parsers/dockerfile");
 
 function extractDockerfile(c, ctx) {
   const out = [];
@@ -59,5 +59,6 @@ function extractDockerfile(c, ctx) {
     }
   }
   return out;
+}
 
 module.exports = { extractDockerfile };

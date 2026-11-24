@@ -74,6 +74,4 @@ function makeMatcher(patterns) {
   return (rel) => res.some((r) => r.test(rel) || r.test(rel + "/"));
 }
 
-/** Optimal string alignment distance (Levenshtein plus adjacent transposition). */
-
 module.exports = { globToRegex, makeMatcher };

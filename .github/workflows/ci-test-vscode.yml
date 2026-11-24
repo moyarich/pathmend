@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '*.js'
+      - 'src/**'
       - 'views/**'
       - 'package.json'
       - 'package-lock.json'
@@ -17,7 +17,7 @@ on:
       - '.github/workflows/ci-test-vscode.yml'
   pull_request:
     paths:
-      - '*.js'
+      - 'src/**'
       - 'views/**'
       - 'package.json'
       - 'package-lock.json'

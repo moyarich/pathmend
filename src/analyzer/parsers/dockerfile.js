@@ -108,4 +108,4 @@ function parseDockerfile(text) {
   return instrs;
 }
 
-module.exports = { parseDockerfile };
+module.exports = { parseDockerfile, dockerTokens, dockerJsonTokens };

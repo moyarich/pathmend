@@ -42,7 +42,7 @@
     "onView:pathmend.references",
     "onView:pathmend.referenceDetails"
   ],
-  "main": "./extension.js",
+  "main": "./src/extension/index.js",
   "icon": "icon.png",
   "galleryBanner": {
     "color": "#3A1A06",
@@ -473,8 +473,9 @@
     "dev": "node scripts/dev/launch.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:core": "node scripts/test/run-diagnostics-tests.js",
-    "test:vscode": "node scripts/test/run-vscode-tests.js"
+    "test:vscode": "node scripts/test/run-vscode-tests.js",
+    "test:diagnostics": "node scripts/test/run-diagnostics-tests.js",
+    "sync:manifest": "node scripts/sync-manifest.js"
   },
   "devDependencies": {
     "@vscode/test-electron": "^2.5.2",
