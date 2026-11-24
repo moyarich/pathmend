@@ -72,6 +72,14 @@ jobs:
         env:
           TEST_OUTCOME: ${{ steps.tests.outcome }}
         run: node test/write-summary.js vscode "$RUNNER_TEMP/vscode-results.json"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pathmend-vscode-results
+          path: ${{ runner.temp }}/vscode-results.json
+          retention-days: 14
+          if-no-files-found: warn
       - name: Upload screenshots
         if: ${{ always() && (inputs.screenshots || github.event_name == 'pull_request') }}
         uses: actions/upload-artifact@v7

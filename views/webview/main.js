@@ -1,6 +1,7 @@
 import { createBridge } from "./bridge.js";
 import { createViewState } from "./state.js";
 import "./components/reference-list.js";
+import { icon } from "./icons/registry.js";
 
 const bridge = createBridge(acquireVsCodeApi());
 const state = createViewState(bridge);
@@ -11,6 +12,10 @@ const clear = document.getElementById("clear-filter");
 const expand = document.getElementById("expand");
 const collapse = document.getElementById("collapse");
 
+for (const [id, name] of Object.entries({ "clear-filter": "x", expand: "chevrons-up-down", collapse: "chevrons-down-up", problems: "circle-alert", settings: "settings", export: "download" })) {
+  const button = document.getElementById(id);
+  button.prepend(icon(name));
+}
 filter.value = state.filter;
 severity.value = state.severity;
 const render = () => {
@@ -32,6 +37,7 @@ severity.addEventListener("change", () => { state.setSeverity(severity.value); r
 expand.addEventListener("click", () => { state.setAllExpanded(true); render(); });
 collapse.addEventListener("click", () => { state.setAllExpanded(false); render(); });
 document.getElementById("problems").addEventListener("click", () => bridge.send({ type: "problems" }));
+document.getElementById("export").addEventListener("click", () => bridge.send({ type: "export" }));
 document.getElementById("settings").addEventListener("click", () => bridge.send({ type: "settings" }));
 list.addEventListener("pm-reference-action", event => bridge.send(event.detail));
 list.addEventListener("pm-group-toggle", event => {

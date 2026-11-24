@@ -53,3 +53,10 @@ button.path:hover { color: var(--vscode-textLink-activeForeground); text-decorat
 .suggestion-path { font-family: var(--vscode-editor-font-family); white-space: pre-wrap; overflow-wrap: anywhere; }
 .suggestion button { justify-self: start; max-width: 100%; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* SVGs inherit the current workbench foreground and never request remote assets. */
+.pm-icon { display: inline-block; width: 14px; height: 14px; flex: 0 0 14px; vertical-align: -2px; }
+.toolbar button, .filter-row button, .search-row button, .suggestion button { display: inline-flex; align-items: center; gap: 5px; }
+.severity-label { display: inline-flex; align-items: center; gap: 4px; }
+.group-label { align-items: flex-start; }
+.group-label .pm-icon { margin-top: 2px; }

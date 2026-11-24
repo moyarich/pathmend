@@ -17,7 +17,7 @@ npm test
 
 ## Running tests
 
-All three CI workflows publish GitHub Actions job summaries and native error annotations for failures. Vitest reports test counts and source locations when available; core reports diagnostic and filesystem checks; VS Code reports trusted and untrusted results separately. Reports are published even after a failed test step. Test exit codes still determine CI success.
+All three CI workflows upload their JSON test reports as separate artifacts (retained for 14 days), including on test failure when a report exists. All three CI workflows publish GitHub Actions job summaries and native error annotations for failures. Vitest reports test counts and source locations when available; core reports diagnostic and filesystem checks; VS Code reports trusted and untrusted results separately. Reports are published even after a failed test step. Test exit codes still determine CI success.
 
 Concurrency is scoped by workflow and event. New automatic runs cancel obsolete runs of the same workflow and ref; manual dispatches use a unique run ID so they do not cancel each other or automatic CI, including screenshot captures.
 
@@ -146,7 +146,7 @@ Disabling screenshots does not disable functional testing. The editor and sideba
 
 ### Reference Details webview
 
-The native tree and webview share the model in `views/model.js`. `views/details-provider.js` owns the host lifecycle and validates commands. The browser entry point `views/webview/main.js` wires together the bridge, state and native custom elements. Filtering and DOM helpers are separate modules; `pm-reference-list`, `pm-file-group` and `pm-reference-card` live under `views/webview/components/`. The components use light DOM and shared VS Code theme styles, and emit bubbling custom events rather than calling the extension host directly. The Broken References title provides Open Reference Details, and both view overflow menus contain a PathMend submenu. The native view title provides Scan workspace; the details view also exposes VS Code Problems and Settings. Tree selection highlights the corresponding diagnostic, and Show reference details reveals the webview. Native browser ES modules load directly from extension-owned assets without a bundler.
+The native tree and webview share the model in `views/model.js`. `views/details-provider.js` owns the host lifecycle and validates commands. The browser entry point `views/webview/main.js` wires together the bridge, state and native custom elements. Filtering and DOM helpers are separate modules; `pm-reference-list`, `pm-file-group` and `pm-reference-card` live under `views/webview/components/`. The components use light DOM and shared VS Code theme styles, and emit bubbling custom events rather than calling the extension host directly. The Broken References title provides Open Reference Details, and both view overflow menus contain a PathMend submenu. The native view title provides Scan workspace; the details view also exposes VS Code Problems and Settings. Tree selection highlights the corresponding diagnostic, and Show reference details reveals the webview. A local Lucide SVG registry in `views/webview/icons/` uses inline SVG nodes and `currentColor`, without an icon package or CDN. See its third-party license notices. Native browser ES modules load directly from extension-owned assets without a bundler.
 
 ### Captured screenshots
 

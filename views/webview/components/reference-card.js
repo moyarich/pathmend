@@ -1,4 +1,5 @@
 import { element, action } from "../dom.js";
+import { icon } from "../icons/registry.js";
 
 /** Present one diagnostic and emit actions without depending on the VS Code API. */
 export class ReferenceCard extends HTMLElement {
@@ -6,7 +7,9 @@ export class ReferenceCard extends HTMLElement {
     const card = element("article", undefined, "reference-card " + f.severity);
     if (selected) card.classList.add("selected");
     const meta = element("div", undefined, "card-meta");
-    meta.append(element("span", f.code, "rule-code"), element("span", f.notChecked ? "Not checked" : f.severity, "severity-label"), element("span", "L" + f.line + ":" + f.column, "location"));
+    const severity = element("span", f.notChecked ? "Not checked" : f.severity, "severity-label");
+    severity.prepend(icon(f.severity === "error" ? "circle-x" : f.severity === "warning" ? "triangle-alert" : "info"));
+    meta.append(element("span", f.code, "rule-code"), severity, element("span", "L" + f.line + ":" + f.column, "location"));
     const dispatch = type => this.dispatchEvent(new CustomEvent("pm-reference-action", {
       bubbles: true, detail: { type, id: f.id, revision },
     }));
@@ -17,7 +20,7 @@ export class ReferenceCard extends HTMLElement {
     if (f.fix) {
       const suggestion = element("div", undefined, "suggestion");
       suggestion.append(element("span", "Suggested path", "suggestion-label"), element("code", f.fix, "suggestion-path"));
-      const fix = action("Apply fix", () => dispatch("fix"));
+      const fix = action("Apply fix", () => dispatch("fix"), "check");
       fix.classList.add("primary");
       suggestion.append(fix);
       card.append(suggestion);

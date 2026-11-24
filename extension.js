@@ -20,6 +20,8 @@ const core = require("./core");
 const { createTreeProvider } = require("./views/tree-provider");
 const { fileGroups, findingDetails } = require("./views/model");
 const { ReferenceDetailsProvider } = require("./views/details-provider");
+const { createReport } = require("./views/report");
+const { exportResults } = require("./views/export-results");
 
 const SOURCE = "PathMend";
 const CONFIG_GLOB =
@@ -307,6 +309,10 @@ function confined(file) {
 }
 
 /** Show the complete diagnostic without the single-line tree width constraint. */
+async function exportCurrentResults() {
+  return exportResults(createReport(getGroups(), getConfig().severity, getConfig().enabled, roots().length > 0));
+}
+
 async function openDetails() {
   if (!detailsProvider) return false;
   await detailsProvider.reveal(null);
@@ -638,6 +644,7 @@ function activate(context) {
     vscode.commands.registerCommand("pathmend.openReference", openReference),
     vscode.commands.registerCommand("pathmend.showReferenceDetails", showReferenceDetails),
     vscode.commands.registerCommand("pathmend.openDetails", openDetails),
+    vscode.commands.registerCommand("pathmend.exportResults", exportCurrentResults),
     vscode.commands.registerCommand("pathmend.applyFix", applyFix),
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, { provideCodeActions }, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
     vscode.workspace.onDidSaveTextDocument((d) => {

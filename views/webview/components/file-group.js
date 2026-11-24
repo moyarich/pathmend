@@ -1,4 +1,5 @@
 import { element } from "../dom.js";
+import { icon } from "../icons/registry.js";
 import "./reference-card.js";
 
 /** Group references by source file using native disclosure semantics. */
@@ -8,7 +9,7 @@ export class FileGroup extends HTMLElement {
     group.open = expanded;
     const summary = element("summary");
     const label = element("span", undefined, "group-label");
-    label.append(element("span", file.path, "file-path"), element("span", String(file.findings.length), "file-count"));
+    label.append(icon("file-code"), element("span", file.path, "file-path"), element("span", String(file.findings.length), "file-count"));
     summary.append(label);
     group.append(summary);
     let previous = expanded;

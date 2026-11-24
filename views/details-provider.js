@@ -70,6 +70,7 @@ class ReferenceDetailsProvider {
     if (!message || typeof message !== "object") return;
     if (message.type === "ready") { this.ready = true; return this.refresh(); }
     if (!this.view?.visible || !this.ready) return;
+    if (message.type === "export") return vscode.commands.executeCommand("pathmend.exportResults");
     if (message.type === "settings") return vscode.commands.executeCommand("workbench.action.openSettings", "pathmend");
     if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");
     if (message.type !== "open" && message.type !== "fix") return;
@@ -103,15 +104,15 @@ function renderHtml(cspSource, style, script) {
   <div class="search-row">
     <label class="sr-only" for="filter">Filter references</label>
     <input id="filter" type="search" placeholder="Filter references…" autocomplete="off">
-    <button id="clear-filter" class="quiet" type="button" title="Clear filter" aria-label="Clear filter" hidden>×</button>
+    <button id="clear-filter" class="quiet" type="button" title="Clear filter" aria-label="Clear filter" hidden></button>
   </div>
   <div class="filter-row">
     <label class="sr-only" for="severity">Reference type</label>
     <select id="severity" aria-label="Reference type"><option value="all">All references</option><option value="broken">Broken only</option><option value="info">Not checked</option><option value="fixable">Fixable</option></select>
-    <button id="expand" class="quiet" type="button">Expand all</button>
-    <button id="collapse" class="quiet" type="button">Collapse all</button>
+    <button id="expand" class="quiet" type="button" title="Expand all" aria-label="Expand all"></button>
+    <button id="collapse" class="quiet" type="button" title="Collapse all" aria-label="Collapse all"></button>
   </div>
-  <div class="toolbar"><button id="problems" class="quiet" type="button">Problems</button><button id="settings" class="quiet" type="button">Settings</button></div>
+  <div class="toolbar"><button id="problems" class="quiet" type="button">Problems</button><button id="settings" class="quiet" type="button">Settings</button><button id="export" class="quiet" type="button">Export</button></div>
 </header>
 <main><pm-reference-list><p class="reference-status" role="status">Loading references…</p></pm-reference-list></main>
 <script type="module" src="${script}"></script>

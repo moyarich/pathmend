@@ -1,3 +1,5 @@
+import { icon } from "./icons/registry.js";
+
 /** Workspace-controlled strings are assigned as text, never HTML. */
 export function element(tag, text, className) {
   const node = document.createElement(tag);
@@ -6,9 +8,10 @@ export function element(tag, text, className) {
   return node;
 }
 
-export function action(label, handler) {
+export function action(label, handler, iconName) {
   const button = element("button", label);
   button.type = "button";
+  if (iconName) button.prepend(icon(iconName));
   button.addEventListener("click", handler);
   return button;
 }
