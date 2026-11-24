@@ -7,6 +7,7 @@ const { evaluateRef } = require("./references/evaluate");
 const { formatPath } = require("./references/format-path");
 const { encodeFor } = require("./references/encode");
 const { getFormat } = require("./formats/registry");
+const { collectWorkspacePackages } = require("./formats/package-json/workspace-membership");
 const { RULES, resolveRuleId } = require("./rules/registry");
 
 function relFor(p, roots) {
@@ -33,6 +34,8 @@ function analyze(opts) {
   const configs = (opts.configs || []).map(c => ({ ...c, ...getFormat(c.file) })).filter(c => c.format).sort((a,b) => a.format.order - b.format.order);
   ctx.guard = opts.guard;
   ctx.packageDirs = new Map();
+  ctx.duplicatePackageNames = new Set();
+  ctx.workspacePackages = collectWorkspacePackages(configs);
   ctx.tsInfo = new Map();
   for (const c of configs) {
     try { c.format.prepare?.(c, ctx, settings); } catch (_) { /* malformed document */ }
@@ -54,6 +57,7 @@ function analyze(opts) {
     for (const r of list) refs.push(r);
   }
   const env = {
+    workspacePackages: ctx.workspacePackages,
     guard: opts.guard,
     index: opts.index,
     ignored: (abs, root) => {
@@ -76,6 +80,11 @@ function analyze(opts) {
     } else if (r.state === "context") {
       code = "PM011";
       message = shown + " is outside the Docker build context " + relFor(r.ctx, roots) + " - the build fails with \"forbidden path outside the build context\" (" + ref.label + ")";
+    } else if (r.state === "workspace-package-missing") {
+      message = "Workspace package not found: " + shown + " (" + ref.label + ")";
+    } else if (r.state === "workspace-package-duplicate") {
+      code = "PM028";
+      message = "Multiple workspace packages share the name " + shown;
     } else if (r.state === "glob") {
       code = "PM009";
       message = "No files match " + shown + " (" + ref.label + ")";
