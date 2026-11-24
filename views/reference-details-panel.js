@@ -18,12 +18,24 @@ class ReferenceDetailsPanel {
       "pathmend.referenceDetailsEditor", "PathMend: Reference Details",
       vscode.ViewColumn.Active, { enableScripts: true }
     );
+    this.attach(panel);
+  }
+
+  attach(panel) {
     this.panel = panel;
-    panel.onDidDispose(() => { this.panel = undefined; });
+    panel.onDidDispose(() => { if (this.panel === panel) this.panel = undefined; });
     this.session.attach(panel, {
       location: "editor",
       onVisibilityChanged: listener => panel.onDidChangeViewState(listener),
     });
+  }
+
+  async deserializeWebviewPanel(panel) {
+    if (this.panel && this.panel !== panel) { panel.dispose(); this.reveal(); return; }
+    this.attach(panel);
+    // Webview getState restores presentation preferences, never diagnostic snapshots.
+    await this.session.actions.rescan?.();
+    this.refresh();
   }
 
   refresh() { this.session.refresh(); }
