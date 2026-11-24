@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
-import registry from "../../rules.js";
-import core from "../../core.js";
+import { createRequire } from "node:module";
 import manifest from "../../package.json";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const { RULES, resolveRuleId } = registry;
+// Load both CommonJS modules through the same Node module cache.
+const require = createRequire(import.meta.url);
+const core = require("../../core.js");
+const { RULES, resolveRuleId } = require("../../rules.js");
 
 describe("rule metadata", () => {
   it("preserves stable IDs and has unique descriptive aliases", () => {

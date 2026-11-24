@@ -100,6 +100,8 @@ async function launch(executable, mode, extraArgs) {
   fs.writeFileSync(cfgFile, JSON.stringify({ mode, resultFile, shotDir, screenshotsEnabled, ws: fx.ws, outside: fx.outside }));
   const args = [
     "--new-window",
+    // Hosted Linux CI lacks a configured Chromium sandbox; opt in only there.
+    ...(process.platform === "linux" && process.env.PM_TEST_NO_SANDBOX === "1" ? ["--no-sandbox"] : []),
     ...(screenshotsEnabled ? ["--remote-debugging-port=0"] : []),
     "--user-data-dir", userDir,
     "--extensions-dir", extsDir,
@@ -134,7 +136,7 @@ async function launch(executable, mode, extraArgs) {
     spawnError = error;
     console.error("VS Code launch failed:", error);
   });
-  const exited = new Promise((resolve) => child.on("exit", (code) => resolve(code)));
+  const exited = new Promise((resolve) => child.on("close", (code, signal) => resolve(code === null ? signal || "unknown" : code)));
   const killer = setTimeout(() => child.kill("SIGKILL"), 300000);
   let captureInProgress = false;
   const poll = screenshotsEnabled ? setInterval(async () => {
