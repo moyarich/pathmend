@@ -1,9 +1,32 @@
 name: CI - VS Code
+run-name: ${{ inputs.screenshots && 'CI - VS Code (screenshots)' || 'CI - VS Code' }} · ${{ github.head_ref || github.ref_name }} · #${{ github.run_number }}
 
 on:
   push:
     branches: [main]
+    paths:
+      - '*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'test/vscode/**'
+      - 'test/fixtures/**'
+      - 'test/run-vscode.js'
+      - 'test/prepare.js'
+      - 'test/expected.js'
+      - 'test/write-summary.js'
+      - '.github/workflows/ci-test-vscode.yml'
   pull_request:
+    paths:
+      - '*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'test/vscode/**'
+      - 'test/fixtures/**'
+      - 'test/run-vscode.js'
+      - 'test/prepare.js'
+      - 'test/expected.js'
+      - 'test/write-summary.js'
+      - '.github/workflows/ci-test-vscode.yml'
   workflow_dispatch:
     inputs:
       screenshots:
@@ -20,7 +43,7 @@ concurrency:
 
 jobs:
   vscode:
-    name: VS Code integration tests
+    name: VS Code integration tests${{ inputs.screenshots && ' (screenshots)' || '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

@@ -43,7 +43,7 @@ Run the integration tests with:
 node test/run-vscode.js
 ```
 
-The runner launches an isolated VS Code instance and executes `test/vscode/index.js`.
+The runner launches an isolated VS Code instance and executes `test/vscode/index.js`. It disables the unrelated built-in `vscode.extension-editing` extension in the test host to avoid manifest parser errors on hostile fixtures. This does not change a user's normal VS Code installation or PathMend's filesystem checks.
 
 Tests cover both **trusted and untrusted workspaces**. The trusted workspace also runs these additional suites:
 
