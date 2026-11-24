@@ -79,7 +79,7 @@ function renderHtml(cspSource, style, script) {
   <p id="status" role="status" aria-live="polite">Loading references…</p>
 </header>
 <main id="results"></main>
-<script src="${script}"></script>
+<script type="module" src="${script}"></script>
 </body>
 </html>`;
 }

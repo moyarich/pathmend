@@ -144,6 +144,10 @@ PM_SCREENSHOTS=0 node test/run-vscode.js
 
 Disabling screenshots does not disable functional testing. The editor and sidebar still navigate through the same test states.
 
+### Reference Details webview
+
+The native tree and webview share the model in `views/model.js`. `views/details-provider.js` owns the host lifecycle and validates commands. The browser entry point `views/webview/main.js` wires together the bridge, state and renderer. Filtering and DOM helpers are separate modules; file groups and reference cards live under `views/webview/components/`. Native browser ES modules load directly from extension-owned assets without a bundler.
+
 ### Captured screenshots
 
 `reference-details.png` captures the additional multiline Reference Details webview. The native tree remains available.
