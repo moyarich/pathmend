@@ -284,3 +284,5 @@ test/fixtures/unit/package-json/package.json
 This keeps tests reproducible and prevents changes to tracked fixtures.
 
 Suggested paths in Reference Details are editable before applying a fix. Reset restores the generated suggestion; custom replacements are validated using the original reference's resolution rules. If the target cannot be verified, a modal warning shows the original and replacement paths and offers Apply Anyway or Cancel. Invalid syntax, stale source edits and edits outside the workspace remain blocked. Drafts survive live diagnostic refreshes while the corresponding finding remains unchanged.
+
+Native notifications use short summaries. Replacement confirmations and error dialogs put paths in modal detail, and rename updates use the native Preview action for full file diffs. The Broken References picker is a navigation aid: selecting a result opens Reference Details for the complete message and suggestion. Native dialog dimensions and wrapping are controlled by VS Code and the operating system.

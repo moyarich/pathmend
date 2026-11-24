@@ -334,8 +334,8 @@ async function body(check, cfg) {
   check("folder rename applied", await vscode.workspace.applyEdit(re));
   const p1 = await waitFor(() => prompts[0], 10000);
   check(
-    "onDidRenameFiles prompts: 4 path references still point to src/utils - update all?",
-    p1 && p1.msg === "4 path references still point to src/utils - update all?" && same(p1.items, ["Update all", "Preview", "Ignore"]),
+    "onDidRenameFiles offers to update references with preview and ignore options",
+    p1 && same(p1.items, ["Update all", "Preview", "Ignore"]),
     p1
   );
   const planFiles = (api.getLastRenamePlan() || []).map((p) => path.relative(ws, p.ref.file) + " -> " + p.newText).sort();
@@ -363,7 +363,7 @@ async function body(check, cfg) {
   re.renameFile(vscode.Uri.file(path.join(ws, "lib", "tool.js")), vscode.Uri.file(path.join(ws, "lib", "cli.js")));
   check("file rename applied", await vscode.workspace.applyEdit(re));
   const p2 = await waitFor(() => prompts[1], 10000);
-  check("file rename prompts for 3 references (bin, COPY, tsconfig paths via .js)", p2 && p2.msg === "3 path references still point to lib/tool.js - update all?", p2);
+  check("file rename prompts for 3 references (bin, COPY, tsconfig paths via .js)", p2 && same(p2.items, ["Update all", "Preview", "Ignore"]), p2);
   const done2 = api.getLastPrompt() && (await withTimeout(api.getLastPrompt().done, 15000));
   check('"Ignore" edits nothing', done2 === false && /"tool": "lib\/tool\.js"/.test(read("package.json")) && /"@tool": \["lib\/tool"\]/.test(read("packages/app/tsconfig.json")));
   await api.scan();

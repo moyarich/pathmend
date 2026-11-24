@@ -24,6 +24,7 @@ const { ReferenceDetailsSidebarProvider } = require("./views/reference-details-s
 const { ReferenceDetailsPanel } = require("./views/reference-details-panel");
 const { createReport } = require("./views/report");
 const { exportResults } = require("./views/export-results");
+const { showErrorDetail, confirmReplacement, promptRenameUpdates } = require("./views/native-dialogs");
 
 const SOURCE = "PathMend";
 const CONFIG_GLOB =
@@ -350,7 +351,7 @@ async function showReferenceDetails(arg) {
 async function openReference(arg) {
   const f = liveFinding(arg);
   if (!f) {
-    vscode.window.showWarningMessage("PathMend: that reference is no longer reported. Run PathMend: Scan workspace and try again.");
+    vscode.window.showWarningMessage("PathMend: reference is outdated. Scan again.");
     return false;
   }
   if (!insideWorkspace(f.file) || !confined(f.file)) {
@@ -364,7 +365,7 @@ async function openReference(arg) {
     await vscode.window.showTextDocument(doc, { selection: r, preview: true });
     return true;
   } catch (e) {
-    vscode.window.showWarningMessage("PathMend: could not open " + viewPath(f.file) + ": " + (e && e.message ? e.message : e));
+    void showErrorDetail("Could not open source file.", viewPath(f.file) + "\n\n" + (e?.message || String(e)));
     return false;
   }
 }
@@ -373,7 +374,7 @@ async function openReference(arg) {
 async function applyFix(arg, replacement) {
   const f = liveFinding(arg);
   if (!f || !f.fix) {
-    vscode.window.showWarningMessage("PathMend: no fix available for that reference any more. Run PathMend: Scan workspace and try again.");
+    vscode.window.showWarningMessage("PathMend: no fix available. Scan again.");
     return false;
   }
   if (!insideWorkspace(f.file) || !confined(f.file)) {
@@ -391,19 +392,15 @@ async function applyFix(arg, replacement) {
   if (replacement !== undefined && chosen !== f.fix) {
     const validation = core.validateReplacement(f.ref, chosen, core.createGuard(fs, roots().map(r => r.path)), state.index);
     if (validation === "invalid") {
-      vscode.window.showWarningMessage("PathMend: the replacement cannot be safely represented as this reference.");
+      void showErrorDetail("Invalid replacement syntax.", "The replacement cannot be safely represented in this reference.\n\nReplacement:\n" + String(chosen));
       return false;
     }
     if (validation !== "valid") {
       const version = doc.version;
-      const confirmed = await vscode.window.showWarningMessage(
-        "PathMend could not verify the replacement path.",
-        { modal: true, detail: "Original: " + f.ref.display + "\nReplacement: " + chosen + "\n\nThe target may be missing, the wrong type, or outside the allowed path context. Applying this change may leave a broken reference." },
-        "Apply Anyway"
-      );
+      const confirmed = await confirmReplacement(f.ref.display, chosen);
       if (confirmed !== "Apply Anyway") return false;
       if (doc.version !== version || liveFinding(arg) !== f || !insideWorkspace(f.file) || !confined(f.file)) {
-        vscode.window.showWarningMessage("PathMend: the reference changed while awaiting confirmation. Rescanning.");
+        vscode.window.showWarningMessage("PathMend: reference changed. Rescanning.");
         scheduleScan(0);
         return false;
       }
@@ -411,7 +408,7 @@ async function applyFix(arg, replacement) {
   }
   const text = core.encodeFor(f.ref, chosen);
   if (text === null || doc.getText(r) !== f.ref.raw) {
-    vscode.window.showWarningMessage("PathMend: " + viewPath(f.file) + " changed since the last scan. Rescanning.");
+    vscode.window.showWarningMessage("PathMend: source changed. Rescanning.");
     scheduleScan(0);
     return false;
   }
@@ -522,13 +519,9 @@ async function onDidRename(e) {
   // Ask right away: the plan was made from the scan before the move, so the prompt never waits
   // for the file index or a rescan.
   if (plan.length && cfg.renameUpdates !== "off") {
-    const n = plan.length;
-    const old = relPath(plan[0].from);
-    const msg = plan.some(p => p.sourceMoved)
-      ? n + " relative path reference" + (n === 1 ? "" : "s") + (n === 1 ? " needs" : " need") + " updating after the move - update " + (n === 1 ? "it" : "all") + "?"
-      : n + " path reference" + (n === 1 ? "" : "s") + " still point" + (n === 1 ? "s" : "") + " to " + old + " - update " + (n === 1 ? "it" : "all") + "?";
-    state.lastPrompt = msg;
-    state.lastPromptDone = Promise.resolve(vscode.window.showInformationMessage(msg, "Update all", "Preview", "Ignore")).then(
+    const { message, choice } = promptRenameUpdates(plan.length);
+    state.lastPrompt = message;
+    state.lastPromptDone = Promise.resolve(choice).then(
       (choice) => {
         if (choice === "Update all") return applyPlan(plan, false);
         if (choice === "Preview") return applyPlan(plan, true);
@@ -575,14 +568,14 @@ async function showBroken() {
     return;
   }
   const items = list.map((f) => ({
-    label: (f.info ? "$(info) " : "$(link) ") + f.code + "  " + f.ref.display,
-    description: viewPath(f.file) + ":" + (f.line + 1),
-    detail: f.message + (f.fix ? ' - did you mean "' + f.fix + '"?' : ""),
+    label: (f.info ? "$(info) " : "$(link) ") + f.code + " · " + path.basename(f.file) + ":" + (f.line + 1),
+    description: f.ref.display,
+    detail: viewPath(f.file) + " · " + f.message,
     f,
   }));
-  const pick = await vscode.window.showQuickPick(items, { placeHolder: "Broken path references", matchOnDescription: true, matchOnDetail: true });
+  const pick = await vscode.window.showQuickPick(items, { title: "PathMend: Broken References", placeHolder: "Search by path, file, or rule", matchOnDescription: true, matchOnDetail: true });
   if (!pick) return;
-  await openReference(pick.f);
+  await showReferenceDetails(pick.f);
 }
 
 async function scanCommand() {

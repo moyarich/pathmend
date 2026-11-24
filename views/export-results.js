@@ -1,6 +1,7 @@
 "use strict";
 
 const vscode = require("vscode");
+const { showErrorDetail } = require("./native-dialogs");
 
 /** Write only to a destination explicitly selected by the user. */
 async function exportResults(report) {
@@ -15,7 +16,7 @@ async function exportResults(report) {
     vscode.window.showInformationMessage("PathMend: exported " + report.summary.total + " references.");
     return true;
   } catch (error) {
-    vscode.window.showErrorMessage("PathMend: export failed: " + error.message);
+    void showErrorDetail("Export failed.", uri.fsPath + "\n\n" + (error?.message || String(error)));
     return false;
   }
 }
