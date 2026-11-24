@@ -57,7 +57,7 @@ function extractPackage(c, ctx) {
       if (it.type === "string" && it.value && !it.value.startsWith("!")) add(it, "files", { kind: "any", glob: isGlob(it.value) ? "std" : false });
     }
   }
-  out.push(...extractDependencies(c, tree));
+  out.push(...extractDependencies(c, tree, ctx));
   let ws = jget(tree, "workspaces");
   if (ws && ws.type === "object") ws = jget(ws, "packages");
   if (ws && ws.type === "array") {
