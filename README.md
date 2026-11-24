@@ -78,6 +78,8 @@ Choose **Bulk repairs** in Reference Details to select verified suggestions. Rev
 
 Use the file type and rule filters, Current file checkbox, and sort menu to narrow Reference Details. Your filter preferences are retained.
 
+Valid file references can be opened using editor document links. Hover over a broken reference for diagnostic details. Enable `pathmend.editor.codeLens` for inline repair previews, or use **Scan File or Folder References** from Explorer (refreshes the workspace scan and shows results for the selection).
+
 ### Choose a replacement path
 
 Use **Browse…** to select a file or folder using the native VS Code picker. Typing in the replacement field offers matching indexed workspace paths. Only eligible paths within the workspace and reference context are offered; excluded paths are omitted. Suggestions are limited to indexed paths and may not include every file.

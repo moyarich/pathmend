@@ -114,6 +114,16 @@
         "title": "Open Reference Details in Sidebar",
         "category": "PathMend",
         "icon": "$(layout-sidebar-left)"
+      },
+      {
+        "command": "pathmend.inspectScope",
+        "title": "Scan File or Folder References",
+        "category": "PathMend"
+      },
+      {
+        "command": "pathmend.previewFix",
+        "title": "Preview Path Repair",
+        "category": "PathMend"
       }
     ],
     "viewsContainers": {
@@ -178,6 +188,10 @@
         },
         {
           "command": "pathmend.showReferenceDetails",
+          "when": "false"
+        },
+        {
+          "command": "pathmend.previewFix",
           "when": "false"
         }
       ],
@@ -268,6 +282,13 @@
         {
           "command": "pathmend.openReferenceDetailsInSidebar",
           "group": "1_views@3"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "pathmend.inspectScope",
+          "when": "resourceScheme == file",
+          "group": "navigation@99"
         }
       ]
     },
@@ -458,6 +479,11 @@
           "default": "sidebar",
           "scope": "window",
           "description": "Default location for opening Reference Details. Explicit sidebar and editor commands override this preference."
+        },
+        "pathmend.editor.codeLens": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show preview repair CodeLens actions above broken references."
         }
       }
     },
