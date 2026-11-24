@@ -3,8 +3,8 @@
 const vscode = require("vscode");
 const { createSnapshot } = require("./model");
 
-/** Sidebar webview. Workspace text is sent as data, never inserted into HTML. */
-class ReferenceDetailsProvider {
+/** Shared webview session: rendering, snapshots and validated diagnostic actions. */
+class ReferenceDetailsWebview {
   constructor(extensionUri, actions) {
     this.extensionUri = extensionUri;
     this.actions = actions;
@@ -17,14 +17,10 @@ class ReferenceDetailsProvider {
 
   get visible() { return !!this.view?.visible; }
 
-  resolveWebviewView(view) {
-    this.attach(view, true);
-  }
-
-  attach(view, sidebar) {
+  attach(view, { location, onVisibilityChanged }) {
     this.dispose();
     this.view = view;
-    this.sidebar = sidebar;
+    this.location = location;
     const assets = vscode.Uri.joinPath(this.extensionUri, "views", "webview");
     const webview = view.webview;
     webview.options = { enableScripts: true, localResourceRoots: [assets] };
@@ -34,12 +30,12 @@ class ReferenceDetailsProvider {
       webview.onDidReceiveMessage(message => {
         this.handleMessage(message).catch(error => console.warn("PathMend Reference Details:", error.message));
       }),
-      (sidebar ? view.onDidChangeVisibility.bind(view) : view.onDidChangeViewState.bind(view))(() => {
+      onVisibilityChanged(() => {
         if (view.visible) this.refresh();
       }),
       view.onDidDispose(() => this.dispose())
     );
-    webview.html = renderHtml(webview.cspSource, style, script, sidebar);
+    webview.html = renderHtml(webview.cspSource, style, script, location === "sidebar");
     this.refresh();
   }
 
@@ -47,8 +43,6 @@ class ReferenceDetailsProvider {
     if (!this.view) return;
     const { getGroups, getSeverity, isEnabled, hasWorkspace } = this.actions;
     const groups = getGroups();
-    const broken = groups.reduce((count, group) => count + group.findings.filter(f => !f.info).length, 0);
-    if (this.sidebar) this.view.badge = broken ? { value: broken, tooltip: broken + " broken path references" } : undefined;
     if (!this.view.visible || !this.ready) return;
     const snapshot = createSnapshot(groups, getSeverity(), isEnabled(), hasWorkspace(), ++this.revision);
     this.references = snapshot.references;
@@ -63,20 +57,13 @@ class ReferenceDetailsProvider {
     this.refresh();
   }
 
-  async reveal(ref) {
-    this.selection = ref;
-    if (this.view) this.view.show(false);
-    else await vscode.commands.executeCommand("pathmend.referenceDetails.focus");
-    this.refresh();
-  }
-
   /** Only allow explicit commands and IDs belonging to the latest rendered snapshot. */
   async handleMessage(message) {
     if (!message || typeof message !== "object") return;
     if (message.type === "ready") { this.ready = true; return this.refresh(); }
     if (!this.view?.visible || !this.ready) return;
-    if (message.type === "editor" && this.sidebar) return vscode.commands.executeCommand("pathmend.openReferenceDetailsInEditor");
-    if (message.type === "sidebar" && !this.sidebar) return vscode.commands.executeCommand("pathmend.openReferenceDetailsInSidebar");
+    if (message.type === "editor" && this.location === "sidebar") return vscode.commands.executeCommand("pathmend.openReferenceDetailsInEditor");
+    if (message.type === "sidebar" && this.location === "editor") return vscode.commands.executeCommand("pathmend.openReferenceDetailsInSidebar");
     if (message.type === "export") return vscode.commands.executeCommand("pathmend.exportResults");
     if (message.type === "settings") return vscode.commands.executeCommand("pathmend.openSettings");
     if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");
@@ -131,4 +118,4 @@ function renderHtml(cspSource, style, script, sidebar) {
 </html>`;
 }
 
-module.exports = { ReferenceDetailsProvider };
+module.exports = { ReferenceDetailsWebview };

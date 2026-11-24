@@ -19,7 +19,7 @@ const path = require("path");
 const core = require("./core");
 const { createTreeProvider } = require("./views/tree-provider");
 const { fileGroups, findingDetails } = require("./views/model");
-const { ReferenceDetailsProvider } = require("./views/reference-details-provider");
+const { ReferenceDetailsSidebarProvider } = require("./views/reference-details-sidebar-provider");
 const { ReferenceDetailsPanel } = require("./views/reference-details-panel");
 const { createReport } = require("./views/report");
 const { exportResults } = require("./views/export-results");
@@ -262,7 +262,7 @@ function viewPath(file) {
 }
 
 let treeProvider = null;
-let referenceDetailsProvider = null;
+let referenceDetailsSidebarProvider = null;
 let referenceDetailsPanel = null;
 
 function getGroups() {
@@ -277,7 +277,7 @@ let treeView = null;
 
 function refreshTree() {
   if (treeProvider) treeProvider.emitter.fire(undefined);
-  if (referenceDetailsProvider) referenceDetailsProvider.refresh();
+  if (referenceDetailsSidebarProvider) referenceDetailsSidebarProvider.refresh();
   if (referenceDetailsPanel) referenceDetailsPanel.refresh();
   if (!treeView) return;
   const n = brokenCount();
@@ -322,12 +322,12 @@ async function exportCurrentResults() {
 }
 
 async function openReferenceDetailsAt(location, ref = null) {
-  if (!referenceDetailsProvider || !referenceDetailsPanel) return false;
+  if (!referenceDetailsSidebarProvider || !referenceDetailsPanel) return false;
   if (location === "editor") {
     referenceDetailsPanel.select(ref);
     referenceDetailsPanel.reveal();
   } else {
-    await referenceDetailsProvider.reveal(ref);
+    await referenceDetailsSidebarProvider.reveal(ref);
   }
   return true;
 }
@@ -610,7 +610,7 @@ function activate(context) {
     isEnabled: () => getConfig().enabled, hasWorkspace: () => roots().length > 0,
     open: openReference, fix: applyFix,
   };
-  referenceDetailsProvider = new ReferenceDetailsProvider(context.extensionUri, referenceDetailsActions);
+  referenceDetailsSidebarProvider = new ReferenceDetailsSidebarProvider(context.extensionUri, referenceDetailsActions);
   referenceDetailsPanel = new ReferenceDetailsPanel(context.extensionUri, referenceDetailsActions);
   treeView = vscode.window.createTreeView(VIEW_ID, { treeDataProvider: treeProvider, showCollapseAll: true });
   const excluded = (uri) => {
@@ -658,16 +658,16 @@ function activate(context) {
     treeView.onDidChangeSelection(event => {
       const f = liveFinding(event.selection[0]);
       const ref = f ? { file: f.file, line: f.line, col: f.col, code: f.code } : null;
-      referenceDetailsProvider.select(ref);
+      referenceDetailsSidebarProvider.select(ref);
       referenceDetailsPanel.select(ref);
     }),
-    referenceDetailsProvider,
+    referenceDetailsSidebarProvider,
     referenceDetailsPanel,
     vscode.window.registerTreeDataProvider("pathmend.actions", {
       getChildren: () => [],
       getTreeItem: item => item,
     }),
-    vscode.window.registerWebviewViewProvider("pathmend.referenceDetails", referenceDetailsProvider),
+    vscode.window.registerWebviewViewProvider("pathmend.referenceDetails", referenceDetailsSidebarProvider),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
     vscode.commands.registerCommand("pathmend.openReference", openReference),
@@ -735,7 +735,7 @@ function activate(context) {
     getTreeItem: (node) => treeProvider.getTreeItem(node),
     getBadge: () => (treeView && treeView.badge ? treeView.badge.value : 0),
     isViewVisible: () => !!(treeView && treeView.visible),
-    isReferenceDetailsVisible: () => !!(referenceDetailsProvider && referenceDetailsProvider.visible),
+    isReferenceDetailsVisible: () => !!(referenceDetailsSidebarProvider && referenceDetailsSidebarProvider.visible),
     getStatusText: () => (state && state.status ? state.status.text : ""),
   };
 }
@@ -748,7 +748,7 @@ function deactivate() {
   state = null;
   treeView = null;
   treeProvider = null;
-  referenceDetailsProvider = null;
+  referenceDetailsSidebarProvider = null;
   referenceDetailsPanel = null;
 }
 

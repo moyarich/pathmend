@@ -1,12 +1,12 @@
 "use strict";
 
 const vscode = require("vscode");
-const { ReferenceDetailsProvider } = require("./reference-details-provider");
+const { ReferenceDetailsWebview } = require("./reference-details-webview");
 
 /** A singleton editor tab using the same renderer and diagnostic actions as the sidebar. */
 class ReferenceDetailsPanel {
   constructor(extensionUri, actions) {
-    this.provider = new ReferenceDetailsProvider(extensionUri, actions);
+    this.session = new ReferenceDetailsWebview(extensionUri, actions);
   }
 
   reveal() {
@@ -20,14 +20,17 @@ class ReferenceDetailsPanel {
     );
     this.panel = panel;
     panel.onDidDispose(() => { this.panel = undefined; });
-    this.provider.attach(panel, false);
+    this.session.attach(panel, {
+      location: "editor",
+      onVisibilityChanged: listener => panel.onDidChangeViewState(listener),
+    });
   }
 
-  refresh() { this.provider.refresh(); }
-  select(ref) { this.provider.select(ref); }
+  refresh() { this.session.refresh(); }
+  select(ref) { this.session.select(ref); }
   dispose() {
     this.panel?.dispose();
-    this.provider.dispose();
+    this.session.dispose();
   }
 }
 
