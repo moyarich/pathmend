@@ -3,6 +3,7 @@ const { extractMarkdown } = require("./extract");
 
 const format = {
   id: "markdown",
+  cacheable: true,
   patterns: ["**/*.{md,mdx,MD,MDX}"],
   order: 2,
   rules: {
