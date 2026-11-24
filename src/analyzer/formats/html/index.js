@@ -1,16 +1,19 @@
 "use strict";
 const { sourceRef, maskComments } = require("../source-path");
 const format = {
+  cacheable:true,
   id:"html", patterns:["**/*.{html,htm}"], order:2,
   rules:{PM017:{name:"html-path-not-found",description:"HTML local resource path not found",category:"html",tags:["html","assets"],severity:"warning",fixable:true}},
   match({base}) { return /\.html?$/i.test(base) ? "html" : null; },
   extract(c) {
-    const text = maskComments(c.text, /<!--[\s\S]*?-->|<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi);
+    const comments = maskComments(c.text, /<!--[\s\S]*?-->/g);
+    const text = comments.replace(/(<(script|style)\b[^>]*>)([\s\S]*?)(<\/\2\s*>)/gi, (_,open,tag,body,close)=>open+body.replace(/[^\r\n]/g," ")+close);
     const refs = [];
     for (const tag of text.matchAll(/<[a-z][\w:-]*(?:\s+(?:"[^"]*"|'[^']*'|[^'"<>])*)?\/?>/gi)) {
-      for (const m of tag[0].matchAll(/\s(src|href|srcset)\s*=\s*(?:"([^"\r\n]*)"|'([^'\r\n]*)')/gi)) {
-        const raw = m[2] ?? m[3];
-        if (!raw || /^(?:data:)|\{\{/i.test(raw)) continue;
+      for (const m of tag[0].matchAll(/\s([\w:-]+)\s*=\s*(?:"([^"\r\n]*)"|'([^'\r\n]*)'|([^\s>]+))/gi)) {
+        if (!/^(src|href|srcset)$/i.test(m[1])) continue;
+        const raw = m[2] ?? m[3] ?? m[4];
+        if (!raw || /(?:^|,)\s*data:|\{\{/i.test(raw)) continue;
         const offset = tag.index + m.index + m[0].indexOf(raw, m[0].indexOf("="));
         const parts = m[1].toLowerCase() === "srcset" ? [...raw.matchAll(/(?:^|,)\s*([^\s,]+)(?:\s+\d+(?:\.\d+)?[wx])?\s*(?=,|$)/g)] : null;
         for (const item of parts || [{0:raw,1:raw,index:0}]) {
