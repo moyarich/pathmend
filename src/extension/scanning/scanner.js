@@ -37,17 +37,23 @@ function createScanner(runtime) {
     if (!index) {
       const gen = st.indexGen;
       index = await buildIndex(cfg);
-      if (seq !== st.seq && st.index) return SUPERSEDED;
+      if (runtime.state !== st || seq !== st.seq) return SUPERSEDED;
       if (st.indexGen === gen) st.index = index;
       else stale = true;
     }
+    if (runtime.state !== st || seq !== st.seq) return SUPERSEDED;
     const files = await collectConfigs(cfg);
     if (runtime.state !== st || seq !== st.seq) return SUPERSEDED;
     const rs = roots();
     const guard = analyzer.createGuard(fs, rs.map((r) => r.path));
     const maxBytes = cfg.maxFileSizeKB * 1024;
     const configs = [];
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      if (i && i % 128 === 0) {
+        await new Promise(resolve => setImmediate(resolve));
+        if (runtime.state !== st || seq !== st.seq) return SUPERSEDED;
+      }
+      const file = files[i];
       const fst = guard.status(file);
       if (fst.state !== "file") continue; // missing, or a symlink that leaves the workspace
       if (fst.size > maxBytes) continue;
