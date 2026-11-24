@@ -126,6 +126,10 @@ Remove `PM_SCREENSHOTS=0` to enable screenshots.
 
 If VS Code is installed elsewhere, update the application path.
 
+## Diagnostic report artifacts
+
+VS Code integration tests export the initial scan from both trusted and untrusted fixture workspaces using the same report serializer as PathMend: Export Results. CI uploads `trusted.json` and `untrusted.json` as `pathmend-diagnostic-reports` for 14 days, even if later assertions fail. These are diagnostic exports, not the separate `pathmend-vscode-results` test assertion report. Local reports are written to `test-results/diagnostics/`; override with `PM_DIAGNOSTIC_REPORTS`. Screenshot capture is not required.
+
 ## Screenshots (optional)
 
 The VS Code integration runner can capture screenshots of important editor states for visual debugging.

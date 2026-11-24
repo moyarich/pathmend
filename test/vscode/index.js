@@ -80,6 +80,14 @@ function rows(api) {
   return out;
 }
 
+/** Capture the same report used by the user-facing export command. */
+function saveDiagnosticReport(api, cfg, check) {
+  const report = api.getReport();
+  check("diagnostic export matches live findings", report.summary.total === api.getFindings().length);
+  if (!cfg.diagnosticReportFile) return;
+  fs.writeFileSync(cfg.diagnosticReportFile, JSON.stringify(report, null, 2) + "\n");
+}
+
 async function activate() {
   const ext = vscode.extensions.getExtension("jaytankdev.pathmend");
   const api = await ext.activate();
@@ -98,6 +106,7 @@ async function untrusted(check, cfg) {
   await api.rebuildIndex();
   const d = diff(diagList(ws).map((x) => x.key), expected);
   check("untrusted: exact diagnostics", !d.extra.length && !d.missing.length, d);
+  saveDiagnosticReport(api, cfg, check);
   await vscode.commands.executeCommand("workbench.view.extension.pathmend");
   const broken = api.getFindings().filter((f) => !f.info).length;
   check("untrusted: view has rows", rows(api).length === expected.length, rows(api).length);
@@ -152,6 +161,7 @@ async function body(check, cfg) {
   let list = diagList(ws);
   let d = diff(list.map((x) => x.key), expected);
   check("exact diagnostics (" + expected.length + " expected)", !d.extra.length && !d.missing.length, d);
+  saveDiagnosticReport(api, cfg, check);
 
   const byKey = (k) => list.find((x) => x.key === k);
   const h = byKey("hostile/package.json:3:PM010");

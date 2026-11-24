@@ -66,6 +66,7 @@ jobs:
         id: tests
         env:
           PM_TEST_RESULTS: ${{ runner.temp }}/vscode-results.json
+          PM_DIAGNOSTIC_REPORTS: ${{ runner.temp }}/pathmend-diagnostics
         run: xvfb-run -a -s "-screen 0 1920x1080x24" node test/run-vscode.js
       - name: Publish test summary and annotations
         if: always()
@@ -78,6 +79,14 @@ jobs:
         with:
           name: pathmend-vscode-results
           path: ${{ runner.temp }}/vscode-results.json
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Upload diagnostic exports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pathmend-diagnostic-reports
+          path: ${{ runner.temp }}/pathmend-diagnostics/*.json
           retention-days: 14
           if-no-files-found: warn
       - name: Upload screenshots

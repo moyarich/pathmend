@@ -38,6 +38,8 @@ const cfgFile = path.join(base, "config.json");
 const shotDir = path.join(base, "shots");
 fs.mkdirSync(shotDir);
 const screenshotsDir = path.join(extDir, "screenshots");
+const diagnosticReportDir = path.resolve(process.env.PM_DIAGNOSTIC_REPORTS || path.join(extDir, "test-results", "diagnostics"));
+fs.mkdirSync(diagnosticReportDir, { recursive: true });
 if (screenshotsEnabled) fs.mkdirSync(screenshotsDir, { recursive: true });
 
 
@@ -117,7 +119,7 @@ async function captureWorkbench(devtoolsUrl, screenshotName) {
 
 async function launch(executable, mode, extraArgs) {
   const fx = prepare(path.join(base, mode, "fx"));
-  fs.writeFileSync(cfgFile, JSON.stringify({ mode, resultFile, shotDir, screenshotsEnabled, ws: fx.ws, outside: fx.outside }));
+  fs.writeFileSync(cfgFile, JSON.stringify({ mode, resultFile, shotDir, screenshotsEnabled, ws: fx.ws, outside: fx.outside, diagnosticReportFile: path.join(diagnosticReportDir, mode + ".json") }));
   const args = [
     "--new-window",
     // Hosted Linux CI lacks a configured Chromium sandbox; opt in only there.

@@ -309,8 +309,13 @@ function confined(file) {
 }
 
 /** Show the complete diagnostic without the single-line tree width constraint. */
+function getReport() {
+  const cfg = getConfig();
+  return createReport(getGroups(), cfg.severity, cfg.enabled, roots().length > 0);
+}
+
 async function exportCurrentResults() {
-  return exportResults(createReport(getGroups(), getConfig().severity, getConfig().enabled, roots().length > 0));
+  return exportResults(getReport());
 }
 
 async function openDetails() {
@@ -686,6 +691,7 @@ function activate(context) {
     scan: () => scan(),
     rebuildIndex: () => refreshIndex(),
     poll: () => refreshIndex(),
+    getReport,
     getFindings: () => (state ? state.findings : []),
     getLastRenamePlan: () => (state ? state.lastPlan : []),
     getLastPrompt: () => (state ? { message: state.lastPrompt, done: state.lastPromptDone } : null),
