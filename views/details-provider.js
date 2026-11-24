@@ -109,8 +109,7 @@ function renderHtml(cspSource, style, script) {
   <div class="filter-row">
     <label class="sr-only" for="severity">Reference type</label>
     <select id="severity" aria-label="Reference type"><option value="all">All references</option><option value="broken">Broken only</option><option value="info">Not checked</option><option value="fixable">Fixable</option></select>
-    <button id="expand" class="quiet icon-button" type="button" title="Expand all" aria-label="Expand all"></button>
-    <button id="collapse" class="quiet icon-button" type="button" title="Collapse all" aria-label="Collapse all"></button>
+    <button id="toggle-groups" class="quiet icon-button" type="button" title="Collapse all" aria-label="Collapse all" disabled></button>
   </div>
   <div class="toolbar"><button id="problems" class="quiet" type="button">Problems</button><button id="settings" class="quiet" type="button">Settings</button><button id="export" class="quiet" type="button">Export</button></div>
 </header>

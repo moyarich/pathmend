@@ -9,10 +9,9 @@ const list = document.querySelector("pm-reference-list");
 const filter = document.getElementById("filter");
 const severity = document.getElementById("severity");
 const clear = document.getElementById("clear-filter");
-const expand = document.getElementById("expand");
-const collapse = document.getElementById("collapse");
+const toggleGroups = document.getElementById("toggle-groups");
 
-for (const [id, name] of Object.entries({ "clear-filter": "x", expand: "chevrons-up-down", collapse: "chevrons-down-up", problems: "circle-alert", settings: "settings", export: "download" })) {
+for (const [id, name] of Object.entries({ "clear-filter": "x", problems: "circle-alert", settings: "settings", export: "download" })) {
   const button = document.getElementById(id);
   button.prepend(icon(name));
 }
@@ -21,9 +20,17 @@ searchIcon.classList.add("search-icon");
 filter.before(searchIcon);
 filter.value = state.filter;
 severity.value = state.severity;
+function updateGroupToggle() {
+  const { canToggle, allExpanded } = state.groupDisclosure;
+  const label = allExpanded ? "Collapse all" : "Expand all";
+  toggleGroups.disabled = !canToggle;
+  toggleGroups.title = label;
+  toggleGroups.setAttribute("aria-label", label);
+  toggleGroups.replaceChildren(icon(allExpanded ? "chevrons-down-up" : "chevrons-up-down"));
+}
 const render = () => {
   clear.hidden = !state.filter;
-  expand.disabled = collapse.disabled = !!state.filter.trim() || !state.snapshot?.files.length;
+  updateGroupToggle();
   list.update(state);
 };
 function setFilter(value) {
@@ -37,8 +44,7 @@ filter.addEventListener("keydown", event => {
 });
 clear.addEventListener("click", () => { setFilter(""); filter.focus(); });
 severity.addEventListener("change", () => { state.setSeverity(severity.value); render(); });
-expand.addEventListener("click", () => { state.setAllExpanded(true); render(); });
-collapse.addEventListener("click", () => { state.setAllExpanded(false); render(); });
+toggleGroups.addEventListener("click", () => { state.toggleGroups(); render(); });
 document.getElementById("problems").addEventListener("click", () => bridge.send({ type: "problems" }));
 document.getElementById("export").addEventListener("click", () => bridge.send({ type: "export" }));
 document.getElementById("settings").addEventListener("click", () => bridge.send({ type: "settings" }));
@@ -46,6 +52,7 @@ list.addEventListener("pm-reference-action", event => bridge.send(event.detail))
 list.addEventListener("pm-group-toggle", event => {
   const { path, expanded } = event.detail;
   state.setExpanded(path, expanded);
+  updateGroupToggle();
 });
 bridge.onSnapshot(snapshot => {
   state.setSnapshot(snapshot);

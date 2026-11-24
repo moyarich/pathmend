@@ -1,3 +1,5 @@
+import { filterReferences } from "./filter.js";
+
 /** Keep transient diagnostics separate from persisted presentation preferences. */
 const TYPES = new Set(["all", "broken", "info", "fixable"]);
 
@@ -8,6 +10,19 @@ export function createViewState(storage) {
   let snapshot;
   const collapsed = new Set(Array.isArray(saved.collapsed) ? saved.collapsed : []);
   const persist = () => storage.save({ filter, severity, collapsed: [...collapsed] });
+
+  const visibleFiles = () => snapshot?.enabled === false || snapshot?.hasWorkspace === false ? [] : filterReferences(snapshot?.files || [], filter, severity);
+  const disclosure = () => {
+    const files = visibleFiles();
+    return { canToggle: !filter.trim() && files.length > 0, allExpanded: files.length > 0 && files.every(file => !!filter.trim() || !collapsed.has(file.path)) };
+  };
+  const setAllExpanded = expanded => {
+    if (filter.trim()) return;
+    for (const file of visibleFiles()) {
+      if (expanded) collapsed.delete(file.path); else collapsed.add(file.path);
+    }
+    persist();
+  };
 
   return {
     get filter() { return filter; },
@@ -22,12 +37,11 @@ export function createViewState(storage) {
       if (expanded) collapsed.delete(path); else collapsed.add(path);
       persist();
     },
-    setAllExpanded(expanded) {
-      if (filter.trim()) return;
-      for (const file of snapshot?.files || []) {
-        if (expanded) collapsed.delete(file.path); else collapsed.add(file.path);
-      }
-      persist();
+    get groupDisclosure() { return disclosure(); },
+    setAllExpanded,
+    toggleGroups() {
+      const { canToggle, allExpanded } = disclosure();
+      if (canToggle) setAllExpanded(!allExpanded);
     },
   };
 }

@@ -47,7 +47,7 @@ describe("reference type filters", () => {
   it("persists reference type and bulk disclosure preferences", () => {
     let saved = {};
     const state = createViewState({ load: () => saved, save: value => { saved = value; } });
-    state.setSnapshot({ files: [{ path: "a.md" }, { path: "b.md" }] });
+    state.setSnapshot({ files: [{ path: "a.md", findings: [{ fix: "./a" }] }, { path: "b.md", findings: [{ fix: "./b" }] }] });
     state.setSeverity("fixable");
     state.setAllExpanded(false);
     expect(saved.severity).toBe("fixable");
@@ -55,4 +55,27 @@ describe("reference type filters", () => {
     state.setAllExpanded(true);
     expect(state.isExpanded("b.md")).toBe(true);
   });
+});
+
+
+it("toggles visible file groups and reflects manual disclosure changes", () => {
+  const state = createViewState({ load: () => ({}), save: () => {} });
+  state.setSnapshot({ enabled: true, hasWorkspace: true, files: [
+    { path: "a.md", findings: [{ fix: "./a" }] },
+    { path: "b.md", findings: [{ notChecked: true }] },
+  ] });
+  expect(state.groupDisclosure).toEqual({ canToggle: true, allExpanded: true });
+  state.toggleGroups();
+  expect(state.isExpanded("a.md")).toBe(false);
+  expect(state.isExpanded("b.md")).toBe(false);
+  state.setExpanded("a.md", true);
+  expect(state.groupDisclosure.allExpanded).toBe(false);
+  state.toggleGroups();
+  expect(state.groupDisclosure.allExpanded).toBe(true);
+  state.setSeverity("fixable");
+  state.toggleGroups();
+  expect(state.isExpanded("a.md")).toBe(false);
+  expect(state.isExpanded("b.md")).toBe(true);
+  state.setFilter("a");
+  expect(state.groupDisclosure.canToggle).toBe(false);
 });
