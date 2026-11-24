@@ -4,7 +4,7 @@ const { isUrl, isGlob, hasControl } = require("../utils/paths");
 const { evaluateRef } = require("./evaluate");
 const { encodeFor } = require("./encode");
 
-function validateReplacement(ref, replacement, guard, index) {
+function inspectReplacement(ref, replacement, guard, index) {
   if (typeof replacement !== "string" || !replacement.trim() || hasControl(replacement) ||
       isUrl(replacement) || encodeFor(ref, replacement) === null) return "invalid";
   let value = replacement;
@@ -20,7 +20,11 @@ function validateReplacement(ref, replacement, guard, index) {
   const result = evaluateRef({ ...ref, value, glob: false, anywhere: undefined }, {
     guard, index, ignored: () => false,
   });
-  return result?.state === "ok" ? "valid" : "unverified";
+  return ({ ok: "valid", missing: "missing", notdir: "wrong-type", notfile: "wrong-type", noentry: "missing-entry", outside: "outside-workspace", context: "outside-context" })[result?.state] || "unverified";
 }
 
-module.exports = { validateReplacement };
+function validateReplacement(ref, replacement, guard, index) {
+  const status = inspectReplacement(ref, replacement, guard, index);
+  return status === "valid" || status === "invalid" ? status : "unverified";
+}
+module.exports = { validateReplacement, inspectReplacement };

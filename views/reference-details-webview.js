@@ -67,15 +67,15 @@ class ReferenceDetailsWebview {
     if (message.type === "export") return vscode.commands.executeCommand("pathmend.exportResults");
     if (message.type === "settings") return vscode.commands.executeCommand("pathmend.openSettings");
     if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");
-    if (!["open", "fix", "pick-replacement", "complete-replacement"].includes(message.type)) return;
+    if (!["open", "fix", "pick-replacement", "complete-replacement", "validate-replacement"].includes(message.type)) return;
     if (message.revision !== this.revision || typeof message.id !== "string") return;
     const ref = this.references.get(message.id);
     if (!ref) return;
-    if (message.type === "pick-replacement" || message.type === "complete-replacement") {
+    if (message.type === "pick-replacement" || message.type === "complete-replacement" || message.type === "validate-replacement") {
       if (!Number.isSafeInteger(message.request) || typeof message.replacement !== "string" || message.replacement.length > 4096) return;
       const view = this.view;
       const revision = this.revision;
-      const result = message.type === "pick-replacement" ? await this.actions.pickReplacement(ref) : await this.actions.completeReplacement(ref, message.replacement);
+      const result = message.type === "pick-replacement" ? await this.actions.pickReplacement(ref) : message.type === "complete-replacement" ? await this.actions.completeReplacement(ref, message.replacement) : await this.actions.checkReplacement(ref, message.replacement);
       if (this.view === view && this.revision === revision) await view.webview.postMessage({ type: "replacement-result", action: message.type, id: message.id, revision, request: message.request, result });
       return;
     }

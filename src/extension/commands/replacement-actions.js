@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const analyzer = require("../../analyzer");
 const { canReplace } = require("../../analyzer/references/can-replace");
-const { validateReplacement } = require("../../analyzer/references/validate-replacement");
+const { validateReplacement, inspectReplacement } = require("../../analyzer/references/validate-replacement");
 
 function createReplacementActions(runtime, liveFinding) {
   const environment = f => {
@@ -54,6 +54,12 @@ function createReplacementActions(runtime, liveFinding) {
     }
     return [...out].sort();
   }
-  return { pickReplacement, completeReplacement };
+  function checkReplacement(arg, value) {
+    const f = liveFinding(arg);
+    if (!f || !canReplace(f)) return "unavailable";
+    const env = environment(f);
+    return inspectReplacement(f.ref, value, env.guard, env.index);
+  }
+  return { pickReplacement, completeReplacement, checkReplacement };
 }
 module.exports = { createReplacementActions };

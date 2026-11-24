@@ -41,13 +41,35 @@ export class ReferenceCard extends HTMLElement {
       const choices = element("select", undefined, "replacement-choices");
       choices.hidden = true;
       choices.setAttribute("aria-label", "Matching workspace paths");
-      let request = 0, timer;
+      let request = 0, timer, validationRequest = 0, validationTimer;
+      let validation = "pending";
+      const feedback = element("div", "", "replacement-validation");
+      feedback.setAttribute("role", "status");
+      const messages = { pending: "Checking path…", valid: "Path verified", missing: "Target not found", "wrong-type": "Target has the wrong file or folder type", "missing-entry": "Required file is missing in this folder", "outside-workspace": "Path outside workspace — not checked", "outside-context": "Path outside build context", invalid: "Invalid replacement syntax", unverified: "Path could not be verified", unavailable: "Reference changed — scan again" };
+      const displayValidation = status => {
+        validation = status;
+        feedback.textContent = messages[status] || messages.unverified;
+        feedback.className = "replacement-validation " + status;
+        fix.disabled = !input.value.trim() || status === "invalid" || status === "unavailable" || status === "pending";
+      };
+      const scheduleValidation = () => {
+        clearTimeout(validationTimer);
+        const current = ++validationRequest;
+        if (!input.value.trim()) { displayValidation("invalid"); feedback.textContent = ""; return; }
+        displayValidation("pending");
+        validationTimer = setTimeout(() => { if (this.isConnected) dispatch("validate-replacement", { replacement: input.value, request: current }); }, 180);
+      };
       const ask = type => dispatch(type, { replacement: input.value, request: ++request });
       const browse = action("Browse…", () => { clearTimeout(timer); ask("pick-replacement"); });
       browse.classList.add("quiet");
       const schedule = () => { clearTimeout(timer); request++; choices.hidden = true; timer = setTimeout(() => { if (this.isConnected) ask("complete-replacement"); }, 200); };
       this.receiveReplacement = message => {
-        if (message.revision !== revision || message.id !== f.id || message.request !== request) return;
+        if (message.revision !== revision || message.id !== f.id) return;
+        if (message.action === "validate-replacement") {
+          if (message.request === validationRequest && typeof message.result === "string") displayValidation(message.result);
+          return;
+        }
+        if (message.request !== request) return;
         if (message.action === "pick-replacement" && typeof message.result === "string") { input.value = message.result; update(); }
         if (message.action === "complete-replacement" && Array.isArray(message.result)) {
           choices.replaceChildren(element("option", "Choose a matching path…"));
@@ -58,7 +80,7 @@ export class ReferenceCard extends HTMLElement {
       choices.addEventListener("change", () => { if (choices.selectedIndex > 0) { input.value = choices.value; update(); choices.hidden = true; } });
       const update = () => {
         draft.save(input.value);
-        fix.disabled = !input.value.trim();
+        scheduleValidation();
         reset.disabled = input.value === (f.fix ?? "");
       };
       input.addEventListener("input", () => { update(); schedule(); });
@@ -70,7 +92,7 @@ export class ReferenceCard extends HTMLElement {
       });
       const buttons = element("div", undefined, "suggestion-actions");
       buttons.append(fix, reset, browse);
-      suggestion.append(label, choices, buttons);
+      suggestion.append(label, feedback, choices, buttons);
       update();
       card.append(suggestion);
     }
