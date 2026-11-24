@@ -79,3 +79,11 @@ it("toggles visible file groups and reflects manual disclosure changes", () => {
   state.setFilter("a");
   expect(state.groupDisclosure.canToggle).toBe(false);
 });
+
+it("filters by type, rule and active file, then sorts without mutating input", () => {
+  const files = [{path:"a.md",findings:[{code:"PM012",severity:"warning"}]}, {path:"b.json",findings:[{code:"PM001",severity:"error"},{code:"PM001",severity:"error"}]}];
+  expect(filterReferences(files,"","all",{fileType:"md",rule:"PM012"})).toEqual([files[0]]);
+  expect(filterReferences(files,"","all",{currentOnly:true,currentFile:"b.json"})).toEqual([files[1]]);
+  expect(filterReferences(files,"","all",{sort:"count"})).toEqual([files[1],files[0]]);
+  expect(filterReferences(files,"","all",{sort:"severity"})).toEqual([files[1],files[0]]);
+});
