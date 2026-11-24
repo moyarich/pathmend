@@ -37,7 +37,8 @@ const resultFile = path.join(base, "results.json");
 const cfgFile = path.join(base, "config.json");
 const shotDir = path.join(base, "shots");
 fs.mkdirSync(shotDir);
-const screenshotsDir = path.join(extDir, "screenshots");
+const screenshotsDir = path.resolve(process.env.PM_SCREENSHOT_DIR || path.join(extDir, "screenshots"));
+const screenshotResults = [];
 const diagnosticReportDir = path.resolve(process.env.PM_DIAGNOSTIC_REPORTS || path.join(extDir, "test-results", "diagnostics"));
 fs.mkdirSync(diagnosticReportDir, { recursive: true });
 if (screenshotsEnabled) fs.mkdirSync(screenshotsDir, { recursive: true });
@@ -98,6 +99,22 @@ async function captureWorkbench(devtoolsUrl, screenshotName) {
         await new Promise(resolve => setTimeout(resolve, 150));
       }
       if (!rendered) throw new Error("Reference Details webview did not render before capture");
+      if (["reference-details-editor","reference-details-filtered","reference-details-collapsed"].includes(screenshotName)) {
+        let frame;
+        for (const candidate of page.frames()) {
+          if (await candidate.locator("#sidebar").count() && await candidate.locator("pm-reference-list").isVisible()) { frame=candidate; break; }
+        }
+        if (!frame) throw new Error("Editor Reference Details frame not found");
+        if (screenshotName==="reference-details-filtered") {
+          await frame.locator("#rule").selectOption("PM018");
+          await frame.locator("pm-reference-card .rule-code").first().waitFor({state:"visible",timeout:5000});
+        } else if (screenshotName==="reference-details-collapsed") {
+          await frame.locator("#rule").selectOption("");
+          const toggle=frame.locator("#toggle-groups");
+          if (await toggle.getAttribute("aria-label")==="Collapse all") await toggle.click();
+          await frame.locator("pm-file-group details[open]").first().waitFor({state:"detached",timeout:5000});
+        }
+      }
     }
     const screenshotPath = path.join(screenshotsDir, screenshotName + ".png");
     await page.screenshot({ path: screenshotPath, timeout: 10000, animations: "disabled" });
@@ -173,8 +190,10 @@ async function launch(executable, mode, extraArgs) {
     try {
       await captureWorkbench(devtoolsUrl, screenshotName);
       screenshotOk = true;
+      screenshotResults.push({mode,name:screenshotName,status:"captured",file:screenshotName+".png"});
       console.log("screenshot: " + path.join(screenshotsDir, screenshotName + ".png"));
     } catch (error) {
+      screenshotResults.push({mode,name:screenshotName,status:"failed",reason:error.message});
       console.warn("screenshot skipped (" + screenshotName + "):", error.message);
     } finally {
       // Acknowledge capture completion so the extension test can continue at the correct UI state.
@@ -223,7 +242,8 @@ async function launch(executable, mode, extraArgs) {
   const passed = r1.passed + r2.passed;
   const failed = r1.failed + r2.failed;
   console.log(`\nin-editor tests: ${passed} passed, ${failed} failed (trusted run ${r1.passed}/${r1.passed + r1.failed}, untrusted run ${r2.passed}/${r2.passed + r2.failed})`);
-  if (process.env.PM_TEST_RESULTS) fs.writeFileSync(process.env.PM_TEST_RESULTS, JSON.stringify({ trusted: r1, untrusted: r2 }));
+  if (screenshotsEnabled) fs.writeFileSync(path.join(screenshotsDir,"manifest.json"),JSON.stringify(screenshotResults,null,2)+"\n");
+  if (process.env.PM_TEST_RESULTS) fs.writeFileSync(process.env.PM_TEST_RESULTS, JSON.stringify({ trusted: r1, untrusted: r2, screenshots:screenshotResults }));
   if (!failed) fs.rmSync(base, { recursive: true, force: true });
   process.exit(failed ? 1 : 0);
 })().catch((error) => { console.error(error); process.exitCode = 1; });
