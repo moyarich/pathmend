@@ -76,8 +76,9 @@ class ReferenceDetailsProvider {
     if (message.type === "ready") { this.ready = true; return this.refresh(); }
     if (!this.view?.visible || !this.ready) return;
     if (message.type === "editor" && this.sidebar) return vscode.commands.executeCommand("pathmend.openDetailsInEditor");
+    if (message.type === "sidebar" && !this.sidebar) return vscode.commands.executeCommand("pathmend.openDetails");
     if (message.type === "export") return vscode.commands.executeCommand("pathmend.exportResults");
-    if (message.type === "settings") return vscode.commands.executeCommand("workbench.action.openSettings", "pathmend");
+    if (message.type === "settings") return vscode.commands.executeCommand("pathmend.openSettings");
     if (message.type === "problems") return vscode.commands.executeCommand("workbench.actions.view.problems");
     if (message.type !== "open" && message.type !== "fix") return;
     if (message.revision !== this.revision || typeof message.id !== "string") return;
@@ -117,7 +118,12 @@ function renderHtml(cspSource, style, script, sidebar) {
     <select id="severity" aria-label="Reference type"><option value="all">All references</option><option value="broken">Broken only</option><option value="info">Not checked</option><option value="fixable">Fixable</option></select>
     <button id="toggle-groups" class="quiet icon-button" type="button" title="Collapse all" aria-label="Collapse all" disabled></button>
   </div>
-  <div class="toolbar">${sidebar ? '<button id="editor" class="quiet" type="button">Open in Editor</button>' : ""}<button id="problems" class="quiet" type="button">Problems</button><button id="settings" class="quiet" type="button">Settings</button><button id="export" class="quiet" type="button">Export</button></div>
+  <div class="toolbar" role="group" aria-label="Reference actions">
+    ${sidebar ? '<button id="editor" class="quiet" type="button" title="Open reference details in an editor tab alongside your files">Open in Editor</button>' : '<button id="sidebar" class="quiet" type="button" title="Show reference details in the PathMend sidebar">Open in Sidebar</button>'}
+    <button id="problems" class="quiet" type="button" title="Open the VS Code Problems panel">Problems</button>
+    <button id="export" class="quiet" type="button" title="Save the complete diagnostic report as a JSON file">Export JSON</button>
+    <button id="settings" class="quiet" type="button" title="Configure PathMend settings">Settings</button>
+  </div>
 </header>
 <main class="view-content"><pm-reference-list><p class="reference-status" role="status">Loading references…</p></pm-reference-list></main>
 <script type="module" src="${script}"></script>

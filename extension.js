@@ -651,6 +651,10 @@ function activate(context) {
     }),
     detailsProvider,
     detailsPanel,
+    vscode.window.registerTreeDataProvider("pathmend.actions", {
+      getChildren: () => [],
+      getTreeItem: item => item,
+    }),
     vscode.window.registerWebviewViewProvider("pathmend.details", detailsProvider),
     vscode.commands.registerCommand("pathmend.scan", scanCommand),
     vscode.commands.registerCommand("pathmend.showBroken", showBroken),
@@ -659,6 +663,7 @@ function activate(context) {
     vscode.commands.registerCommand("pathmend.openDetails", openDetails),
     vscode.commands.registerCommand("pathmend.openDetailsInEditor", () => detailsPanel.reveal()),
     vscode.commands.registerCommand("pathmend.exportResults", exportCurrentResults),
+    vscode.commands.registerCommand("pathmend.openSettings", () => vscode.commands.executeCommand("workbench.action.openSettings", "pathmend")),
     vscode.commands.registerCommand("pathmend.applyFix", applyFix),
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, { provideCodeActions }, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
     vscode.workspace.onDidSaveTextDocument((d) => {

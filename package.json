@@ -59,49 +59,55 @@
     "commands": [
       {
         "command": "pathmend.scan",
-        "title": "Scan workspace",
+        "title": "Scan Workspace",
         "category": "PathMend",
         "icon": "$(refresh)"
       },
       {
         "command": "pathmend.showBroken",
-        "title": "Show broken references",
+        "title": "Show Broken References",
         "category": "PathMend",
         "icon": "$(list-filter)"
       },
       {
         "command": "pathmend.openReference",
-        "title": "Open reference",
+        "title": "Open Source File",
         "category": "PathMend"
       },
       {
         "command": "pathmend.applyFix",
-        "title": "Apply suggested path",
+        "title": "Apply Suggested Fix",
         "category": "PathMend",
         "icon": "$(lightbulb-autofix)"
       },
       {
         "command": "pathmend.showReferenceDetails",
-        "title": "Show reference details",
+        "title": "Show Reference Details",
         "category": "PathMend"
       },
       {
         "command": "pathmend.openDetails",
-        "title": "Open Reference Details",
+        "title": "Open Reference Details in Sidebar",
         "category": "PathMend",
-        "icon": "$(open-preview)"
+        "icon": "$(layout-sidebar-left)"
       },
       {
         "command": "pathmend.exportResults",
-        "title": "Export Results",
+        "title": "Export Results as JSON",
         "category": "PathMend",
-        "icon": "$(export)"
+        "icon": "$(save)"
       },
       {
         "command": "pathmend.openDetailsInEditor",
         "title": "Open Reference Details in Editor",
         "category": "PathMend",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "pathmend.openSettings",
+        "title": "Open PathMend Settings",
+        "category": "PathMend",
+        "icon": "$(gear)"
       }
     ],
     "viewsContainers": {
@@ -115,6 +121,12 @@
     },
     "views": {
       "pathmend": [
+        {
+          "id": "pathmend.actions",
+          "name": "Quick Actions",
+          "icon": "media/activity.svg",
+          "contextualTitle": "PathMend"
+        },
         {
           "id": "pathmend.references",
           "name": "Broken References",
@@ -132,6 +144,10 @@
       ]
     },
     "viewsWelcome": [
+      {
+        "view": "pathmend.actions",
+        "contents": "Find and repair broken file references in your workspace.\n[Scan Workspace](command:pathmend.scan)\n[Open Details in Editor](command:pathmend.openDetailsInEditor)\n[Open Details in Sidebar](command:pathmend.openDetails)\n[Export Results as JSON](command:pathmend.exportResults)\n[Settings](command:pathmend.openSettings)"
+      },
       {
         "view": "pathmend.references",
         "contents": "PathMend is turned off.\n[Open PathMend Settings](command:workbench.action.openSettings?%5B%22pathmend.%22%5D)",
@@ -224,12 +240,16 @@
       ],
       "pathmend.menu": [
         {
-          "command": "pathmend.openDetails",
+          "command": "pathmend.showBroken",
           "group": "1_views@1"
         },
         {
-          "command": "pathmend.showBroken",
+          "command": "pathmend.openDetails",
           "group": "1_views@2"
+        },
+        {
+          "command": "pathmend.openDetailsInEditor",
+          "group": "1_views@3"
         },
         {
           "command": "pathmend.scan",
@@ -240,8 +260,8 @@
           "group": "2_actions@2"
         },
         {
-          "command": "pathmend.openDetailsInEditor",
-          "group": "1_views@3"
+          "command": "pathmend.openSettings",
+          "group": "3_settings@1"
         }
       ]
     },
@@ -424,7 +444,7 @@
     "submenus": [
       {
         "id": "pathmend.menu",
-        "label": "PathMend",
+        "label": "PathMend Actions",
         "icon": "$(ellipsis)"
       }
     ]

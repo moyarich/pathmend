@@ -46,6 +46,7 @@ clear.addEventListener("click", () => { setFilter(""); filter.focus(); });
 severity.addEventListener("change", () => { state.setSeverity(severity.value); render(); });
 toggleGroups.addEventListener("click", () => { state.toggleGroups(); render(); });
 document.getElementById("editor")?.addEventListener("click", () => bridge.send({ type: "editor" }));
+document.getElementById("sidebar")?.addEventListener("click", () => bridge.send({ type: "sidebar" }));
 document.getElementById("problems").addEventListener("click", () => bridge.send({ type: "problems" }));
 document.getElementById("export").addEventListener("click", () => bridge.send({ type: "export" }));
 document.getElementById("settings").addEventListener("click", () => bridge.send({ type: "settings" }));
