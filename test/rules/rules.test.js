@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
-import registry from "../../rules.js";
-import core from "../../core.js";
+import { createRequire } from "node:module";
 import manifest from "../../package.json";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const { RULES, resolveRuleId } = registry;
+// Load both CommonJS modules through the same Node module cache.
+const require = createRequire(import.meta.url);
+const core = require("../../core.js");
+const { RULES, resolveRuleId } = require("../../rules.js");
 
 describe("rule metadata", () => {
   it("preserves stable IDs and has unique descriptive aliases", () => {
-    expect(Object.keys(RULES)).toEqual(Array.from({ length: 11 }, (_, i) => "PM" + String(i + 1).padStart(3, "0")));
+    expect(Object.keys(RULES)).toEqual(Array.from({ length: 15 }, (_, i) => "PM" + String(i + 1).padStart(3, "0")));
     expect(core.RULES).toBe(RULES);
-    expect(new Set(Object.values(RULES).map(rule => rule.name)).size).toBe(11);
+    expect(new Set(Object.values(RULES).map(rule => rule.name)).size).toBe(15);
     for (const [id, rule] of Object.entries(RULES)) {
       expect(resolveRuleId(id)).toBe(id);
       expect(resolveRuleId(rule.name)).toBe(id);

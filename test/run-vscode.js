@@ -100,6 +100,8 @@ async function launch(executable, mode, extraArgs) {
   fs.writeFileSync(cfgFile, JSON.stringify({ mode, resultFile, shotDir, screenshotsEnabled, ws: fx.ws, outside: fx.outside }));
   const args = [
     "--new-window",
+    // Hosted Linux CI lacks a configured Chromium sandbox; opt in only there.
+    ...(process.platform === "linux" && process.env.PM_TEST_NO_SANDBOX === "1" ? ["--no-sandbox"] : []),
     ...(screenshotsEnabled ? ["--remote-debugging-port=0"] : []),
     "--user-data-dir", userDir,
     "--extensions-dir", extsDir,
@@ -134,7 +136,7 @@ async function launch(executable, mode, extraArgs) {
     spawnError = error;
     console.error("VS Code launch failed:", error);
   });
-  const exited = new Promise((resolve) => child.on("exit", (code) => resolve(code)));
+  const exited = new Promise((resolve) => child.on("close", (code, signal) => resolve(code === null ? signal || "unknown" : code)));
   const killer = setTimeout(() => child.kill("SIGKILL"), 300000);
   let captureInProgress = false;
   const poll = screenshotsEnabled ? setInterval(async () => {
@@ -183,12 +185,15 @@ async function launch(executable, mode, extraArgs) {
   console.log("code exit status:", status);
   if (!fs.existsSync(resultFile)) {
     console.log("FAIL: no results written");
-    return { passed: 0, failed: 1, results: [] };
+    return { passed: 0, failed: 1, results: [{ name: "Editor produced no results", ok: false, detail: status }] };
   }
   const res = JSON.parse(fs.readFileSync(resultFile, "utf8"));
   fs.unlinkSync(resultFile);
   for (const t of res.results) console.log((t.ok ? "PASS " : "FAIL ") + t.name + (t.detail !== undefined ? " :: " + JSON.stringify(t.detail) : ""));
-  if (status !== 0) res.failed += 1;
+  if (status !== 0 && !(status === 1 && res.failed > 0)) {
+    res.failed += 1;
+    res.results.push({ name: "Editor exit status", ok: false, detail: status });
+  }
   return res;
 }
 
@@ -201,6 +206,7 @@ async function launch(executable, mode, extraArgs) {
   const passed = r1.passed + r2.passed;
   const failed = r1.failed + r2.failed;
   console.log(`\nin-editor tests: ${passed} passed, ${failed} failed (trusted run ${r1.passed}/${r1.passed + r1.failed}, untrusted run ${r2.passed}/${r2.passed + r2.failed})`);
+  if (process.env.PM_TEST_RESULTS) fs.writeFileSync(process.env.PM_TEST_RESULTS, JSON.stringify({ trusted: r1, untrusted: r2 }));
   if (!failed) fs.rmSync(base, { recursive: true, force: true });
   process.exit(failed ? 1 : 0);
 })().catch((error) => { console.error(error); process.exitCode = 1; });

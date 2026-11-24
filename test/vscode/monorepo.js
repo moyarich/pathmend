@@ -29,7 +29,7 @@ async function runMonorepoCases(check, cfg) {
     // The same real VS Code rename API used by the main integration suite.
     try {
       vscode.window.showInformationMessage = (message, ...items) => {
-        if (typeof message === "string" && /config reference/.test(message)) {
+        if (typeof message === "string" && /path reference/.test(message)) {
           return Promise.resolve("Update all");
         }
         return originalInfo.call(vscode.window, message, ...items);

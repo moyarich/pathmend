@@ -1,0 +1,35 @@
+name: CI - Vitest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Vitest (Node 24)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run Vitest
+        id: tests
+        run: npm test -- --reporter=default --reporter=json --outputFile="$RUNNER_TEMP/vitest-results.json"
+      - name: Publish test summary and annotations
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: node test/write-summary.js vitest "$RUNNER_TEMP/vitest-results.json"

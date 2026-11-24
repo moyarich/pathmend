@@ -20,7 +20,11 @@ async function runScriptCases(check, cfg) {
       missingRelative: "./tools/missing-cli.sh",
       chained: "echo ready && node tools/missing-second.js",
     });
-    fs.writeFileSync(pkgPath, JSON.stringify(fixture, null, 2) + "\n");
+    const uri = vscode.Uri.file(pkgPath);
+    const doc = await vscode.workspace.openTextDocument(uri);
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(uri, new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length)), JSON.stringify(fixture, null, 2) + "\n");
+    if (!await vscode.workspace.applyEdit(edit) || !await doc.save()) throw new Error("Could not update script fixture");
     await api.rebuildIndex();
     const findings = vscode.languages.getDiagnostics(vscode.Uri.file(pkgPath))
       .filter((d) => d.source === "PathMend");
@@ -64,7 +68,11 @@ async function runScriptCases(check, cfg) {
     }
   } finally {
     // Restore the copied tracked fixture; never modify the repository fixture.
-    fs.writeFileSync(pkgPath, original);
+    const uri = vscode.Uri.file(pkgPath);
+    const doc = await vscode.workspace.openTextDocument(uri);
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(uri, new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length)), original);
+    if (!await vscode.workspace.applyEdit(edit) || !await doc.save()) throw new Error("Could not restore script fixture");
     await api.rebuildIndex();
   }
 }

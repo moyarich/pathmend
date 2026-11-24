@@ -1,6 +1,6 @@
-# PathMend: Find Broken Paths in Config Files
+# PathMend: Find Broken Paths in Config and Documentation Files
 
-**Find broken paths in your config files after a move or rename** - before CI, `docker build` or `npm publish` does.
+**Find broken paths in your config and documentation files after a move or rename** - before CI, `docker build` or `npm publish` does.
 
 You move `scripts/start.sh` to `tools/start.sh`. The editor updates the imports in your code,
 the tests pass, and you push. Then CI fails, because a string in a config file still says
@@ -33,6 +33,8 @@ Real examples:
 | `.gitlab-ci.yml`                                              | `include:` local files (string or `local:`), including `*` / `**` globs                                                                                                                                                                                                                      | the repository root                                                                                                                            |
 | `CODEOWNERS` (root, `.github/`, `docs/`, `.gitlab/`)          | patterns without wildcards; `/path` and `dir/file` are anchored, a bare name matches anywhere                                                                                                                                                                                                | the repository root                                                                                                                            |
 | `.vscode/launch.json`                                         | `program`, `cwd` that start with `${workspaceFolder}` or `${workspaceFolder:Name}`                                                                                                                                                                                                           | that workspace folder                                                                                                                          |
+| `.md`, `.mdx` | Local Markdown links, images, reference definitions and configured directive attributes | the document folder |
+| `.mdx` | Static relative imports/exports and configured JSX path attributes | the document folder |
 
 A glob is fine when it matches at least one file. Skipped on purpose: `COPY --from=<stage>`,
 URLs and git contexts, anything with `$VAR`, `${VAR}` or `${{ }}`, bare package specifiers
@@ -57,6 +59,10 @@ automatically, so `"main": "build/index.js"` is not reported before a build).
 | **PM009** | `glob-no-matches` | filesystem | Glob matches no files |
 | **PM010** | `outside-workspace` | security | Resolves outside the workspace - not checked (Information) |
 | **PM011** | `outside-docker-context` | docker | COPY / ADD source outside the Docker build context |
+| **PM012** | `markdown-path-not-found` | markdown | Markdown link or image path not found |
+| **PM013** | `mdx-module-not-found` | mdx | MDX import or export path not found |
+| **PM014** | `mdx-attribute-path-not-found` | mdx | MDX JSX attribute path not found |
+| **PM015** | `directive-path-not-found` | markdown | Markdown directive path not found |
 
 ### Rule examples
 
@@ -73,8 +79,41 @@ automatically, so `"main": "build/index.js"` is not reported before a build).
 | **PM009** | `"files": ["docs/*.pdf"]`, `COPY config/*.yaml /app/` |
 | **PM010** | `"main": "/etc/passwd"`, `../../elsewhere` |
 | **PM011** | `COPY ../../src /src` with context `services/api` |
+| **PM012** | `[Guide](./guide.md)` |
+| **PM013** | `import Demo from "./Demo.tsx"` |
+| **PM014** | `<img src="./image.png" />` |
+| **PM015** | `:::code-preview{component="./Example.tsx"}` |
 
 Rule IDs are stable; descriptive aliases can also be used in `pathmend.disabledRules` (for example, `["PM006", "outside-workspace"]`). Categories and tags describe rules; they are not disable selectors. Most rules use the configured severity; PM010 remains informational. A rule may support suggestions, but actual Quick Fix availability depends on the finding.
+
+### Markdown and MDX
+
+The dependency-free scanner checks static local references, including link fragments
+(the fragment is preserved and is not validated). It skips external URLs, root-relative
+site routes, bare module imports, dynamic expressions, frontmatter, fenced code and
+inline code. It is not a full CommonMark or MDX parser: complex syntax, escaped or
+percent-encoded paths and framework-specific resolution are not supported. Only safe
+single-line path replacements are offered; moving the referring Markdown or MDX document rebases its static local paths. Folder moves and simultaneous document/target moves are supported for references resolved before the move.
+
+Configure JSX and directive attributes in VS Code settings:
+
+```json
+{
+  "pathmend.mdx.pathAttributes": [
+    "src",
+    "href",
+    "component"
+  ],
+  "pathmend.markdown.directivePathAttributes": [
+    "component",
+    "code",
+    "files"
+  ],
+  "pathmend.markdown.multiPathAttributes": [
+    "files"
+  ]
+}
+```
 
 Each diagnostic sits on the exact path string, with source `PathMend`.
 
@@ -97,7 +136,7 @@ PathMend compares with the references it saw before the move and shows:
 - **Preview** opens the standard refactor preview, so you can review and untick edits.
 - **Ignore** leaves them - they then show up as normal diagnostics.
 
-Only config files inside the workspace are edited. Renames done outside VS Code (for example
+Only supported config and documentation files inside the workspace are edited. Renames done outside VS Code (for example
 `git mv` in a terminal) are not seen as renames; the references simply show up as broken.
 
 ## Settings
@@ -133,7 +172,7 @@ the window regains focus and once a minute, even where the editor's file watcher
 
 - **No network, no telemetry, no child processes.** PathMend never runs git, docker, node or
   any other program.
-- **Only config files are read.** They are found with the editor's own file search inside your
+- **Only supported config and documentation files are read.** They are found with the editor's own file search inside your
   workspace folders. Referenced files are only checked for **existence** - their contents are
   never opened.
 - **Nothing outside the workspace is touched.** A path from a config file is resolved first,
@@ -161,7 +200,7 @@ the window regains focus and once a minute, even where the editor's file watcher
   `python`, `node` and similar). Files created earlier in the same step are reported as missing.
 - Glob matching and "did you mean" use an index of up to `pathmend.maxIndexedFiles` files;
   in a larger workspace unmatched globs are not reported.
-- A rename update is skipped for references inside a config file that was itself moved.
+- A rename update is skipped for references inside a config file that was itself moved; Markdown and MDX documents support rebasing their outgoing references.
 - Out of scope by design: `env_file` and `${VAR}` in Compose files, and script line endings,
   shebangs and executable bits.
 

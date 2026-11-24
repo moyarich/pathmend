@@ -177,7 +177,7 @@ async function body(check, cfg) {
   check("zero fs calls outside the workspace", bad.length === 0, bad.slice(0, 20));
   check("outside secret folder never touched", outside && !calls.some((c) => c.p.startsWith(outside)), outside);
   check("no call on /etc", !calls.some((c) => c.p.startsWith("/etc")));
-  check("only config files are read", calls.filter((c) => /readFile/.test(c.fn)).every((c) => /(package\.json|tsconfig[^/]*\.json|Dockerfile|\.ya?ml|CODEOWNERS|launch\.json)$/.test(c.p)), calls.filter((c) => /readFile/.test(c.fn)).map((c) => c.p));
+  check("only supported config and documentation files are read", calls.filter((c) => /readFile/.test(c.fn)).every((c) => /(package\.json|tsconfig[^/]*\.json|Dockerfile|\.ya?ml|CODEOWNERS|launch\.json|\.mdx?)$/i.test(c.p)), calls.filter((c) => /readFile/.test(c.fn)).map((c) => c.p));
   check("symlinked tsconfig (to outside) not read", !calls.some((c) => /readFile/.test(c.fn) && c.p.endsWith(path.join("hostile", "tsconfig.json"))));
   check("huge package.json not read", !calls.some((c) => /readFile/.test(c.fn) && c.p.includes(path.join("hostile", "huge"))));
   check("config found through symlinked folder not reported", !list.some((x) => x.key.startsWith("hostile/linkout/")));
@@ -256,8 +256,14 @@ async function body(check, cfg) {
   const actionsAt = async (rel, key) => {
     const uri = vscode.Uri.file(path.join(ws, rel));
     await vscode.workspace.openTextDocument(uri);
-    const x = byKey(key);
+    await api.scan();
+    const x = diagList(ws).find(item => item.key === key);
     if (!x) return [];
+    for (let i = 0; i < 5; i++) {
+      const actions = await codeActions(uri, x.d.range);
+      if (actions.some(a => a.title.startsWith("Did you mean "))) return actions;
+      await sleep(200);
+    }
     return codeActions(uri, x.d.range);
   };
   const fix = (actions || []).find((a) => a.title === 'Did you mean "lib/tool.js"?');
@@ -288,7 +294,7 @@ async function body(check, cfg) {
   let stubbed = false;
   try {
     vscode.window.showInformationMessage = (msg, ...items) => {
-      if (typeof msg === "string" && /config reference/.test(msg)) {
+      if (typeof msg === "string" && /path reference/.test(msg)) {
         prompts.push({ msg, items });
         return Promise.resolve(answer);
       }
@@ -306,8 +312,8 @@ async function body(check, cfg) {
   check("folder rename applied", await vscode.workspace.applyEdit(re));
   const p1 = await waitFor(() => prompts[0], 10000);
   check(
-    "onDidRenameFiles prompts: 4 config references still point to src/utils - update all?",
-    p1 && p1.msg === "4 config references still point to src/utils - update all?" && same(p1.items, ["Update all", "Preview", "Ignore"]),
+    "onDidRenameFiles prompts: 4 path references still point to src/utils - update all?",
+    p1 && p1.msg === "4 path references still point to src/utils - update all?" && same(p1.items, ["Update all", "Preview", "Ignore"]),
     p1
   );
   const planFiles = (api.getLastRenamePlan() || []).map((p) => path.relative(ws, p.ref.file) + " -> " + p.newText).sort();
@@ -335,7 +341,7 @@ async function body(check, cfg) {
   re.renameFile(vscode.Uri.file(path.join(ws, "lib", "tool.js")), vscode.Uri.file(path.join(ws, "lib", "cli.js")));
   check("file rename applied", await vscode.workspace.applyEdit(re));
   const p2 = await waitFor(() => prompts[1], 10000);
-  check("file rename prompts for 3 references (bin, COPY, tsconfig paths via .js)", p2 && p2.msg === "3 config references still point to lib/tool.js - update all?", p2);
+  check("file rename prompts for 3 references (bin, COPY, tsconfig paths via .js)", p2 && p2.msg === "3 path references still point to lib/tool.js - update all?", p2);
   const done2 = api.getLastPrompt() && (await withTimeout(api.getLastPrompt().done, 15000));
   check('"Ignore" edits nothing', done2 === false && /"tool": "lib\/tool\.js"/.test(read("package.json")) && /"@tool": \["lib\/tool"\]/.test(read("packages/app/tsconfig.json")));
   await api.scan();
@@ -386,7 +392,7 @@ async function body(check, cfg) {
   list = diagList(ws);
   check("disabledRules hides PM006 and PM010", !list.some((x) => x.d.code === "PM006" || x.d.code === "PM010") && list.length > 0);
   check("view follows disabledRules", !rows(api).some((r) => /^PM00[6]|^PM010/.test(r.label)) && rows(api).length === list.length);
-  await conf.update("disabledRules", ["PM001", "PM002", "PM003", "PM004", "PM005", "PM006", "PM007", "PM008", "PM009", "PM010", "PM011"], vscode.ConfigurationTarget.Workspace);
+  await conf.update("disabledRules", Object.keys(require("../../rules").RULES), vscode.ConfigurationTarget.Workspace);
   await sleep(200);
   await api.scan();
   check("empty state: nothing to show -> no rows, no badge (welcome text shows)", api.getChildren().length === 0 && api.getBadge() === 0);

@@ -13,6 +13,7 @@ const path = require("path");
 const { extractScriptPaths } = require("./package-scripts");
 
 const { RULES, resolveRuleId } = require("./rules");
+const { extractMarkdownPaths } = require("./markdown");
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -815,6 +816,8 @@ function classify(file) {
   const base = parts[parts.length - 1] || "";
   const parent = parts[parts.length - 2] || "";
   const grand = parts[parts.length - 3] || "";
+  if (/\.mdx$/i.test(base)) return "mdx";
+  if (/\.md$/i.test(base)) return "markdown";
   if (base === "package.json") return "package";
   if (/^[tj]sconfig(\..+)?\.json$/i.test(base)) return "tsconfig";
   if (/\.dockerignore$/i.test(base)) return null;
@@ -874,6 +877,34 @@ function packageScriptRefs(c, node, label, base, ctx) {
       endCol: position.col + value.length, value,
       escape: "json", code: "PM001", base: scriptBase, kind: "file",
       label: "package.json " + label,
+    });
+  });
+}
+
+/**
+ * Convert document scanner offsets into the core's single-line reference format.
+ * Relative module paths use extension/index fallbacks; other paths resolve literally.
+ * @param {{file: string, text: string, kind: string, starts: number[]}} c Classified document.
+ * @param {Object} settings Effective scanner settings from analyze().
+ * @returns {Object[]} Normalized references for validation and rename planning.
+ */
+function extractMarkdown(c, settings) {
+  const codes = { markdown: "PM012", module: "PM013", jsx: "PM014", directive: "PM015" };
+  return extractMarkdownPaths(c.text, {
+    mdx: c.kind === "mdx",
+    pathAttributes: settings.mdxPathAttributes,
+    directivePathAttributes: settings.directivePathAttributes,
+    multiPathAttributes: settings.multiPathAttributes,
+  }).map(ref => {
+    const p = posOf(c.starts, ref.start);
+    const module = ref.type === "module";
+    return mkRef({
+      file: c.file, line: p.line, col: p.col, endCol: p.col + ref.end - ref.start,
+      value: ref.value, base: path.dirname(c.file), code: codes[ref.type],
+      label: ref.type + (ref.attribute ? " " + ref.attribute : ""),
+      kind: module || ref.type === "directive" || ref.attribute === "src" ? "file" : "any",
+      alts: module && !path.extname(ref.value) ? [...TS_MODULE_ALTS, ".md", ".mdx", "/index.mdx"].filter(a => a !== "/package.json") : [],
+      escape: "document-path",
     });
   });
 }
@@ -1487,11 +1518,11 @@ function checkOne(ref, abs, env) {
   let st = env.guard.status(abs);
   if (st.state === "outside") return { state: "outside", abs };
   let hit = st.state === "missing" ? null : abs;
-  if (!hit) {
+  if (!hit || (ref.escape === "document-path" && ref.kind === "file" && st.state === "dir")) {
     for (const a of ref.alts || []) {
       const s2 = env.guard.status(abs + a);
       if (s2.state === "outside") return { state: "outside", abs };
-      if (s2.state !== "missing") {
+      if (s2.state !== "missing" && (ref.escape !== "document-path" || s2.state === "file")) {
         hit = abs + a;
         st = s2;
         break;
@@ -1558,6 +1589,10 @@ function encodeFor(ref, text) {
       return text.replace(/'/g, "''");
     case "plain":
       return /^[-?:,[\]{}#&*!|>'"%@`]|: | #|\s$/.test(text) ? null : text;
+    case "document-path":
+      // Conservative edits: do not introduce syntax delimiters, URI escapes,
+      // or separators that change the meaning of links, strings or lists.
+      return /[\s\\'"<>()\[\]{}#?%,&`]/.test(text) ? null : text;
     case "shell":
       return /[\s'"$`\\;&|<>()]/.test(text) ? null : text;
     default:
@@ -1629,6 +1664,7 @@ function analyze(opts) {
       else if (c.kind === "codeowners") list = extractCodeowners(c);
       else if (c.kind === "launch") list = extractLaunch(c, ctx);
       else if (c.kind === "dockerfile") list = extractDockerfile(c, ctx);
+      else if (c.kind === "markdown" || c.kind === "mdx") list = extractMarkdown(c, settings);
     } catch (_) {
       list = [];
     }
@@ -1702,11 +1738,64 @@ function analyze(opts) {
 }
 
 /** Plan edits for references that pointed at a renamed path (computed from the pre-rename scan). */
+/**
+ * Map an original path through a simultaneous rename batch. The most specific
+ * source wins for nested moves; destinations are not recursively remapped.
+ * @param {string} original Absolute pre-move path.
+ * @param {{from: string, to: string}[]} renames Rename batch.
+ * @returns {{path: string, rename: Object|null}} Mapped path and matching move.
+ */
+function movedPath(original, renames) {
+  let match = null;
+  for (const rn of renames) {
+    const from = path.resolve(rn.from);
+    if (!within(original, from)) continue;
+    if (!match || from.length > match.from.length) match = { from, to: path.resolve(rn.to) };
+  }
+  return match
+    ? { path: path.resolve(match.to, path.relative(match.from, original)), rename: match }
+    : { path: original, rename: null };
+}
+
+/**
+ * Plan outgoing and incoming document reference edits from pre-move resolutions.
+ * @param {Object} ref Normalized document reference.
+ * @param {{from: string, to: string}[]} renames Rename batch.
+ * @param {function(string): boolean} isInside Workspace boundary predicate.
+ * @returns {Object|null} Edit targeting the post-move document, if necessary.
+ */
+function planDocumentRename(ref, renames, isInside) {
+  const r = ref.result;
+  const source = movedPath(ref.file, renames);
+  const target = movedPath(r.hit || r.abs, renames);
+  const change = target.rename || source.rename;
+  if (!change || !isInside(source.path) || !isInside(target.path)) return null;
+  // Preserve extensionless imports only when the original fallback still applies.
+  let newAbs = target.path;
+  if (r.hit && r.hit !== r.abs) {
+    const suffix = r.hit.slice(r.abs.length);
+    if (newAbs.endsWith(suffix)) newAbs = newAbs.slice(0, -suffix.length);
+  }
+  const base = path.dirname(source.path);
+  let newText = formatPath(ref, newAbs, base);
+  // JS imports and configured attributes must remain explicit relative paths.
+  if (ref.lead === "./" || /^\.\.\//.test(ref.value)) {
+    if (!/^\.\.?\//.test(newText) && newText !== ".") newText = "./" + newText;
+  }
+  if (newText === ref.display || encodeFor(ref, newText) === null) return null;
+  return { ref, file: source.path, newText, from: change.from, to: change.to, sourceMoved: !!source.rename };
+}
+
 function planRenames(refs, renames, isInside) {
   const plan = [];
   for (const ref of refs || []) {
     const r = ref.result;
     if (!r || r.state !== "ok" || r.anywhere || ref.escape === "noedit") continue;
+    if (ref.escape === "document-path") {
+      const edit = planDocumentRename(ref, renames, isInside);
+      if (edit) plan.push(edit);
+      continue;
+    }
     const target = r.hit || r.abs;
     for (const rn of renames) {
       const from = path.resolve(rn.from);

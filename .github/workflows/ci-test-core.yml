@@ -1,0 +1,38 @@
+name: CI - Core
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Core diagnostics (Node 24)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Core diagnostics fixture
+        id: tests
+        env:
+          PM_TEST_RESULTS: ${{ runner.temp }}/core-results.json
+        run: node test/unit.js "$RUNNER_TEMP/pathmend-unit"
+      - name: Publish test summary and annotations
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: node test/write-summary.js core "$RUNNER_TEMP/core-results.json"
+

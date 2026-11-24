@@ -1,0 +1,57 @@
+name: CI - VS Code
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      screenshots:
+        description: Capture VS Code screenshots
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vscode:
+    name: VS Code integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PM_SCREENSHOTS: ${{ inputs.screenshots && '1' || '0' }}
+      PM_TEST_NO_SANDBOX: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install virtual display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth
+      - name: Run trusted and untrusted workspace tests
+        id: tests
+        env:
+          PM_TEST_RESULTS: ${{ runner.temp }}/vscode-results.json
+        run: xvfb-run -a node test/run-vscode.js
+      - name: Publish test summary and annotations
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: node test/write-summary.js vscode "$RUNNER_TEMP/vscode-results.json"
+      - name: Upload screenshots
+        if: ${{ always() && inputs.screenshots }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: pathmend-vscode-screenshots
+          path: screenshots/*.png
+          retention-days: 14
+          if-no-files-found: warn
