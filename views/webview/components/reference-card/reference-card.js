@@ -6,6 +6,7 @@ export class ReferenceCard extends HTMLElement {
   static requestSequence = 0;
   connectedCallback() { this.resumeValidation?.(); }
   disconnectedCallback() { this.cancelPending?.(); }
+  setBulkSelected(checked) { if (this.bulkCheckbox) this.bulkCheckbox.checked = checked; }
   update(f, revision, selected, draft) {
     this.cancelPending?.();
     this.resumeValidation = undefined;
@@ -13,6 +14,15 @@ export class ReferenceCard extends HTMLElement {
     const card = element("article", undefined, "reference-card " + f.severity);
     if (selected) card.classList.add("selected");
     const meta = element("div", undefined, "card-meta");
+    this.bulkCheckbox = undefined;
+    if (f.fix && f.repairable && !f.notChecked) {
+      const checkbox = this.bulkCheckbox = element("input", undefined, "bulk-reference-checkbox");
+      checkbox.type = "checkbox";
+      checkbox.setAttribute("aria-label", "Select suggested repair for " + f.path + " at line " + f.line);
+      checkbox.title = "Select suggested repair";
+      checkbox.addEventListener("change", () => this.dispatchEvent(new CustomEvent("pm-bulk-selection", {bubbles:true,detail:{ids:[f.id],checked:checkbox.checked}})));
+      meta.append(checkbox);
+    }
     const severity = element("span", f.notChecked ? "Not checked" : f.severity, "severity-label");
     severity.prepend(icon(f.severity === "error" ? "circle-x" : f.severity === "warning" ? "triangle-alert" : "info"));
     meta.append(element("span", f.code, "rule-code"), severity, element("span", "L" + f.line + ":" + f.column, "location"));
