@@ -358,6 +358,8 @@
               "PM024",
               "PM025",
               "PM026",
+              "PM027",
+              "PM028",
               "package-path-not-found",
               "tsconfig-path-not-found",
               "docker-source-not-found",
@@ -383,7 +385,9 @@
               "yaml-attribute-path-not-found",
               "workspace-folder-path-not-found",
               "pnpm-workspace-path-not-found",
-              "local-package-path-not-found"
+              "local-package-path-not-found",
+              "workspace-package-not-found",
+              "duplicate-workspace-package"
             ],
             "enumDescriptions": [
               "package-path-not-found: package.json path not found",
@@ -412,6 +416,8 @@
               "workspace-folder-path-not-found: VS Code workspace folder or configuration path not found",
               "pnpm-workspace-path-not-found: pnpm workspace package path not found",
               "local-package-path-not-found: Local package dependency path not found",
+              "workspace-package-not-found: Named workspace dependency not found",
+              "duplicate-workspace-package: Duplicate workspace package name",
               "PM001: package.json path not found",
               "PM002: tsconfig / jsconfig path not found",
               "PM003: Dockerfile COPY / ADD source not found",
@@ -437,7 +443,9 @@
               "PM023: Configured YAML local path attribute not found",
               "PM024: VS Code workspace folder or configuration path not found",
               "PM025: pnpm workspace package path not found",
-              "PM026: Local package dependency path not found"
+              "PM026: Local package dependency path not found",
+              "PM027: Named workspace dependency not found",
+              "PM028: Duplicate workspace package name"
             ]
           },
           "default": [],
